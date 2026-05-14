@@ -1,12 +1,31 @@
+# Environment
 .env
 .env.local
 .env*.local
+
+# Dependencies & build output
 node_modules/
 .next/
 dist/
+
+# Python
 *.pyc
 __pycache__/
 .venv/
+
+# Uploads & sensitive files
 *.pdf
 uploads/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Local-only session & tooling state
+HANDOFF.md
+.omc/
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
