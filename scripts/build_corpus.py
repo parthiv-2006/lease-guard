@@ -20,6 +20,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import certifi
+import truststore
+truststore.inject_into_ssl()  # use Windows system cert store (handles government CAs)
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -100,7 +103,7 @@ def _with_retry(fn, max_attempts: int = 3, base_delay: float = 2.0):
 def _fetch_html(url: str) -> str:
     """Fetch HTML with retry."""
     def _get():
-        resp = requests.get(url, timeout=30, headers={"User-Agent": "LeaseGuard/1.0"})
+        resp = requests.get(url, timeout=30, headers={"User-Agent": "LeaseGuard/1.0"}, verify=certifi.where())
         resp.raise_for_status()
         return resp.text
 
