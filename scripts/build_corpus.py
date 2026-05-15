@@ -22,7 +22,9 @@ from typing import Any
 
 import certifi
 import truststore
-truststore.inject_into_ssl()  # use Windows system cert store (handles government CAs)
+truststore.inject_into_ssl()  # patches Python ssl module (requests/httpx)
+# gRPC uses BoringSSL — a separate TLS stack that ignores truststore.
+# This env var points gRPC at the certifi CA bundle before gRPC initializes.
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -293,30 +295,38 @@ def _chunk_section(section: dict[str, Any]) -> list[dict[str, Any]]:
 # Step 3: Embed with Gemini
 # ---------------------------------------------------------------------------
 
+_GEMINI_EMBED_URL = (
+    "https://generativelanguage.googleapis.com/v1beta"
+    "/models/gemini-embedding-001:embedContent"
+)
+
+
 def _embed_text(text: str) -> list[float]:
     """
-    Embed text using Gemini text-embedding-004.
-    Handles rate limits (429) with a 60s sleep + retry.
+    Embed text using gemini-embedding-001 via REST (not gRPC).
+
+    The google-generativeai SDK uses gRPC which has its own BoringSSL stack
+    that ignores truststore on Windows. REST via requests avoids gRPC entirely.
+    outputDimensionality=768 keeps vectors compatible with the vector(768) schema.
     """
-    import google.generativeai as genai
-
-    genai.configure(api_key=GEMINI_API_KEY)
-
     def _call():
-        try:
-            result = genai.embed_content(
-                model="models/text-embedding-004",
-                content=text,
-                task_type="RETRIEVAL_DOCUMENT",
-            )
-            return result["embedding"]
-        except Exception as e:
-            err_str = str(e)
-            if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
-                print("[rate-limit] Gemini 429 — sleeping 60s...", file=sys.stderr)
-                time.sleep(60)
-                raise  # trigger retry
-            raise
+        resp = requests.post(
+            _GEMINI_EMBED_URL,
+            params={"key": GEMINI_API_KEY},
+            json={
+                "content": {"parts": [{"text": text}]},
+                "taskType": "RETRIEVAL_DOCUMENT",
+                "outputDimensionality": 768,
+            },
+            timeout=30,
+            verify=certifi.where(),
+        )
+        if resp.status_code == 429:
+            print("[rate-limit] Gemini 429 — sleeping 60s...", file=sys.stderr)
+            time.sleep(60)
+            resp.raise_for_status()
+        resp.raise_for_status()
+        return resp.json()["embedding"]["values"]
 
     return _with_retry(_call, max_attempts=3, base_delay=2.0)
 
