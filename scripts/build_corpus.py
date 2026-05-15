@@ -40,7 +40,13 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 CORPUS_VERSION = date.today().isoformat()  # e.g. "2026-05-14"
+
+# ontario.ca now requires JavaScript (SPA). The Wayback Machine snapshot from
+# 2022-01-01 has the full static HTML and is the last known good version of the
+# pre-redesign page. The canonical URL is stored in the DB for citation purposes.
 RTA_URL = "https://www.ontario.ca/laws/statute/06r17"
+RTA_FETCH_URL = "https://web.archive.org/web/20220101120457/https://www.ontario.ca/laws/statute/06r17"
+
 JURISDICTION_CODE = "ON"
 ACT_NAME = "Residential Tenancies Act, 2006"
 
@@ -101,9 +107,9 @@ def _with_retry(fn, max_attempts: int = 3, base_delay: float = 2.0):
 # ---------------------------------------------------------------------------
 
 def _fetch_html(url: str) -> str:
-    """Fetch HTML with retry."""
+    """Fetch HTML with retry. Uses a longer timeout for Wayback Machine."""
     def _get():
-        resp = requests.get(url, timeout=30, headers={"User-Agent": "LeaseGuard/1.0"}, verify=certifi.where())
+        resp = requests.get(url, timeout=60, headers={"User-Agent": "LeaseGuard/1.0"}, verify=certifi.where())
         resp.raise_for_status()
         return resp.text
 
@@ -117,105 +123,105 @@ def _normalize_text(text: str) -> str:
 
 def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
     """
-    Parse Ontario RTA HTML into section chunks.
-    Each chunk: {section_number, section_title, full_text, url, clause_type}
+    Parse Ontario RTA HTML (Wayback Machine 2022-01-01 snapshot) into sections.
+
+    Structure of the archived page:
+      - <p class="section"> — starts each section; text begins with the section
+        number immediately followed by the content, e.g. "105(1) A landlord..."
+      - <p class="paragraph"> — numbered subsection items within a section
+      - <p class="TOCid"> / <p class="table"> — table-of-contents rows that
+        give us section titles (parsed separately into toc_titles map)
+      - <a name="BK{n}"> — anchors used for deep-linking (preserved as url)
     """
     soup = BeautifulSoup(html, "lxml")
 
-    # Ontario laws pages wrap each section in elements with id like "BK42"
-    # Sections are typically <h2> or <h3> followed by <p> tags.
+    # Strip Wayback Machine toolbar so its text doesn't pollute sections
+    for el in soup.find_all(id=re.compile(r"^wm")):
+        el.decompose()
+
+    # ── Build section-number → title map from the TOC ──────────────────────
+    # TOC structure: each <tr> has <td><p class="TOCid">N.</p></td>
+    #                                   <td><p class="table">Title</p></td>
+    toc_titles: dict[str, str] = {}
+    for toc_el in soup.find_all("p", class_="TOCid"):
+        raw_id = toc_el.get_text(strip=True).rstrip(".")
+        # Title is in a <p class="table"> inside the next <td> of the same <tr>
+        td = toc_el.parent  # the enclosing <td>
+        if td and td.name == "td":
+            next_td = td.find_next_sibling("td")
+            if next_td:
+                title_el = next_td.find("p", class_="table")
+                if title_el and raw_id:
+                    toc_titles[raw_id] = _normalize_text(title_el.get_text(strip=True))
+
+    # ── Build BK-anchor → section-number map from TOC hrefs ─────────────────
+    bk_to_sec: dict[str, str] = {}
+    for a in soup.find_all("a", href=re.compile(r"^#BK")):
+        title_attr = a.get("title", "")
+        m = re.match(r"Section\s+(\d+(?:\.\d+)?)", title_attr)
+        if m:
+            bk = a["href"].lstrip("#")
+            bk_to_sec[bk] = m.group(1)
+
+    # ── Parse section content blocks ─────────────────────────────────────────
+    # Section number is always a leading digit sequence in the <p class="section"> text.
+    sec_num_re = re.compile(r"^(\d{1,3}(?:\.\d+)?)")
     sections: list[dict[str, Any]] = []
+    seen_nums: set[str] = set()
 
-    # Find all heading elements that represent sections
-    # Ontario.ca uses <h2 class="section"> or similar; fall back to heuristics.
-    content_div = (
-        soup.find("div", {"class": "field-items"})
-        or soup.find("div", {"id": "content"})
-        or soup.find("main")
-        or soup.body
-    )
+    section_els = soup.find_all("p", class_="section")
+    for sec_el in section_els:
+        raw_text = _normalize_text(sec_el.get_text(strip=True))
+        m = sec_num_re.match(raw_text)
+        if not m:
+            continue
+        sec_num = m.group(1)
 
-    if content_div is None:
-        print("[warn] Could not find main content div; using full body.", file=sys.stderr)
-        content_div = soup.body
+        # Collect subsection paragraphs that follow until the next section
+        paras: list[str] = [raw_text]
+        for sib in sec_el.next_siblings:
+            if not hasattr(sib, "name") or sib.name != "p":
+                continue
+            sib_classes = sib.get("class", [])
+            if "section" in sib_classes:
+                break
+            if "paragraph" in sib_classes or "subsection" in sib_classes:
+                t = _normalize_text(sib.get_text(strip=True))
+                if t:
+                    paras.append(t)
 
-    # Collect all block-level elements in order
-    # We look for elements with anchors that match section patterns
-    section_pattern = re.compile(r"^(\d+(?:\.\d+)?)\s*[.\-–—]?\s*(.*)")
-    anchor_pattern = re.compile(r"^BK\d+$")
-
-    current_section: dict[str, Any] | None = None
-    current_paragraphs: list[str] = []
-    current_anchor: str = ""
-
-    def _flush_section():
-        nonlocal current_section, current_paragraphs, current_anchor
-        if current_section is None:
-            return
-        full_text = _normalize_text("\n".join(current_paragraphs).strip())
+        full_text = " ".join(paras)
         if not full_text:
-            current_section = None
-            current_paragraphs = []
-            current_anchor = ""
-            return
-        sec_num = current_section["section_number"]
+            continue
+
+        # Find the nearest preceding BK anchor to build a deep-link URL
+        bk_anchor = ""
+        for prev in sec_el.previous_siblings:
+            if hasattr(prev, "name") and prev.name == "a":
+                name = prev.get("name", "")
+                if name.startswith("BK"):
+                    bk_anchor = name
+                    break
+
+        url = f"{RTA_URL}#{bk_anchor}" if bk_anchor else RTA_URL
+        sec_title = toc_titles.get(sec_num, "")
+
+        # Deduplicate — keep only the first occurrence of each section number
+        if sec_num in seen_nums:
+            continue
+        seen_nums.add(sec_num)
+
         sections.append(
             {
                 "section_number": sec_num,
-                "section_title": current_section["section_title"],
+                "section_title": sec_title,
                 "full_text": full_text,
-                "url": f"{RTA_URL}#{current_anchor}" if current_anchor else RTA_URL,
+                "url": url,
                 "clause_type": SECTION_CLAUSE_MAP.get(sec_num, "general"),
             }
         )
-        current_section = None
-        current_paragraphs = []
-        current_anchor = ""
 
-    for element in content_div.find_all(
-        ["h1", "h2", "h3", "h4", "p", "li", "div"], recursive=True
-    ):
-        tag = element.name
-
-        # Check for anchor on element or its parent
-        anchor_id = element.get("id", "")
-        if not anchor_id and element.parent:
-            anchor_id = element.parent.get("id", "")
-
-        is_heading = tag in ("h1", "h2", "h3", "h4")
-        text = element.get_text(separator=" ", strip=True)
-        text = _normalize_text(text)
-
-        if not text:
-            continue
-
-        if is_heading:
-            m = section_pattern.match(text)
-            if m:
-                _flush_section()
-                sec_num = m.group(1).strip()
-                sec_title = m.group(2).strip()
-                current_section = {
-                    "section_number": sec_num,
-                    "section_title": sec_title,
-                }
-                if anchor_id and anchor_pattern.match(anchor_id):
-                    current_anchor = anchor_id
-                current_paragraphs = [text]
-            # Non-section headings are ignored for section breaks
-        else:
-            if current_section is not None:
-                # Avoid double-adding the heading text
-                if text not in current_paragraphs:
-                    current_paragraphs.append(text)
-
-    _flush_section()
-
-    # Deduplicate by section_number (keep last occurrence which is most complete)
-    seen: dict[str, dict] = {}
-    for s in sections:
-        seen[s["section_number"]] = s
-    return list(seen.values())
+    return sections
 
 
 # ---------------------------------------------------------------------------
@@ -365,10 +371,10 @@ def main() -> None:
         print(f"[error] Missing environment variables: {', '.join(missing)}", file=sys.stderr)
         sys.exit(1)
 
-    # Step 1: Fetch RTA
-    print("[1/4] Fetching RTA HTML from ontario.ca...", file=sys.stderr)
+    # Step 1: Fetch RTA (via Wayback Machine — ontario.ca now requires JS)
+    print(f"[1/4] Fetching RTA HTML from Wayback Machine...", file=sys.stderr)
     try:
-        html = _fetch_html(RTA_URL)
+        html = _fetch_html(RTA_FETCH_URL)
     except Exception as e:
         print(f"[error] Failed to fetch RTA: {e}", file=sys.stderr)
         sys.exit(1)
