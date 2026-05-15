@@ -438,7 +438,8 @@ def main() -> None:
             skipped += 1
             continue
 
-        # Embed
+        # Embed — 1s pause keeps us at ~60 RPM, safely under free-tier limits
+        time.sleep(1.0)
         try:
             embedding = _embed_text(full_text)
         except Exception as e:
