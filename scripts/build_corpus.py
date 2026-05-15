@@ -16,7 +16,7 @@ import re
 import sys
 import time
 import unicodedata
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -28,8 +28,9 @@ from dotenv import load_dotenv
 # Load environment
 # ---------------------------------------------------------------------------
 
-_env_path = Path(__file__).parent.parent / ".env"
-load_dotenv(dotenv_path=_env_path)
+_project_root = Path(__file__).parent.parent
+load_dotenv(dotenv_path=_project_root / ".env.local")  # preferred
+load_dotenv(dotenv_path=_project_root / ".env")        # fallback
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -43,6 +44,14 @@ ACT_NAME = "Residential Tenancies Act, 2006"
 # ---------------------------------------------------------------------------
 # Section → ClauseType mapping
 # ---------------------------------------------------------------------------
+
+VALID_CLAUSE_TYPES: frozenset[str] = frozenset({
+    "rent_payment", "rent_increase", "security_deposit", "entry_rights",
+    "maintenance_repairs", "subletting_assignment", "early_termination",
+    "renewal_terms", "utilities", "pets", "alterations", "quiet_enjoyment",
+    "liability_indemnification", "dispute_resolution", "parking_storage",
+    "guest_policy", "standard_boilerplate", "unknown",
+})
 
 SECTION_CLAUSE_MAP: dict[str, str] = {
     "12": "rent_payment",
@@ -317,7 +326,7 @@ def _section_exists(client, jurisdiction_code: str, act_name: str, section_numbe
     """Check if a section already exists in the DB."""
     try:
         resp = (
-            client.table("statute_sections")
+            client.table("statutes")
             .select("id")
             .eq("jurisdiction_code", jurisdiction_code)
             .eq("act_name", act_name)
@@ -332,7 +341,7 @@ def _section_exists(client, jurisdiction_code: str, act_name: str, section_numbe
 
 def _upsert_section(client, row: dict[str, Any]) -> None:
     """Upsert a section row. Conflict on (jurisdiction_code, act_name, section_number)."""
-    client.table("statute_sections").upsert(
+    client.table("statutes").upsert(
         row,
         on_conflict="jurisdiction_code,act_name,section_number",
     ).execute()
@@ -418,7 +427,10 @@ def main() -> None:
             errors += 1
             continue
 
-        # Build row
+        # Build row — relevant_clause_types is a clause_type[] enum array
+        raw_type = chunk.get("clause_type", "")
+        relevant_types = [raw_type] if raw_type in VALID_CLAUSE_TYPES else []
+
         row: dict[str, Any] = {
             "jurisdiction_code": JURISDICTION_CODE,
             "act_name": ACT_NAME,
@@ -426,8 +438,9 @@ def main() -> None:
             "section_title": sec_title,
             "full_text": full_text,
             "url": chunk.get("url", RTA_URL),
-            "clause_type": chunk.get("clause_type", "general"),
+            "relevant_clause_types": relevant_types,
             "embedding": embedding,
+            "embedded_at": datetime.now(timezone.utc).isoformat(),
             "corpus_version": CORPUS_VERSION,
         }
 
