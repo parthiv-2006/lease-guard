@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/start.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/start.js",
     "test": "node --experimental-vm-modules ../../node_modules/.bin/jest"
   },
   "dependencies": {
@@ -14,7 +14,8 @@
     "@supabase/supabase-js": "^2.47.0",
     "@google/generative-ai": "^0.21.0",
     "uuid": "^11.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "dotenv": "^16.4.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
