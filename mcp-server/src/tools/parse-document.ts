@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { spawn } from "child_process";
 import path from "path";
+import { fileURLToPath } from "url";
 
 export const toolDefinition = {
   name: "parse_document",
@@ -90,7 +91,7 @@ export async function execute(input: unknown): Promise<unknown> {
 
   // Resolve the script path relative to the mcp-server directory
   const scriptPath = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
+    path.dirname(fileURLToPath(import.meta.url)),
     "../../..",
     "scripts",
     "parse_pdf.py"
