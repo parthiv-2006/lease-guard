@@ -46,7 +46,7 @@ interface DecisionRow {
   outcome: "tenant_favour" | "landlord_favour" | "mixed";
   relevant_principle: string;
   url: string;
-  similarity: number;
+  relevance_score: number;
 }
 
 interface LookupResult {
@@ -71,7 +71,7 @@ async function vectorSearchDecisions(
   const rpcParams: Record<string, unknown> = {
     query_embedding: embedding,
     jurisdiction: jurisdictionCode,
-    similarity_threshold: threshold,
+    match_threshold: threshold,
     match_count: limit,
   };
 
@@ -96,7 +96,7 @@ async function vectorSearchDecisions(
     outcome: row.outcome,
     relevant_principle: row.relevant_principle,
     url: row.url,
-    relevance_score: row.similarity,
+    relevance_score: row.relevance_score,
   }));
 }
 
@@ -195,7 +195,7 @@ export async function execute(input: unknown): Promise<unknown> {
           .join(",");
 
         const { data, error } = await supabase
-          .from("decisions")
+          .from("tribunal_decisions")
           .select(
             "case_number, decision_date, ruling_summary, outcome, relevant_principle, url"
           )

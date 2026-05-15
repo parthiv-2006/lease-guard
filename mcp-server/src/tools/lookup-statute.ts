@@ -44,10 +44,10 @@ interface StatuteRow {
   act_name: string;
   section_number: string;
   section_title: string;
-  text: string;
+  full_text: string;
   url: string;
-  similarity: number;
-  last_verified: string;
+  relevance_score: number;
+  corpus_version: string;
 }
 
 interface LookupResult {
@@ -65,7 +65,7 @@ async function vectorSearch(
   const { data, error } = await supabase.rpc("search_statutes", {
     query_embedding: embedding,
     jurisdiction: jurisdictionCode,
-    similarity_threshold: threshold,
+    match_threshold: threshold,
     match_count: limit,
   });
 
@@ -82,10 +82,10 @@ async function vectorSearch(
     act_name: row.act_name,
     section_number: row.section_number,
     section_title: row.section_title,
-    text: row.text,
+    text: row.full_text,
     url: row.url,
-    relevance_score: row.similarity,
-    last_verified: row.last_verified,
+    relevance_score: row.relevance_score,
+    last_verified: row.corpus_version,
   }));
 }
 
@@ -117,12 +117,12 @@ async function keywordFallback(
 
   // Build ilike conditions
   const ilikeConditions = searchTerms
-    .map((term) => `text.ilike.%${term}%`)
+    .map((term) => `full_text.ilike.%${term}%`)
     .join(",");
 
   const { data, error } = await supabase
     .from("statutes")
-    .select("id, act_name, section_number, section_title, text, url, last_verified")
+    .select("id, act_name, section_number, section_title, full_text, url, corpus_version")
     .eq("jurisdiction_code", jurisdictionCode)
     .or(ilikeConditions)
     .limit(limit);
@@ -135,15 +135,15 @@ async function keywordFallback(
     return [];
   }
 
-  return (data as Omit<StatuteRow, "similarity">[]).map((row) => ({
+  return (data as Omit<StatuteRow, "relevance_score">[]).map((row) => ({
     id: row.id,
     act_name: row.act_name,
     section_number: row.section_number,
     section_title: row.section_title,
-    text: row.text,
+    text: row.full_text,
     url: row.url,
     relevance_score: 0.3, // Low score for keyword fallback results
-    last_verified: row.last_verified,
+    last_verified: row.corpus_version,
   }));
 }
 
