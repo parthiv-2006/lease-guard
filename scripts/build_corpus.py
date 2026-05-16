@@ -49,7 +49,7 @@ CORPUS_VERSION = date.today().isoformat()  # e.g. "2026-05-14"
 RTA_URL = "https://www.ontario.ca/laws/statute/06r17"
 RTA_FETCH_URL = "https://web.archive.org/web/20220101120457/https://www.ontario.ca/laws/statute/06r17"
 
-JURISDICTION_CODE = "ON"
+JURISDICTION_CODE = "CA-ON"
 ACT_NAME = "Residential Tenancies Act, 2006"
 
 # ---------------------------------------------------------------------------
