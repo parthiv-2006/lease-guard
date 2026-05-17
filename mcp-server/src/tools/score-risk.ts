@@ -65,12 +65,12 @@ const InputSchema = z.object({
 });
 
 // Clause types that are standard — inherently lower risk baseline
+// NOTE: "pets" intentionally excluded — no-pet clauses with fines/evictions are high risk
 const STANDARD_BOILERPLATE_TYPES: ClauseType[] = [
   "standard_boilerplate",
   "utilities",
   "parking_storage",
   "guest_policy",
-  "pets",
 ];
 
 // Patterns that indicate the clause restricts tenant rights
@@ -195,6 +195,90 @@ function detectStatutoryViolations(
       violations.push({
         statute_section: sectionRef,
         violation_description: `Mandatory arbitration clause may contradict ${sectionRef} — tenants have the right to access the Landlord and Tenant Board`,
+      });
+      continue;
+    }
+
+    // Post-dated cheques — RTA s.108 prohibits requiring them
+    if (
+      (lowerClause.includes("post-dated") ||
+        lowerClause.includes("postdated") ||
+        lowerClause.includes("post dated")) &&
+      statute.section_number === "108"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause requires post-dated cheques, which is prohibited by ${sectionRef} — landlords cannot require post-dated cheques or automatic payment authorizations`,
+      });
+      continue;
+    }
+
+    // Maintenance offloading — RTA s.20 places non-delegable duty on landlord
+    if (
+      (lowerClause.includes("tenant") &&
+        (lowerClause.includes("responsible for") || lowerClause.includes("responsible for all")) &&
+        (lowerClause.includes("repair") || lowerClause.includes("maintenance") || lowerClause.includes("plumbing"))) &&
+      statute.section_number === "20"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause shifts repair/maintenance responsibility to tenant, contradicting ${sectionRef} — landlord has a non-delegable duty to maintain the unit in good repair`,
+      });
+      continue;
+    }
+
+    // RTA waiver / superseding provincial law — RTA s.4 voids such provisions
+    if (
+      (lowerClause.includes("supersede") ||
+        lowerClause.includes("overrides") ||
+        lowerClause.includes("provincial law") ||
+        (lowerClause.includes("waive") && lowerClause.includes("rta"))) &&
+      statute.section_number === "4"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause purports to supersede or waive the RTA, which is void under ${sectionRef} — no tenancy agreement can contract out of the Residential Tenancies Act`,
+      });
+      continue;
+    }
+
+    // Unlawful daily late fee penalty — RTA s.59 sets the only permissible remedy
+    if (
+      (/\$\s*\d+(?:\.\d+)?\s*per\s*day/.test(lowerClause) ||
+        /\d+\s*dollar[s]?\s*per\s*day/.test(lowerClause) ||
+        (lowerClause.includes("late") && lowerClause.includes("penalty") && /\$\d+/.test(lowerClause))) &&
+      statute.section_number === "59"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause imposes a daily late-payment penalty, which is not permitted under Ontario law. ${sectionRef} provides the only remedy for non-payment: an N4 notice followed by an LTB application`,
+      });
+      continue;
+    }
+
+    // Unlawful pet fines / eviction — RTA s.14 voids no-pet provisions
+    if (
+      (lowerClause.includes("fine") || lowerClause.includes("penalty") || lowerClause.includes("fee")) &&
+      (lowerClause.includes("pet") || lowerClause.includes("animal")) &&
+      statute.section_number === "14"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause imposes fines or penalties for having pets. The underlying no-pet provision is void under ${sectionRef} — fines and eviction threats based on it are therefore also unenforceable`,
+      });
+      continue;
+    }
+
+    // Excess security deposit — RTA s.105/106 limit deposits to one month's rent
+    if (
+      (lowerClause.includes("deposit") || lowerClause.includes("security")) &&
+      (lowerClause.includes("non-refundable") || lowerClause.includes("nonrefundable") ||
+        /\$\s*[2-9]\d{3,}/.test(lowerClause)) && // $2000+ deposit hint
+      (statute.section_number === "105" || statute.section_number.startsWith("106"))
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_description: `Clause requires a deposit that likely exceeds the one-month-rent limit or is non-refundable, contradicting ${sectionRef} — only a last-month's-rent deposit is permitted`,
       });
       continue;
     }
