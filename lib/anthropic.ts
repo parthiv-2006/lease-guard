@@ -1,12 +1,94 @@
-import Anthropic from "@anthropic-ai/sdk";
+/**
+ * Anthropic client — dual-mode authentication.
+ *
+ * Mode A (production / CI): set ANTHROPIC_API_KEY in environment.
+ * Mode B (local dev):       authenticate with `claude auth login` and leave
+ *                           ANTHROPIC_API_KEY unset. Credentials are read from
+ *                           ~/.claude/.credentials.json automatically.
+ *
+ * The client is a lazy singleton — it is created on first use, not at import
+ * time, so tests can inject env vars before the first call.
+ */
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("Missing ANTHROPIC_API_KEY environment variable");
+import Anthropic from "@anthropic-ai/sdk";
+import fs from "fs";
+import path from "path";
+import os from "os";
+
+let _client: Anthropic | null = null;
+
+/** Candidate paths where Claude Code stores OAuth credentials. */
+const CLAUDE_CRED_PATHS = [
+  path.join(os.homedir(), ".claude", ".credentials.json"),
+  path.join(os.homedir(), ".claude", "credentials.json"),
+];
+
+/**
+ * Resolve an API key from the environment or from Claude Code credentials.
+ * Returns undefined if neither source is available.
+ */
+function resolveApiKey(): string | undefined {
+  // Mode A: explicit API key wins unconditionally
+  if (process.env.ANTHROPIC_API_KEY) {
+    return process.env.ANTHROPIC_API_KEY;
+  }
+
+  // Mode B: read Claude Code OAuth token from disk
+  // (only attempted when USE_CLAUDE_CODE_AUTH is not explicitly "false")
+  if (process.env.USE_CLAUDE_CODE_AUTH === "false") return undefined;
+
+  for (const credPath of CLAUDE_CRED_PATHS) {
+    try {
+      if (!fs.existsSync(credPath)) continue;
+      const raw = fs.readFileSync(credPath, "utf-8");
+      const creds = JSON.parse(raw) as Record<string, unknown>;
+
+      // Claude Code stores the token under different keys depending on version
+      const token =
+        (creds.claudeAiOauth as Record<string, string> | undefined)
+          ?.accessToken ??
+        (creds as Record<string, string>).access_token ??
+        (creds as Record<string, string>).apiKey;
+
+      if (token) return token;
+    } catch {
+      // File unreadable or malformed — try the next path
+    }
+  }
+
+  return undefined;
 }
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+/**
+ * Return the shared Anthropic client, creating it on first call.
+ * Throws if no credentials are available.
+ */
+export function getAnthropicClient(): Anthropic {
+  if (!_client) {
+    const apiKey = resolveApiKey();
+    if (!apiKey) {
+      throw new Error(
+        "No Anthropic credentials found.\n" +
+          "  • For direct API access:       set ANTHROPIC_API_KEY in .env.local\n" +
+          "  • For Claude Code subscription: run `claude auth login` in your terminal"
+      );
+    }
+    _client = new Anthropic({ apiKey });
+  }
+  return _client;
+}
 
-export const MCP_SERVER_URL =
-  process.env.MCP_SERVER_URL ?? "http://localhost:3001";
+/**
+ * Reset the singleton (test helper — do not call in production code).
+ */
+export function _resetClientForTesting(): void {
+  _client = null;
+}
+
+/** Absolute path to the compiled MCP server entry point. */
+export const MCP_SERVER_PATH = path.resolve(
+  process.cwd(),
+  "mcp-server",
+  "dist",
+  "start.js"
+);
