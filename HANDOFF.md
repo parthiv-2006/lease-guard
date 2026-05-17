@@ -39,7 +39,7 @@ The agent (Claude) calls MCP tools. The LLM never asserts legal facts from train
 | MCP server TypeScript built | `tsc` builds clean, output in `mcp-server/dist/` |
 | Claude Code MCP config | `.claude/settings.json` wires MCP server (gitignored — see below) |
 | Benchmark corpus seeded | 50 clauses × 5 types in `clause_comparisons` via `seed_benchmark.ts` |
-| RTA statute corpus | **All 1574 chunks embedded** in `statutes` table (completed 2026-05-16) |
+| RTA statute corpus | **All 1574 chunks embedded** in `statutes` table (completed 2026-05-16) — 564 new + 1010 skipped, 0 errors. Covers s.1–s.263 including all transitional provisions. |
 | Full pipeline tested E2E | All 12 MCP tools tested against `faultyLease.pdf` — all working |
 | RAG lookup bugs fixed | See Critical Gotchas #13–15 below |
 | `score_risk` improved | 6 new violation patterns added (s.4, s.14, s.20, s.59, s.105/106, s.108) |
