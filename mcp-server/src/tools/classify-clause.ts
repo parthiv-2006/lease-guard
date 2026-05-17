@@ -82,7 +82,19 @@ const CLAUSE_KEYWORDS: Array<{
       "arbitration", "waive.*right", "waiver.*right", "mediation", "binding arbitration",
       "dispute.*resolution", "legal action", "court.*jurisdiction", "waive.*court",
       "class action waiver", "mandatory arbitration", "landlord.*tribunal",
+      // RTA waiver / supersession patterns
+      "supersedes", "supersede", "overrides", "override.*rta", "override.*act",
+      "provincial law", "standard form of lease", "standard form", "notwithstanding.*rta",
+      "notwithstanding.*act", "waive.*rta", "waive.*act", "exempt.*rta",
     ],
+    subtypeMap: {
+      "supersede": "rta_waiver",
+      "override": "rta_waiver",
+      "provincial law": "rta_waiver",
+      "standard form": "non_standard_form",
+      "arbitration": "arbitration",
+      "mediation": "mediation",
+    },
     priority: "high",
   },
   {
@@ -91,13 +103,21 @@ const CLAUSE_KEYWORDS: Array<{
       "rent.*due", "monthly rent", "rent payment", "pay rent", "amount.*rent",
       "rent.*amount", "base rent", "total rent", "rent.*payable", "rent is due",
       "rental amount", "monthly.*payment", "first.*month.*rent",
+      // Post-dated cheque requirement
+      "post-dated", "post dated", "postdated", "post.dated cheque", "cheque",
+      // Late fees and penalties
+      "late.*fee", "late.*penalty", "late fee", "late penalty", "per day.*late",
+      "penalty.*late", "nsf", "nsf fee", "bounced cheque", "bounced.*cheque",
+      "non-sufficient", "insufficient funds",
     ],
     subtypeMap: {
       "late": "late_payment",
       "nsf": "nsf_fee",
+      "post-dated": "post_dated_cheque",
+      "postdated": "post_dated_cheque",
       "electronic": "e_transfer",
     },
-    priority: "medium",
+    priority: "high",
   },
   {
     type: "rent_increase",
