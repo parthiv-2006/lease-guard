@@ -23,9 +23,9 @@ The agent (Claude) calls MCP tools. The LLM never asserts legal facts from train
 
 ---
 
-## Current Status (as of 2026-05-16)
+## Current Status (as of 2026-05-17)
 
-**Current HEAD:** `79351bf` — run `git log --oneline -5` to verify.
+**Current HEAD:** `1393c62` — run `git log --oneline -6` to verify.
 
 ### ✅ Fully Complete
 
@@ -45,11 +45,21 @@ The agent (Claude) calls MCP tools. The LLM never asserts legal facts from train
 | `score_risk` improved | 6 new violation patterns added (s.4, s.14, s.20, s.59, s.105/106, s.108) |
 | `classify_clause` improved | rent_payment and dispute_resolution keyword coverage expanded |
 
+### ✅ Phase 3 Complete (as of 2026-05-17)
+
+| What | Notes |
+|------|-------|
+| `lib/anthropic.ts` | Dual-mode lazy client: `ANTHROPIC_API_KEY` or Claude Code subscription (`~/.claude/.credentials.json`). No throw at module load — safe for tests. |
+| `lib/mcp-client.ts` | Persistent stdio McpClient: spawns MCP server once per analysis, MCP initialize handshake, JSON-RPC tool calls, 90s per-tool timeout, graceful close. |
+| `lib/agent.ts` | Full 14-step pipeline: parse → detect jurisdiction → segment → **parallel clause batches** (5 at a time: classify + lookup_statute/tribunal simultaneously + score_risk) → contradiction detection → check missing → negotiation points → benchmark (fire-and-forget) → generate report → persist → mark complete. |
+| `app/api/upload/route.ts` | Wired to `runLeaseAnalysis()` — replaced dead HTTP stub. Fire-and-forget with error written to DB. |
+| `app/api/job/[id]/route.ts` | Already complete — reads from `leases` table, returns status + metadata. |
+| `app/api/report/[id]/route.ts` | Already complete — GET report with disclaimer injection, POST share link generation. |
+| Tests | **48 tests, all passing.** TypeScript clean (`tsc --noEmit` exits 0). |
+
 ### ❌ Not Built Yet
 
 - `tribunal_decisions` table: **0 rows** — LTB decisions corpus not started
-- Next.js backend API routes: `app/api/upload`, `app/api/job/[id]`, `app/api/report/[id]` are stubs
-- `lib/agent.ts`: the Claude orchestration loop — **this is the next thing to build**
 - Frontend: `app/page.tsx` is a placeholder, `app/report/[id]/page.tsx` doesn't exist
 
 ---
@@ -259,54 +269,37 @@ Missing any of these causes a Zod validation error. The tool returns `{ error: "
 
 ## What to Build Next
 
-### Phase 3 — Next.js Backend API Routes (immediate priority)
+### Phase 4 — Frontend (immediate priority)
 
-The MCP tools are proven. The corpus is complete. The next step is wiring them into
-a real async job system so a browser can upload a PDF and get a report back.
+The backend is fully wired. A PDF upload now flows end-to-end: upload →
+storage → DB row → agent pipeline → report persisted → lease marked complete.
+The frontend just needs to drive this flow and display results.
 
-#### 1. `lib/agent.ts` — Claude orchestration loop
+#### 1. `app/page.tsx` — Upload page
 
-Invoke Claude via the Anthropic API with the 12 MCP tools. The agent must:
+- Drag-and-drop PDF upload (or file picker)
+- POST to `/api/upload` → receive `{ lease_id }`
+- Redirect to `/report/[lease_id]` which polls until complete
 
-1. Call `parse_document` → raw text + pages
-2. Call `detect_jurisdiction` → confirm ON, fail fast otherwise
-3. Call `segment_clauses` → array of clause objects
-4. **In parallel batches (critical for 90s target):** for each clause:
-   - `classify_clause` → then simultaneously `lookup_statute` + `lookup_tribunal` → then `score_risk`
-5. After all clauses: `detect_contradiction` for each known interaction pair
-6. `check_missing` once with the set of found clause types
-7. **In parallel:** `generate_negotiation` for each clause with score ≥ 4
-8. `benchmark_clause` for each clause (fire-and-forget, non-blocking)
-9. `generate_report` with all accumulated results
+#### 2. `app/report/[id]/page.tsx` — Report view
 
-**Parallelise steps 4 and 7 or the pipeline takes 4–6 minutes.** Target: 90s total.
+- Poll `GET /api/job/[id]` every 2s until `status === "complete"` or `"failed"`
+- Display a progress indicator while polling
+- On complete: fetch `GET /api/report/[id]` and render:
+  - Overall risk score (colour-coded)
+  - Executive summary
+  - Clause cards (sorted by risk, expandable)
+  - Red flags section
+  - Missing protections
+  - Negotiation points (top 3 highlighted)
+  - Share button → POST `/api/report/[id]` `{ action: "share" }`
+  - Legal disclaimer (must appear prominently)
 
-The agent prompt must explicitly instruct Claude to process clauses in parallel batches.
-
-#### 2. `app/api/upload/route.ts` — PDF upload handler
-
-- Accept multipart PDF upload
-- Store in Supabase Storage (`leases` bucket)
-- Create a job row in `analysis_jobs` table (status: `pending`)
-- Kick off `lib/agent.ts` as a background job (fire-and-forget)
-- Return `{ job_id }`
-
-#### 3. `app/api/job/[id]/route.ts` — Status polling
-
-- Read `analysis_jobs` row by ID
-- Return `{ status, progress_pct, error? }`
-- Frontend polls this every 2s until `status === 'complete'`
-
-#### 4. `app/api/report/[id]/route.ts` — Report retrieval
-
-- Read completed report from `analysis_reports` table
-- Return full structured report JSON
-
-### Phase 4 — Frontend
-
-After backend API routes work end-to-end:
-- `app/page.tsx` → drag-and-drop PDF upload, jurisdiction selector, progress bar
-- `app/report/[id]/page.tsx` → full report view: overall score, clause cards, negotiation tips
+#### Implementation notes
+- No auth required for MVP — anyone with the URL can upload
+- Use `app/layout.tsx` for shared disclaimer banner
+- Keep the UI simple: Tailwind + shadcn/ui recommended
+- The share URL format is `/report/[id]?token=[share_token]`
 
 ### Phase 5 — LTB Decisions Corpus
 
@@ -336,13 +329,15 @@ cosine similarity threshold. Adjust if needed before public launch.
 │   ├── layout.tsx                   ← Root layout (placeholder)
 │   ├── page.tsx                     ← Landing page (PLACEHOLDER — needs full UI)
 │   └── api/
-│       ├── upload/route.ts          ← PDF upload, job creation, rate limiting (stub)
-│       ├── job/[id]/route.ts        ← Job status polling (stub)
-│       ├── report/[id]/route.ts     ← Report fetch + share link (stub)
+│       ├── upload/route.ts          ← PDF upload → storage → DB row → fires runLeaseAnalysis() ✅
+│       ├── job/[id]/route.ts        ← Job status polling (reads leases table) ✅
+│       ├── report/[id]/route.ts     ← Report fetch + disclaimer injection + share link gen ✅
 │       └── feedback/route.ts        ← User feedback endpoint
 ├── lib/
 │   ├── supabase.ts                  ← Supabase client (anon key, for Next.js)
-│   ├── anthropic.ts                 ← Anthropic API client
+│   ├── anthropic.ts                 ← Dual-mode: ANTHROPIC_API_KEY or Claude Code creds (lazy singleton)
+│   ├── mcp-client.ts               ← McpClient: persistent stdio subprocess + JSON-RPC (PHASE 3 ✅)
+│   ├── agent.ts                    ← Full 14-step analysis pipeline, parallel clause batches (PHASE 3 ✅)
 │   ├── gemini.ts                    ← Gemini embeddings client (superseded by REST impl in mcp-server)
 │   └── rate-limiter.ts              ← In-memory rate limiter (IP-based)
 ├── mcp-server/
@@ -445,28 +440,48 @@ sb.from('clause_comparisons').select('id', { count: 'exact', head: true })
 ## Commit History (recent)
 
 ```
+1393c62  add phase 3 tests: agent pipeline and report route (48 tests total)
+7ff685a  wire upload route to agent pipeline replacing http stub
+76b98cc  implement lease analysis pipeline with parallel clause batching
+4d85985  add mcp-client: persistent stdio subprocess with json-rpc protocol
+1966d2b  add dual-mode anthropic client: api key or claude code subscription auth
+618039c  update HANDOFF.md: corpus build complete (1574/1574, 564 new, 0 errors)
 79351bf  expand classify_clause keyword coverage for rent and dispute clauses
 8349b2a  improve score_risk violation detection for 6 clause patterns
-a85d9b0  fix build_corpus: use CA-ON jurisdiction code to match tool expectations
-714de7c  fix lookup-statute and lookup-tribunal: correct column names and RPC params
-86e0cd7  fix parse-document: use fileURLToPath to resolve script path on Windows
-86fc493  add 1s throttle between gemini embedding requests
-225416e  fix mcp embeddings: switch to gemini-embedding-001 rest api, drop grpc sdk
-249df96  fix build_corpus.py: switch gemini embeddings from grpc sdk to rest api
 ```
 
 ---
 
 ## Recommended Next Session Starting Point
 
-**Build `lib/agent.ts`** — the Claude orchestration loop — then wire it into the Next.js
-API routes (`upload`, `job/[id]`, `report/[id]`).
+**Build the frontend (Phase 4)** — the full backend pipeline is working end-to-end.
 
-1. Read `lib/anthropic.ts` (the base Anthropic client) to understand what's already there
-2. Read `mcp-server/src/index.ts` to see all 12 tool definitions
-3. Read `mcp-server/src/types.ts` for the shared type shapes (Clause, Statute, RiskScore, etc.)
-4. Implement `lib/agent.ts` per the orchestration steps in "What to Build Next" above
-5. Test on the Ontario Standard Form of Lease (public PDF from ontario.ca) before touching frontend
+1. Start with `app/page.tsx`: drag-and-drop upload → POST `/api/upload` → redirect to report page
+2. Build `app/report/[id]/page.tsx`: poll `/api/job/[id]` until complete, then render report
+3. Keep it simple — Tailwind + shadcn/ui components are sufficient for MVP
+4. Test the full flow with `faultyLease.pdf` (already in the repo) via the UI
 
-The MCP server + Supabase corpus are fully ready. The only missing piece is the glue between
-a PDF upload and a stored report.
+### New gotchas from Phase 3 to be aware of
+
+#### 18. `lib/anthropic.ts` no longer throws at module load
+The client is now a lazy singleton via `getAnthropicClient()`. Old code that imported
+`anthropic` directly no longer works — use `getAnthropicClient()` instead.
+
+#### 19. MCP server must be built before running the agent
+`lib/agent.ts` spawns `mcp-server/dist/start.js`. If that file doesn't exist, the pipeline
+fails immediately with "ENOENT". Always run `cd mcp-server && npm run build` after changes
+to the MCP server TypeScript.
+
+#### 20. `USE_CLAUDE_CODE_AUTH=false` disables credential fallback
+If you set `ANTHROPIC_API_KEY` in `.env.local`, that takes priority. If you want to test
+the Claude Code credential path locally, unset `ANTHROPIC_API_KEY` and ensure you're logged
+in via `claude auth login`.
+
+#### 21. Benchmark tool is fire-and-forget — failures are silently swallowed
+`benchmark_clause` errors are caught and discarded inside `lib/agent.ts`. This is intentional.
+If benchmarks appear empty, check the MCP server logs separately.
+
+#### 22. Per-clause failures don't abort the pipeline
+If `classify_clause` or `score_risk` throws for one clause, that clause is skipped and logged.
+The report is generated from whichever clauses succeeded. This is the correct behaviour for
+robustness, but means the clause count in the report may be less than the segment count.
