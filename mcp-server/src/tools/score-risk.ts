@@ -126,12 +126,20 @@ function detectStatutoryViolations(
 
     // Check for explicit contradictions based on known patterns
 
-    // Entry without notice — RTA s.27 requires 24-hour written notice
+    // Entry without notice — RTA s.27 requires 24-hour written notice.
+    // Do NOT flag if the clause qualifies "without notice" with emergency/consent
+    // exception language — that is RTA s.26(2)/s.26(3) compliant behaviour.
     if (
       (lowerClause.includes("enter") || lowerClause.includes("access")) &&
       (lowerClause.includes("without notice") ||
         lowerClause.includes("any time") ||
         lowerClause.includes("at any time")) &&
+      !lowerClause.includes("emergency") &&
+      !lowerClause.includes("urgent") &&
+      !lowerClause.includes("in accordance") &&
+      !lowerClause.includes("except") &&
+      !lowerClause.includes("unless") &&
+      !lowerClause.includes("pursuant to") &&
       (statuteText.includes("24") || statuteText.includes("notice"))
     ) {
       violations.push({
@@ -314,7 +322,8 @@ function scoreClause(
   const isUnusual = UNUSUAL_LANGUAGE_PATTERNS.some((p) => p.test(clauseText));
   if (isUnusual) score += 1.5;
 
-  // High-risk clause types get a bump
+  // High-risk clause types get a bump — but only when the clause is restrictive,
+  // not when it explicitly defers to the RTA (e.g. "in accordance with the Act").
   const highRiskTypes: ClauseType[] = [
     "entry_rights",
     "early_termination",
@@ -322,7 +331,14 @@ function scoreClause(
     "liability_indemnification",
     "security_deposit",
   ];
-  if (highRiskTypes.includes(type)) {
+  const lowerClauseForBump = clauseText.toLowerCase();
+  const isRtaDeferring =
+    lowerClauseForBump.includes("in accordance with") ||
+    lowerClauseForBump.includes("as required by") ||
+    lowerClauseForBump.includes("pursuant to") ||
+    lowerClauseForBump.includes("residential tenancies act") ||
+    lowerClauseForBump.includes("as permitted by");
+  if (highRiskTypes.includes(type) && !isRtaDeferring) {
     score += 1;
   }
 
