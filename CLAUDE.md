@@ -240,3 +240,37 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
 Never commit these. Use `.env.local` locally and Vercel environment variables in production.
+
+---
+
+## Session Handoff Protocol
+
+### HANDOFF.md — local only, never committed
+
+`HANDOFF.md` lives in the project root and is **gitignored**. It is a living document that
+travels with the local checkout only and must never be pushed to the remote repository.
+
+**At the start of every session:**
+1. Read `HANDOFF.md` in full before touching any code.
+2. It contains: known bugs and their root causes, accurate file structure, data-shape
+   reference, gotchas that burned previous sessions, and recommended next steps.
+3. If `HANDOFF.md` does not exist, recreate it from `LEGAL_ACCURACY_ROADMAP.md` and
+   the most recent session summary in the Claude Code transcript.
+
+**At the end of every session:**
+1. Update `HANDOFF.md` with:
+   - Any new gotchas discovered this session
+   - Files modified and why
+   - Bugs fixed (root cause + fix summary)
+   - New known issues not yet fixed
+   - Recommended next steps for the next session
+2. Do NOT commit `HANDOFF.md` — it is in `.gitignore` and must stay there.
+
+**What HANDOFF.md contains (sections to maintain):**
+- `## Status` — one-line summary of where the project is right now
+- `## Known Issues` — bugs with root cause + fix pointer
+- `## Gotchas` — non-obvious constraints that caused bugs in the past
+- `## File Structure` — accurate tree of all important files
+- `## Data Shapes` — API response shapes vs UI type shapes (critical — they differ)
+- `## Next Steps` — prioritised list of what to build/fix next
+- `## Session Log` — table of sessions with dates and what changed
