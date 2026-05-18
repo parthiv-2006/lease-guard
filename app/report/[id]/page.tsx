@@ -765,8 +765,16 @@ export default function ReportPage() {
 // The API may return data in the nested lg-data.js shape OR a flat shape from
 // the DB row. This function coerces either into the Report interface.
 
+// ── Field-name helpers ────────────────────────────────────────────────────────
+
+function mapMissingSeverity(s: string): "critical" | "important" | "minor" {
+  if (s === "critical") return "critical";
+  if (s === "high" || s === "important") return "important";
+  return "minor";
+}
+
 function normaliseApiResponse(data: Record<string, unknown>, id: string): Report {
-  // Already in nested shape (has `lease` and `overall` sub-objects)
+  // Already in the nested lg-data.js shape (has `lease` + `overall` sub-objects)
   if (
     data.lease &&
     typeof data.lease === "object" &&
@@ -776,55 +784,140 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     return data as unknown as Report;
   }
 
-  // Flat shape from API — build nested Report
-  const overall = {
-    risk_score: (data.overall_risk_score as number) ?? 0,
-    risk_level: (data.overall_risk_level as string) ?? "low",
-    executive_summary: (data.executive_summary as string) ?? "",
-    clause_count: ((data.clauses as unknown[]) ?? []).length,
-    red_flag_count:
-      ((data.red_flags as unknown[]) ?? []).length ||
-      ((data.clauses as Array<{risk_level: string}>) ?? []).filter(
-        (c) => c.risk_level === "high" || c.risk_level === "critical"
-      ).length,
-    contradiction_count:
-      ((data.contradictions as unknown[]) ?? []).length,
-    missing_count:
-      ((data.missing_protections as unknown[]) ?? []).length,
-    negotiation_count:
-      ((data.negotiation_points as unknown[]) ?? []).length,
-    corpus_version:
-      (data.corpus_version as string) ?? "RTA-2024-Q4",
-    corpus_date: (data.corpus_date as string) ?? "",
-    analysis_time_s: 0,
+  // ── Clauses — from DB rows fetched by the report API ──────────────────────
+  const rawClauses = (data._clauses as Array<Record<string, unknown>>) ?? [];
+  const clauses: Report["clauses"] = rawClauses.map((c) => ({
+    id: c.id as string,
+    number: (c.clause_number as string) ?? "",
+    heading: (c.heading as string) ?? "",
+    primary_type: (c.primary_type as string) ?? "unknown",
+    raw_text: (c.raw_text as string) ?? "",
+    risk_score: (c.risk_score as number) ?? 0,
+    risk_level: (c.risk_level as Report["clauses"][0]["risk_level"]) ?? "low",
+    is_potentially_unenforceable: (c.is_potentially_unenforceable as boolean) ?? false,
+    is_unusual: (c.is_unusual as boolean) ?? false,
+    is_standard: (c.is_standard as boolean) ?? false,
+    plain_english_explanation: (c.plain_english_explanation as string) ?? "",
+    risk_reasoning: (c.risk_reasoning as string) ?? "",
+    statutory_violations:
+      (c.statutory_violations as Report["clauses"][0]["statutory_violations"]) ?? [],
+    has_negotiation_point: (c.has_negotiation_point as boolean) ?? false,
+  }));
+
+  // ── Negotiation points — add synthetic id + clause_label ─────────────────
+  const rawNeg = (data.negotiation_points as Array<Record<string, unknown>>) ?? [];
+  const negotiation_points: Report["negotiation_points"] = rawNeg.map((n, i) => ({
+    id: (n.clause_id as string) ?? `neg-${i}`,
+    clause_id: (n.clause_id as string) ?? "",
+    clause_label: n.clause_type
+      ? (n.clause_type as string).replace(/_/g, " ")
+      : `Clause ${i + 1}`,
+    priority: (n.priority as Report["negotiation_points"][0]["priority"]) ?? "medium",
+    negotiable: (n.negotiable as boolean) ?? true,
+    walk_away_threshold: (n.walk_away_threshold as boolean) ?? false,
+    ask: (n.ask as string) ?? "",
+    counter_language: (n.counter_language as string) ?? "",
+    legal_argument: (n.legal_argument as string) ?? "",
+    landlord_likely_response: (n.landlord_likely_response as string) ?? "",
+    your_rebuttal: (n.your_rebuttal as string) ?? "",
+  }));
+
+  // ── Missing protections — map generate_report field names → UI shape ──────
+  const rawMissing = (data.missing_protections as Array<Record<string, unknown>>) ?? [];
+  const missing_protections: Report["missing_protections"] = rawMissing.map((m, i) => ({
+    id: `missing-${i}`,
+    protection_name:
+      ((m.clause_type as string) ?? (m.protection_name as string) ?? "missing protection")
+        .replace(/_/g, " "),
+    rta_section: (m.statute_section as string) ?? (m.rta_section as string) ?? "",
+    severity: mapMissingSeverity((m.severity as string) ?? "low"),
+    explanation: (m.description as string) ?? (m.explanation as string) ?? "",
+    risk_if_missing: (m.risk_if_missing as string) ?? "",
+    suggested_addition:
+      (m.suggested_addition as string) ??
+      `Include a clause addressing ${((m.clause_type as string) ?? "this protection").replace(/_/g, " ")}.`,
+  }));
+
+  // ── Contradictions — add synthetic id + labels ────────────────────────────
+  const rawContradictions = (data.contradictions as Array<Record<string, unknown>>) ?? [];
+  const contradictions: Report["contradictions"] = rawContradictions.map((c, i) => ({
+    id: `contra-${i}`,
+    clause_a_id: (c.clause_a_id as string) ?? "",
+    clause_b_id: (c.clause_b_id as string) ?? "",
+    clause_a_label:
+      (c.clause_a_id as string)?.replace(/-/g, " ").slice(0, 20) ?? `Clause A`,
+    clause_b_label:
+      (c.clause_b_id as string)?.replace(/-/g, " ").slice(0, 20) ?? `Clause B`,
+    contradiction_type: (c.contradiction_type as string) ?? "direct_conflict",
+    severity: (c.severity as Report["contradictions"][0]["severity"]) ?? "medium",
+    explanation: (c.explanation as string) ?? "",
+    which_governs: (c.which_governs as string) ?? "",
+    legal_basis: (c.legal_basis as string) ?? "",
+  }));
+
+  // ── Sources — parse reference string → Source shape ───────────────────────
+  const rawSources = (data.sources as Array<Record<string, unknown>>) ?? [];
+  const sources: Report["sources"] = rawSources.map((s, i) => {
+    const ref = (s.reference as string) ?? "";
+    // e.g. "Residential Tenancies Act, 2006 s.22 — Quiet enjoyment"
+    const sectionMatch = ref.match(/s\.(\S+)\s*[—–-]\s*(.+)/);
+    return {
+      id: `source-${i}`,
+      act_name: ref.split(/\ss\.\d/)[0]?.trim() ?? ref,
+      section_number: sectionMatch?.[1] ?? "",
+      section_title: sectionMatch?.[2]?.trim() ?? ref,
+      full_text: "",
+      url: (s.url as string) ?? "",
+      relevance_score: 0,
+      corpus_version: (data.corpus_version as string) ?? "",
+      relevant_clauses: [],
+    };
+  });
+
+  // ── Lease — from DB lease row ─────────────────────────────────────────────
+  const leaseRow = (data._lease as Record<string, unknown>) ?? {};
+  const filePath = (leaseRow.file_path as string) ?? "";
+  const filename = filePath.split("/").pop() ?? "lease.pdf";
+
+  const lease: Report["lease"] = {
+    id,
+    address: "Lease",
+    city: (data.jurisdiction as string) ?? (leaseRow.jurisdiction as string) ?? "",
+    landlord: "",
+    term: "",
+    monthly_rent: "",
+    uploaded_at: (leaseRow.uploaded_at as string) ?? "",
+    page_count: (leaseRow.page_count as number) ?? 0,
+    extraction_method: (leaseRow.extraction_method as string) ?? "text",
+    jurisdiction: (data.jurisdiction as string) ?? (leaseRow.jurisdiction as string) ?? "Ontario",
+    filename,
   };
 
-  const lease = {
-    id,
-    address: (data.address as string) ?? "Lease",
-    city: (data.city as string) ?? "",
-    landlord: (data.landlord as string) ?? "",
-    term: (data.term as string) ?? "",
-    monthly_rent: (data.monthly_rent as string) ?? "",
-    uploaded_at: (data.uploaded_at as string) ?? "",
-    page_count: (data.page_count as number) ?? 0,
-    extraction_method: (data.extraction_method as string) ?? "text",
-    jurisdiction: (data.jurisdiction as string) ?? "Ontario",
-    filename: (data.filename as string) ?? "lease.pdf",
+  const overall: Report["overall"] = {
+    risk_score: (data.overall_risk_score as number) ?? 0,
+    risk_level:
+      (data.overall_risk_level as Report["overall"]["risk_level"]) ?? "low",
+    executive_summary: (data.executive_summary as string) ?? "",
+    clause_count:
+      clauses.length || (data.total_clauses_analyzed as number) || 0,
+    red_flag_count: ((data.red_flags as unknown[]) ?? []).length,
+    contradiction_count: contradictions.length,
+    missing_count: missing_protections.length,
+    negotiation_count: negotiation_points.length,
+    corpus_version: (data.corpus_version as string) ?? "RTA-2024-Q4",
+    corpus_date: "",
+    analysis_time_s: 0,
   };
 
   return {
     lease,
-    overall: overall as Report["overall"],
-    clauses: (data.clauses as Report["clauses"]) ?? [],
-    contradictions:
-      (data.contradictions as Report["contradictions"]) ?? [],
-    missing_protections:
-      (data.missing_protections as Report["missing_protections"]) ?? [],
-    negotiation_points:
-      (data.negotiation_points as Report["negotiation_points"]) ?? [],
-    sources: (data.sources as Report["sources"]) ?? [],
-    agent_trace: (data.agent_trace as Report["agent_trace"]) ?? [],
+    overall,
+    clauses,
+    contradictions,
+    missing_protections,
+    negotiation_points,
+    sources,
+    agent_trace: [],
     expires_at: data.expires_at as string | undefined,
     share_url: data.share_url as string | null | undefined,
     disclaimer: data.disclaimer as string | undefined,

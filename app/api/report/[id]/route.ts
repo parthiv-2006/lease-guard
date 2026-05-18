@@ -24,15 +24,33 @@ export async function GET(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Look up by lease_id; optionally validate share_token for public access
-  const query = supabase
-    .from("reports")
-    .select("*")
-    .eq("lease_id", id)
-    .gt("expires_at", new Date().toISOString())
-    .single();
+  // Fetch report + lease metadata + clauses in parallel
+  const [reportResult, leaseResult, clausesResult] = await Promise.all([
+    supabase
+      .from("reports")
+      .select("*")
+      .eq("lease_id", id)
+      .gt("expires_at", new Date().toISOString())
+      .single(),
+    supabase
+      .from("leases")
+      .select(
+        "id, uploaded_at, jurisdiction, jurisdiction_code, page_count, extraction_method, file_path"
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("clauses")
+      .select(
+        "id, clause_number, heading, raw_text, primary_type, risk_score, risk_level, " +
+        "is_potentially_unenforceable, is_unusual, is_standard, " +
+        "plain_english_explanation, risk_reasoning, statutory_violations, has_negotiation_point"
+      )
+      .eq("lease_id", id)
+      .order("clause_number"),
+  ]);
 
-  const { data, error } = await query;
+  const { data, error } = reportResult;
 
   if (error || !data) {
     return NextResponse.json(
@@ -49,7 +67,8 @@ export async function GET(
     );
   }
 
-  // Inject disclaimer into every report response
+  // Inject disclaimer + DB-fetched clause and lease data so the UI can render
+  // the full clause list (generate_report only stores red_flags, not all clauses)
   const report = {
     ...(data.full_report_json as object),
     disclaimer: DISCLAIMER,
@@ -60,6 +79,8 @@ export async function GET(
       ? `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/report/${id}?token=${data.share_token}`
       : null,
     expires_at: data.expires_at,
+    _lease: leaseResult.data ?? {},
+    _clauses: clausesResult.data ?? [],
   };
 
   return NextResponse.json(report);

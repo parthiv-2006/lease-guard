@@ -96,6 +96,9 @@ const NegotiationPointSchema = z.object({
   landlord_likely_response: z.string(),
   your_rebuttal: z.string(),
   walk_away_threshold: z.boolean(),
+  // Clause provenance — passed through from agent for UI labelling
+  clause_id: z.string().optional(),
+  clause_type: z.string().optional(),
 });
 
 const AnalyzedClauseSchema = z.object({

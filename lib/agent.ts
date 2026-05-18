@@ -404,21 +404,14 @@ export async function runLeaseAnalysis(
           const result = (await mcp!.callTool("detect_contradiction", {
             clause_a: {
               id: acA.clause_id,
-              number: acA.clause_number,
-              raw_text: acA.clause_text,
-              char_start: 0,
-              char_end: 0,
-              cross_references: [],
+              text: acA.clause_text,
+              type: acA.clause_type,
             },
             clause_b: {
               id: acB.clause_id,
-              number: acB.clause_number,
-              raw_text: acB.clause_text,
-              char_start: 0,
-              char_end: 0,
-              cross_references: [],
+              text: acB.clause_text,
+              type: acB.clause_type,
             },
-            jurisdiction_code: jurisdictionCode,
           })) as ContradictionResult;
 
           const enriched: ContradictionResult = {
@@ -549,7 +542,11 @@ export async function runLeaseAnalysis(
       implicit_protections: implicitProtections,
       negotiation_points: analyzedClauses
         .filter((ac) => ac.negotiation_point)
-        .map((ac) => ac.negotiation_point!),
+        .map((ac) => ({
+          ...ac.negotiation_point!,
+          clause_id: ac.db_clause_id,
+          clause_type: ac.clause_type,
+        })),
     })) as {
       overall_risk_score: number;
       overall_risk_level: "low" | "medium" | "high" | "critical";
