@@ -3,6 +3,10 @@
 .env.local
 .env*.local
 
+HANDOFF.md
+.claude/
+.omc/
+
 # Dependencies & build output
 node_modules/
 .next/
@@ -29,3 +33,7 @@ HANDOFF.md
 # Logs
 *.log
 npm-debug.log*
+
+# TypeScript incremental build info
+tsconfig.tsbuildinfo
+*.tsbuildinfo
