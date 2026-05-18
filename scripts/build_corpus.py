@@ -68,6 +68,7 @@ SECTION_CLAUSE_MAP: dict[str, str] = {
     "12": "rent_payment",
     "20": "maintenance_repairs",
     "22": "quiet_enjoyment",
+    "26": "entry_rights",   # s.26 was missing — caused subsection rows to be tagged "general"
     "27": "entry_rights",
     "29": "alterations",
     # 42-58 → renewal_terms / early_termination
@@ -125,30 +126,31 @@ def _normalize_text(text: str) -> str:
 
 def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
     """
-    Parse Ontario RTA HTML (Wayback Machine 2022-01-01 snapshot) into sections.
+    Parse Ontario RTA HTML into sections AND granular subsection rows.
 
-    Structure of the archived page:
-      - <p class="section"> — starts each section; text begins with the section
-        number immediately followed by the content, e.g. "105(1) A landlord..."
-      - <p class="paragraph"> — numbered subsection items within a section
-      - <p class="TOCid"> / <p class="table"> — table-of-contents rows that
-        give us section titles (parsed separately into toc_titles map)
-      - <a name="BK{n}"> — anchors used for deep-linking (preserved as url)
+    Emits two levels of granularity:
+      "26"    — intro sentence of the section (the general rule)
+      "26(1)" — subsection 1 text only
+      "26(2)" — subsection 2 text only (e.g. emergency exception)
+      "26(3)" — subsection 3 text only (e.g. tenant consent)
+
+    This prevents exception clauses from being buried in a diluted multi-subsection
+    embedding, which was the root cause of the entry-rights false positive.
+
+    Existing parent rows (e.g. "26") already in the DB are not modified here —
+    the dedup check in main() skips them. Only new subsection rows are inserted.
     """
     soup = BeautifulSoup(html, "lxml")
 
-    # Strip Wayback Machine toolbar so its text doesn't pollute sections
+    # Strip Wayback Machine toolbar
     for el in soup.find_all(id=re.compile(r"^wm")):
         el.decompose()
 
     # ── Build section-number → title map from the TOC ──────────────────────
-    # TOC structure: each <tr> has <td><p class="TOCid">N.</p></td>
-    #                                   <td><p class="table">Title</p></td>
     toc_titles: dict[str, str] = {}
     for toc_el in soup.find_all("p", class_="TOCid"):
         raw_id = toc_el.get_text(strip=True).rstrip(".")
-        # Title is in a <p class="table"> inside the next <td> of the same <tr>
-        td = toc_el.parent  # the enclosing <td>
+        td = toc_el.parent
         if td and td.name == "td":
             next_td = td.find_next_sibling("td")
             if next_td:
@@ -156,7 +158,7 @@ def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
                 if title_el and raw_id:
                     toc_titles[raw_id] = _normalize_text(title_el.get_text(strip=True))
 
-    # ── Build BK-anchor → section-number map from TOC hrefs ─────────────────
+    # ── Build BK-anchor → section-number map ────────────────────────────────
     bk_to_sec: dict[str, str] = {}
     for a in soup.find_all("a", href=re.compile(r"^#BK")):
         title_attr = a.get("title", "")
@@ -165,9 +167,10 @@ def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
             bk = a["href"].lstrip("#")
             bk_to_sec[bk] = m.group(1)
 
-    # ── Parse section content blocks ─────────────────────────────────────────
-    # Section number is always a leading digit sequence in the <p class="section"> text.
     sec_num_re = re.compile(r"^(\d{1,3}(?:\.\d+)?)")
+    # Matches a subsection opener like "(1)", "(2)" at the start of paragraph text
+    subsec_re = re.compile(r"^\((\d+)\)")
+
     sections: list[dict[str, Any]] = []
     seen_nums: set[str] = set()
 
@@ -179,24 +182,11 @@ def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
             continue
         sec_num = m.group(1)
 
-        # Collect subsection paragraphs that follow until the next section
-        paras: list[str] = [raw_text]
-        for sib in sec_el.next_siblings:
-            if not hasattr(sib, "name") or sib.name != "p":
-                continue
-            sib_classes = sib.get("class", [])
-            if "section" in sib_classes:
-                break
-            if "paragraph" in sib_classes or "subsection" in sib_classes:
-                t = _normalize_text(sib.get_text(strip=True))
-                if t:
-                    paras.append(t)
-
-        full_text = " ".join(paras)
-        if not full_text:
+        if sec_num in seen_nums:
             continue
+        seen_nums.add(sec_num)
 
-        # Find the nearest preceding BK anchor to build a deep-link URL
+        # Find the nearest preceding BK anchor for deep-link URL
         bk_anchor = ""
         for prev in sec_el.previous_siblings:
             if hasattr(prev, "name") and prev.name == "a":
@@ -207,21 +197,70 @@ def _parse_rta_sections(html: str) -> list[dict[str, Any]]:
 
         url = f"{RTA_URL}#{bk_anchor}" if bk_anchor else RTA_URL
         sec_title = toc_titles.get(sec_num, "")
+        clause_type = SECTION_CLAUSE_MAP.get(sec_num, "general")
 
-        # Deduplicate — keep only the first occurrence of each section number
-        if sec_num in seen_nums:
-            continue
-        seen_nums.add(sec_num)
+        # ── Collect sibling paragraphs grouped by subsection number ─────────
+        # subsections dict: subsec_key (e.g. "1", "2") → list of text parts
+        subsections: dict[str, list[str]] = {}
+        current_key: str | None = None
+        intro_parts: list[str] = [raw_text]  # text from the <p class="section"> itself
 
-        sections.append(
-            {
+        for sib in sec_el.next_siblings:
+            if not hasattr(sib, "name") or sib.name != "p":
+                continue
+            sib_classes = sib.get("class", [])
+            if "section" in sib_classes:
+                break
+            if "paragraph" in sib_classes or "subsection" in sib_classes:
+                t = _normalize_text(sib.get_text(strip=True))
+                if not t:
+                    continue
+                ms = subsec_re.match(t)
+                if ms:
+                    # New subsection starts
+                    current_key = ms.group(1)
+                    subsections.setdefault(current_key, []).append(t)
+                elif current_key is not None:
+                    # Continuation of current subsection (sub-clauses, definitions)
+                    subsections[current_key].append(t)
+                else:
+                    # Pre-subsection continuation text (rare — treat as intro)
+                    intro_parts.append(t)
+
+        # ── Emit parent row ──────────────────────────────────────────────────
+        # If there are subsections, the parent row holds only the intro sentence.
+        # If there are no subsections, the parent row holds all paragraph text
+        # (same behaviour as the old parser — no regression for simple sections).
+        if subsections:
+            parent_text = " ".join(intro_parts)
+        else:
+            # No subsection structure found — collect all paragraphs as before
+            all_parts = list(intro_parts)
+            for parts in subsections.values():
+                all_parts.extend(parts)
+            parent_text = " ".join(all_parts)
+
+        if parent_text:
+            sections.append({
                 "section_number": sec_num,
                 "section_title": sec_title,
-                "full_text": full_text,
+                "full_text": parent_text,
                 "url": url,
-                "clause_type": SECTION_CLAUSE_MAP.get(sec_num, "general"),
-            }
-        )
+                "clause_type": clause_type,
+            })
+
+        # ── Emit one row per subsection ──────────────────────────────────────
+        for subsec_key, parts in subsections.items():
+            subsec_text = " ".join(parts)
+            if not subsec_text:
+                continue
+            sections.append({
+                "section_number": f"{sec_num}({subsec_key})",
+                "section_title": sec_title,
+                "full_text": subsec_text,
+                "url": url,
+                "clause_type": clause_type,
+            })
 
     return sections
 
