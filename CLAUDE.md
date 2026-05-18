@@ -250,27 +250,86 @@ Never commit these. Use `.env.local` locally and Vercel environment variables in
 `HANDOFF.md` lives in the project root and is **gitignored**. It is a living document that
 travels with the local checkout only and must never be pushed to the remote repository.
 
-**At the start of every session:**
+---
+
+### "end session" trigger
+
+When the user types **"end session"**, immediately perform all of the following in order
+without asking for confirmation:
+
+1. Run `git log --oneline -5` to get the latest commit hashes for the session log.
+2. Run `git status` to confirm nothing is uncommitted that should be.
+3. Push any unpushed commits: `git push origin main`.
+4. Rewrite `HANDOFF.md` in full using the structure below, incorporating everything
+   learned this session — new gotchas, bugs fixed, files changed, next steps.
+5. Confirm to the user: "Session closed. HANDOFF.md updated. X commits pushed."
+
+Do NOT ask "should I update the handoff?" — just do it when "end session" is typed.
+
+---
+
+### At the start of every session
+
 1. Read `HANDOFF.md` in full before touching any code.
-2. It contains: known bugs and their root causes, accurate file structure, data-shape
-   reference, gotchas that burned previous sessions, and recommended next steps.
+2. Check the `## Active Right Now` section first — this shows mid-session work from
+   the previous session that was left in progress.
 3. If `HANDOFF.md` does not exist, recreate it from `LEGAL_ACCURACY_ROADMAP.md` and
    the most recent session summary in the Claude Code transcript.
 
-**At the end of every session:**
-1. Update `HANDOFF.md` with:
-   - Any new gotchas discovered this session
-   - Files modified and why
-   - Bugs fixed (root cause + fix summary)
-   - New known issues not yet fixed
-   - Recommended next steps for the next session
-2. Do NOT commit `HANDOFF.md` — it is in `.gitignore` and must stay there.
+---
 
-**What HANDOFF.md contains (sections to maintain):**
-- `## Status` — one-line summary of where the project is right now
-- `## Known Issues` — bugs with root cause + fix pointer
-- `## Gotchas` — non-obvious constraints that caused bugs in the past
-- `## File Structure` — accurate tree of all important files
-- `## Data Shapes` — API response shapes vs UI type shapes (critical — they differ)
-- `## Next Steps` — prioritised list of what to build/fix next
-- `## Session Log` — table of sessions with dates and what changed
+### HANDOFF.md structure (maintain all sections in this order)
+
+**Header block — 3-bullet TL;DR at the very top, above everything else:**
+```
+> Stack: Next.js + Claude MCP + Supabase pgvector + Gemini embeddings
+> State: <one line — current phase and what's working>
+> First command: <the single command to run to verify everything is healthy>
+```
+
+**`## Active Right Now`** — filled during a session, cleared to "(nothing)" at end of session.
+Shows what is currently in progress so a session can be resumed mid-task:
+```
+- <task name> — <where it's at, e.g. "corpus seeding running, 400/1033 done">
+- Commits this session: <hash> <message>, <hash> <message>
+- Next action: <exact next step>
+```
+
+**`## What This Project Is`** — one paragraph, unchanged unless architecture changes.
+
+**`## Repository`** — GitHub URL, branch, local path, latest commit hash.
+
+**`## Phase Completion Status`** — table of phases with ✅ / ❌ / 🔄 status.
+
+**`## Current State`** — subsections for infrastructure, frontend, API routes. Keep accurate.
+
+**`## Known Issues`** — each issue has:
+- Symptom (what the user sees)
+- Root cause (why it happens)
+- Fix pointer (file + approach, or "see ROADMAP.md §X")
+- Remove issues once fixed; don't let this become a graveyard.
+
+**`## Critical Gotchas`** — non-obvious constraints. Each tagged as either:
+- `[PERMANENT]` — will never change (e.g. "never use gRPC on Windows")
+- `[ACTIVE]` — requires action before launch (e.g. "similarity threshold unvalidated")
+
+  Keep `[PERMANENT]` items but stop re-reading them each session once internalized.
+  `[ACTIVE]` items must be reviewed every session until resolved.
+
+**`## Data Shape Reference`** — API response shapes vs UI type shapes. Update when shapes change.
+
+**`## Environment Variables`** — all keys with one-line descriptions. Keep current.
+
+**`## Quick Health Check`** — runnable commands to verify DB, corpus, and build are healthy.
+
+**`## File Structure`** — accurate tree of all important files. Update when files are added/removed.
+
+**`## Recommended Next Steps`** — prioritised list. Link to Known Issues rather than duplicating.
+  Format: `1. <action> — <why it matters> (see Known Issue #N / ROADMAP.md §X)`
+
+**`## Session Log`** — one row per session with commit hash:
+```
+| Date       | First commit | What was done |
+|------------|-------------|---------------|
+| 2026-05-18 | 691c3b9     | Fixed score-risk false positive, rewrote validate_retrieval.py, seeded RTA subsections |
+```
