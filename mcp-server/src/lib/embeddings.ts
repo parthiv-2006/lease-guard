@@ -1,7 +1,19 @@
 const EMBED_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
 
-export async function embed(text: string): Promise<number[]> {
+/**
+ * Embed text using the Gemini embedding model.
+ *
+ * @param text - Text to embed (will be trimmed and capped at 2000 chars internally)
+ * @param taskType - Gemini task type:
+ *   - "RETRIEVAL_QUERY"    → use when embedding a search query (lookup tools)
+ *   - "RETRIEVAL_DOCUMENT" → use when embedding corpus documents (build_corpus scripts)
+ *   Defaults to "RETRIEVAL_QUERY" because the majority of runtime call sites are query lookups.
+ */
+export async function embed(
+  text: string,
+  taskType: "RETRIEVAL_QUERY" | "RETRIEVAL_DOCUMENT" = "RETRIEVAL_QUERY"
+): Promise<number[]> {
   if (!text || text.trim().length === 0) {
     throw new Error("Cannot embed empty text");
   }
@@ -16,7 +28,7 @@ export async function embed(text: string): Promise<number[]> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       content: { parts: [{ text: text.trim() }] },
-      taskType: "RETRIEVAL_DOCUMENT",
+      taskType,
       outputDimensionality: 768,
     }),
   });

@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { embed } from "../lib/embeddings.js";
 import { supabase } from "../lib/supabase.js";
-import type { ClauseType, Decision } from "../types.js";
+import type { Decision } from "../types.js";
 
 export const toolDefinition = {
   name: "lookup_tribunal",
   description:
-    "Retrieve relevant tribunal decisions from the database for a given clause. Uses vector similarity search, preferring decisions from the last 5 years.",
+    "Retrieve relevant LTB tribunal decisions from the database for a given clause. Uses multi-query vector similarity search with Reciprocal Rank Fusion, preferring decisions from the last 5 years.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -55,12 +55,122 @@ interface LookupResult {
   retrieval_confidence: number;
 }
 
+// ---------------------------------------------------------------------------
+// Decision-focused query phrases per clause type.
+// Targets the kind of language found in LTB ruling summaries.
+// ---------------------------------------------------------------------------
+const DECISION_TYPE_QUERY_PHRASES: Record<string, string> = {
+  entry_rights:
+    "landlord entry without notice harassment illegal entry Ontario LTB ruling tenant remedy",
+  security_deposit:
+    "security deposit key deposit non-refundable charge illegal void Ontario LTB order repayment",
+  maintenance_repairs:
+    "maintenance failure disrepair uninhabitable standard landlord obligation Ontario LTB remedy",
+  rent_increase:
+    "above guideline rent increase illegal unauthorized Ontario LTB ruling",
+  early_termination:
+    "N12 N13 N4 bad faith eviction early termination notice Ontario LTB decision",
+  subletting_assignment:
+    "sublet assignment consent unreasonably withheld refused Ontario LTB",
+  quiet_enjoyment:
+    "interference quiet enjoyment substantial interference harassment Ontario LTB",
+  rent_payment:
+    "rent arrears N4 notice termination payment plan Ontario LTB",
+  renewal_terms:
+    "lease renewal automatic continuation month-to-month Ontario LTB",
+  utilities:
+    "utilities heat water electricity withheld landlord obligation Ontario LTB",
+  pets:
+    "no-pet clause void unenforceable eviction pets Ontario LTB",
+  alterations:
+    "alterations restoration tenant landlord consent damage Ontario LTB",
+  liability_indemnification:
+    "liability waiver tenant rights void unenforceable Ontario LTB",
+  dispute_resolution:
+    "Landlord Tenant Board jurisdiction application hearing Ontario",
+  standard_boilerplate:
+    "Ontario Residential Tenancies Act standard lease compliance LTB",
+  unknown:
+    "Ontario LTB Landlord Tenant Board ruling tenant landlord rights",
+};
+
 function fiveYearsAgoISO(): string {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 5);
-  return d.toISOString().split("T")[0]; // YYYY-MM-DD
+  return d.toISOString().split("T")[0];
 }
 
+// ---------------------------------------------------------------------------
+// buildDecisionQueries — 3 queries targeting different aspects
+//
+//  Q1 — Raw clause text: captures clause vocabulary
+//  Q2 — Risk-angle phrase: focuses on the legal risk dimension
+//  Q3 — Decision-targeted: uses LTB ruling summary vocabulary
+// ---------------------------------------------------------------------------
+function buildDecisionQueries(
+  clauseType: string,
+  clauseText: string,
+  riskAngle?: string
+): [string, string, string] {
+  const q1 = clauseText.slice(0, 1000);
+
+  const riskPhrase =
+    riskAngle ??
+    `${clauseType.replace(/_/g, " ")} tenant rights Ontario LTB decision`;
+  const q2 = `${clauseType.replace(/_/g, " ")} ${riskPhrase}`.slice(0, 500);
+
+  const q3 =
+    DECISION_TYPE_QUERY_PHRASES[clauseType] ??
+    `${clauseType.replace(/_/g, " ")} Ontario Landlord Tenant Board ruling`;
+
+  return [q1, q2, q3];
+}
+
+// ---------------------------------------------------------------------------
+// reciprocalRankFusion for Decision lists
+// ---------------------------------------------------------------------------
+function reciprocalRankFusion(resultLists: Decision[][], k = 60): Decision[] {
+  const scoreMap = new Map<
+    string,
+    { decision: Decision; rrfScore: number; maxCosine: number }
+  >();
+
+  for (const list of resultLists) {
+    for (let i = 0; i < list.length; i++) {
+      const decision = list[i];
+      const rrfContribution = 1 / (k + i + 1);
+
+      const existing = scoreMap.get(decision.case_number);
+      if (existing) {
+        existing.rrfScore += rrfContribution;
+        existing.maxCosine = Math.max(existing.maxCosine, decision.relevance_score);
+      } else {
+        scoreMap.set(decision.case_number, {
+          decision,
+          rrfScore: rrfContribution,
+          maxCosine: decision.relevance_score,
+        });
+      }
+    }
+  }
+
+  const maxRRF = resultLists.length / (k + 1);
+
+  return Array.from(scoreMap.values())
+    .map(({ decision, rrfScore, maxCosine }) => {
+      const normalizedRRF = maxRRF > 0 ? rrfScore / maxRRF : 0;
+      const blended = 0.7 * normalizedRRF + 0.3 * maxCosine;
+      return {
+        ...decision,
+        relevance_score: Math.round(blended * 1000) / 1000,
+      };
+    })
+    .sort((a, b) => b.relevance_score - a.relevance_score);
+}
+
+// ---------------------------------------------------------------------------
+// vectorSearchDecisions — single embedding → pgvector cosine search
+// ---------------------------------------------------------------------------
 async function vectorSearchDecisions(
   embedding: number[],
   jurisdictionCode: string,
@@ -100,6 +210,9 @@ async function vectorSearchDecisions(
   }));
 }
 
+// ---------------------------------------------------------------------------
+// execute — main entry point
+// ---------------------------------------------------------------------------
 export async function execute(input: unknown): Promise<unknown> {
   const parsed = InputSchema.safeParse(input);
   if (!parsed.success) {
@@ -120,62 +233,64 @@ export async function execute(input: unknown): Promise<unknown> {
     } satisfies LookupResult;
   }
 
-  // Build query string
-  const queryParts = [clause_type.replace(/_/g, " "), clause_text];
-  if (risk_angle) {
-    queryParts.push(risk_angle);
-  }
-  const queryString = queryParts.join(" ").slice(0, 2000);
+  const [q1, q2, q3] = buildDecisionQueries(clause_type, clause_text, risk_angle);
 
   let decisions: Decision[] = [];
   let embeddingFailed = false;
   let retrieval_confidence = 0;
 
   try {
-    const embedding = await embed(queryString);
+    // Embed all 3 queries in parallel
+    const [emb1, emb2, emb3] = await Promise.all([
+      embed(q1, "RETRIEVAL_QUERY"),
+      embed(q2, "RETRIEVAL_QUERY"),
+      embed(q3, "RETRIEVAL_QUERY"),
+    ]);
 
-    // First pass: restrict to last 5 years
     const cutoffDate = fiveYearsAgoISO();
-    decisions = await vectorSearchDecisions(
-      embedding,
-      jurisdiction_code,
-      0.45,
-      5,
-      cutoffDate
-    );
 
-    // Fallback to all dates if < 2 recent results
-    if (decisions.length < 2) {
-      const allDecisions = await vectorSearchDecisions(
-        embedding,
-        jurisdiction_code,
-        0.45,
-        5
-      );
+    // First pass: restrict to last 5 years across all 3 queries
+    const [recent1, recent2, recent3] = await Promise.all([
+      vectorSearchDecisions(emb1, jurisdiction_code, 0.45, 5, cutoffDate),
+      vectorSearchDecisions(emb2, jurisdiction_code, 0.45, 5, cutoffDate),
+      vectorSearchDecisions(emb3, jurisdiction_code, 0.45, 5, cutoffDate),
+    ]);
 
-      // Merge: keep recent ones, add older ones not already included
-      const existingCases = new Set(decisions.map((d) => d.case_number));
-      const olderDecisions = allDecisions.filter(
+    let merged = reciprocalRankFusion([recent1, recent2, recent3]).slice(0, 5);
+
+    // If < 2 recent results, expand to all dates
+    if (merged.length < 2) {
+      const [all1, all2, all3] = await Promise.all([
+        vectorSearchDecisions(emb1, jurisdiction_code, 0.45, 5),
+        vectorSearchDecisions(emb2, jurisdiction_code, 0.45, 5),
+        vectorSearchDecisions(emb3, jurisdiction_code, 0.45, 5),
+      ]);
+
+      const allMerged = reciprocalRankFusion([all1, all2, all3]);
+      const existingCases = new Set(merged.map((d) => d.case_number));
+      const olderDecisions = allMerged.filter(
         (d) => !existingCases.has(d.case_number)
       );
-      decisions = [...decisions, ...olderDecisions].slice(0, 5);
+      merged = [...merged, ...olderDecisions].slice(0, 5);
     }
 
+    decisions = merged;
+
     if (decisions.length > 0) {
-      const avgSimilarity =
+      const avgBlended =
         decisions.reduce((sum, d) => sum + d.relevance_score, 0) /
         decisions.length;
-      retrieval_confidence = Math.min(0.95, avgSimilarity + 0.1);
+      retrieval_confidence = Math.min(0.95, avgBlended + 0.1);
     }
   } catch (err) {
     embeddingFailed = true;
     console.error(
-      `Decision search failed: ${err instanceof Error ? err.message : String(err)}`
+      `Multi-query decision search failed: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 
+  // Keyword fallback if corpus empty or embedding failed
   if (embeddingFailed || decisions.length === 0) {
-    // Attempt plain text search as fallback on empty corpus or embedding failure
     try {
       const stopWords = new Set([
         "the", "a", "an", "and", "or", "in", "on", "to", "of", "with",
@@ -205,7 +320,7 @@ export async function execute(input: unknown): Promise<unknown> {
 
         if (!error && Array.isArray(data) && data.length > 0) {
           decisions = (
-            data as Omit<DecisionRow, "similarity">[]
+            data as Omit<DecisionRow, "relevance_score">[]
           ).map((row) => ({
             case_number: row.case_number,
             decision_date: row.decision_date,
