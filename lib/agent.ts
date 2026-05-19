@@ -182,6 +182,124 @@ async function runInBatches<T, R>(
   return results;
 }
 
+// ─── Tool Call Logger ─────────────────────────────────────────────────────────
+
+/**
+ * Build a compact, PII-safe summary of a tool's input for the trace log.
+ * Raw text is replaced with char count; large arrays with item count.
+ */
+function summariseInput(input: Record<string, unknown>): Record<string, unknown> {
+  const verbatim = new Set([
+    "clause_id", "clause_type", "jurisdiction_code", "ocr_fallback",
+    "lease_id", "jurisdiction", "risk_score",
+  ]);
+  const result: Record<string, unknown> = {};
+
+  for (const [k, v] of Object.entries(input)) {
+    if (verbatim.has(k)) {
+      result[k] = v;
+    } else if (k === "raw_text" || k === "clause_text") {
+      result[`${k}_chars`] = typeof v === "string" ? v.length : 0;
+    } else if (k === "file_path") {
+      result[k] = typeof v === "string" ? `…${v.slice(-24)}` : v;
+    } else if (k === "retrieved_statutes" || k === "retrieved_decisions") {
+      result[`${k}_count`] = Array.isArray(v) ? v.length : 0;
+    } else if (k === "found_clause_types" && Array.isArray(v)) {
+      result["found_count"] = v.length;
+    } else if (k === "analyzed_clauses" && Array.isArray(v)) {
+      result["clause_count"] = v.length;
+    } else if (k === "focus_keywords" && Array.isArray(v)) {
+      result["keywords"] = (v as string[]).slice(0, 5);
+    } else if (k === "clause_a" || k === "clause_b") {
+      const sub = v as Record<string, unknown>;
+      result[k] = { id: sub.id, type: sub.type };
+    }
+  }
+  return result;
+}
+
+/**
+ * Build a compact summary of a tool's output for the trace log.
+ * Keeps scalar outcome fields; converts arrays to counts.
+ */
+function summariseOutput(output: unknown): Record<string, unknown> {
+  if (!output || typeof output !== "object" || Array.isArray(output)) {
+    return {};
+  }
+  const verbatim = new Set([
+    "risk_score", "risk_level", "is_potentially_unenforceable", "confidence",
+    "page_count", "extraction_method", "jurisdiction", "jurisdiction_code",
+    "has_contradiction", "severity", "negotiable", "priority",
+    "fallback_used", "retrieval_confidence",
+    "overall_risk_score", "overall_risk_level",
+    "all_required_present", "coverage_score", "jurisdiction_supported",
+    "primary_type", "subtype", "requires_legal_lookup",
+  ]);
+  const result: Record<string, unknown> = {};
+
+  for (const [k, v] of Object.entries(output as Record<string, unknown>)) {
+    if (verbatim.has(k)) {
+      result[k] = v;
+    } else if (Array.isArray(v)) {
+      result[`${k}_count`] = v.length;
+    }
+  }
+  return result;
+}
+
+/**
+ * Wraps every mcp.callTool() call to record timing, success/failure, and
+ * compact input/output summaries into tool_call_logs. DB writes are
+ * fire-and-forget and never block or fail the analysis pipeline.
+ */
+class ToolCallLogger {
+  private seqNum = 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(
+    private readonly sb: { from: (table: string) => any },
+    private readonly leaseId: string
+  ) {}
+
+  async call<T>(
+    mcp: McpClient,
+    toolName: string,
+    input: Record<string, unknown>
+  ): Promise<T> {
+    const seq = ++this.seqNum;
+    const startMs = Date.now();
+    let result: T | undefined;
+    let success = true;
+    let errorMessage: string | undefined;
+
+    try {
+      result = (await mcp.callTool(toolName, input)) as T;
+      return result;
+    } catch (err) {
+      success = false;
+      errorMessage = err instanceof Error ? err.message : String(err);
+      throw err;
+    } finally {
+      const durationMs = Date.now() - startMs;
+      // Fire-and-forget — never blocks or fails the pipeline
+      this.sb
+        .from("tool_call_logs")
+        .insert({
+          lease_id: this.leaseId,
+          tool_name: toolName,
+          sequence_num: seq,
+          duration_ms: durationMs,
+          success,
+          error_message: errorMessage?.slice(0, 500) ?? null,
+          input_summary: summariseInput(input),
+          output_summary:
+            success && result !== undefined ? summariseOutput(result) : {},
+        })
+        .then(() => {}, () => {});
+    }
+  }
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 /**
@@ -220,17 +338,18 @@ export async function runLeaseAnalysis(
 
     // ── 2. Start MCP server ────────────────────────────────────────────────
     mcp = await McpClient.create(MCP_SERVER_PATH);
+    const logger = new ToolCallLogger(supabase, leaseId);
 
     // ── 3. Parse document ──────────────────────────────────────────────────
-    const parseResult = (await mcp.callTool("parse_document", {
-      file_path: tempFilePath,
-      ocr_fallback: true,
-    })) as {
+    const parseResult = await logger.call<{
       raw_text: string;
       page_count: number;
       extraction_method: "text" | "ocr" | "unknown";
       confidence: number;
-    };
+    }>(mcp, "parse_document", {
+      file_path: tempFilePath,
+      ocr_fallback: true,
+    });
 
     const { raw_text: rawText, page_count: pageCount, extraction_method: extractionMethod } =
       parseResult;
@@ -246,15 +365,15 @@ export async function runLeaseAnalysis(
     tempFilePath = null;
 
     // ── 4. Detect jurisdiction ─────────────────────────────────────────────
-    const jurisdictionResult = (await mcp.callTool("detect_jurisdiction", {
-      raw_text: rawText,
-    })) as {
+    const jurisdictionResult = await logger.call<{
       jurisdiction: string;
       jurisdiction_code: string;
       confidence: number;
       detection_basis: string[];
       supported: boolean;
-    };
+    }>(mcp, "detect_jurisdiction", {
+      raw_text: rawText,
+    });
 
     const { jurisdiction, jurisdiction_code: jurisdictionCode } = jurisdictionResult;
 
@@ -273,7 +392,7 @@ export async function runLeaseAnalysis(
       .eq("id", leaseId);
 
     // ── 6. Segment into clauses ────────────────────────────────────────────
-    const segmentRaw = await mcp.callTool("segment_clauses", {
+    const segmentRaw = await logger.call<unknown>(mcp, "segment_clauses", {
       raw_text: rawText,
       jurisdiction_code: jurisdictionCode,
     });
@@ -294,34 +413,44 @@ export async function runLeaseAnalysis(
     await runInBatches(clauses, CLAUSE_BATCH_SIZE, async (clause) => {
       try {
         // 7a. Classify clause type
-        const classification = (await mcp!.callTool("classify_clause", {
-          clause_id: clause.id,
-          clause_text: clause.raw_text,
-        })) as ClassificationResult;
+        const classification = await logger.call<ClassificationResult>(
+          mcp!,
+          "classify_clause",
+          {
+            clause_id: clause.id,
+            clause_text: clause.raw_text,
+          }
+        );
 
         const clauseType = classification.primary_type;
 
         // 7b. Retrieve statutes + decisions in parallel
         const [statuteRaw, tribunalRaw] = await Promise.all([
-          mcp!
-            .callTool("lookup_statute", {
+          logger
+            .call<unknown>(mcp!, "lookup_statute", {
               clause_type: clauseType,
               clause_text: clause.raw_text,
               jurisdiction_code: jurisdictionCode,
               focus_keywords: classification.keywords,
             })
             .catch((err) => {
-              console.warn(`[agent] lookup_statute failed for clause ${clause.id}:`, err.message);
+              console.warn(
+                `[agent] lookup_statute failed for clause ${clause.id}:`,
+                err.message
+              );
               return { statutes: [] };
             }),
-          mcp!
-            .callTool("lookup_tribunal", {
+          logger
+            .call<unknown>(mcp!, "lookup_tribunal", {
               clause_text: clause.raw_text,
               clause_type: clauseType,
               jurisdiction_code: jurisdictionCode,
             })
             .catch((err) => {
-              console.warn(`[agent] lookup_tribunal failed for clause ${clause.id}:`, err.message);
+              console.warn(
+                `[agent] lookup_tribunal failed for clause ${clause.id}:`,
+                err.message
+              );
               return { decisions: [] };
             }),
         ]);
@@ -330,14 +459,14 @@ export async function runLeaseAnalysis(
         const retrievedDecisions = extractArray<Decision>(tribunalRaw, "decisions");
 
         // 7c. Score risk (grounded in retrieved statutes)
-        const riskScore = (await mcp!.callTool("score_risk", {
+        const riskScore = await logger.call<RiskScore>(mcp!, "score_risk", {
           clause_id: clause.id,
           clause_text: clause.raw_text,
           clause_type: clauseType,
-          retrieved_statutes: retrievedStatutes,
-          retrieved_decisions: retrievedDecisions,
+          retrieved_statutes: retrievedStatutes as unknown as Record<string, unknown>[],
+          retrieved_decisions: retrievedDecisions as unknown as Record<string, unknown>[],
           jurisdiction_code: jurisdictionCode,
-        })) as RiskScore;
+        });
 
         // 7d. Persist clause row
         const dbClauseId = uuidv4();
@@ -401,18 +530,22 @@ export async function runLeaseAnalysis(
         const acA = byType.get(typeA)!;
         const acB = byType.get(typeB)!;
         try {
-          const result = (await mcp!.callTool("detect_contradiction", {
-            clause_a: {
-              id: acA.clause_id,
-              text: acA.clause_text,
-              type: acA.clause_type,
-            },
-            clause_b: {
-              id: acB.clause_id,
-              text: acB.clause_text,
-              type: acB.clause_type,
-            },
-          })) as ContradictionResult;
+          const result = await logger.call<ContradictionResult>(
+            mcp!,
+            "detect_contradiction",
+            {
+              clause_a: {
+                id: acA.clause_id,
+                text: acA.clause_text,
+                type: acA.clause_type,
+              } as unknown as Record<string, unknown>,
+              clause_b: {
+                id: acB.clause_id,
+                text: acB.clause_text,
+                type: acB.clause_type,
+              } as unknown as Record<string, unknown>,
+            }
+          );
 
           const enriched: ContradictionResult = {
             ...result,
@@ -447,13 +580,13 @@ export async function runLeaseAnalysis(
       ...new Set(analyzedClauses.map((c) => c.clause_type)),
     ];
 
-    const missingRaw = (await mcp.callTool("check_missing", {
-      found_clause_types: foundClauseTypes,
-      jurisdiction_code: jurisdictionCode,
-    })) as {
+    const missingRaw = await logger.call<{
       missing_protections: unknown[];
       implicit_protections: unknown[];
-    };
+    }>(mcp, "check_missing", {
+      found_clause_types: foundClauseTypes,
+      jurisdiction_code: jurisdictionCode,
+    });
 
     const missingProtections: unknown[] = missingRaw.missing_protections ?? [];
     const implicitProtections: unknown[] = missingRaw.implicit_protections ?? [];
@@ -469,14 +602,18 @@ export async function runLeaseAnalysis(
     await Promise.allSettled(
       highRiskClauses.map(async (ac) => {
         try {
-          const negotiation = (await mcp!.callTool("generate_negotiation", {
-            clause_id: ac.clause_id,
-            clause_text: ac.clause_text,
-            clause_type: ac.clause_type,
-            risk_score: ac.risk_score_result.risk_score,
-            retrieved_statutes: ac.retrieved_statutes,
-            retrieved_decisions: ac.retrieved_decisions,
-          })) as NegotiationPoint;
+          const negotiation = await logger.call<NegotiationPoint>(
+            mcp!,
+            "generate_negotiation",
+            {
+              clause_id: ac.clause_id,
+              clause_text: ac.clause_text,
+              clause_type: ac.clause_type,
+              risk_score: ac.risk_score_result.risk_score,
+              retrieved_statutes: ac.retrieved_statutes as unknown as Record<string, unknown>[],
+              retrieved_decisions: ac.retrieved_decisions as unknown as Record<string, unknown>[],
+            }
+          );
 
           // Persist negotiation point
           await supabase.from("negotiation_points").insert({
@@ -510,8 +647,8 @@ export async function runLeaseAnalysis(
 
     // ── 11. Benchmark — fire-and-forget (non-blocking) ─────────────────────
     for (const ac of analyzedClauses) {
-      mcp
-        .callTool("benchmark_clause", {
+      logger
+        .call<unknown>(mcp, "benchmark_clause", {
           clause_id: ac.clause_id,
           clause_type: ac.clause_type,
           raw_text: ac.clause_text,
@@ -524,7 +661,12 @@ export async function runLeaseAnalysis(
     }
 
     // ── 12. Generate final report ──────────────────────────────────────────
-    const reportPayload = (await mcp.callTool("generate_report", {
+    const reportPayload = await logger.call<{
+      overall_risk_score: number;
+      overall_risk_level: "low" | "medium" | "high" | "critical";
+      executive_summary: string;
+      [key: string]: unknown;
+    }>(mcp, "generate_report", {
       lease_id: leaseId,
       jurisdiction,
       analyzed_clauses: analyzedClauses.map((ac) => ({
@@ -536,23 +678,18 @@ export async function runLeaseAnalysis(
         retrieved_statutes: ac.retrieved_statutes,
         retrieved_decisions: ac.retrieved_decisions,
         ...(ac.negotiation_point && { negotiation_point: ac.negotiation_point }),
-      })),
-      contradictions: contradictionResults,
-      missing_protections: missingProtections,
-      implicit_protections: implicitProtections,
+      })) as unknown as Record<string, unknown>[],
+      contradictions: contradictionResults as unknown as Record<string, unknown>[],
+      missing_protections: missingProtections as unknown as Record<string, unknown>[],
+      implicit_protections: implicitProtections as unknown as Record<string, unknown>[],
       negotiation_points: analyzedClauses
         .filter((ac) => ac.negotiation_point)
         .map((ac) => ({
           ...ac.negotiation_point!,
           clause_id: ac.db_clause_id,
           clause_type: ac.clause_type,
-        })),
-    })) as {
-      overall_risk_score: number;
-      overall_risk_level: "low" | "medium" | "high" | "critical";
-      executive_summary: string;
-      [key: string]: unknown;
-    };
+        })) as unknown as Record<string, unknown>[],
+    });
 
     // ── 13. Persist report ─────────────────────────────────────────────────
     const corpusVersion = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
