@@ -333,3 +333,82 @@ Shows what is currently in progress so a session can be resumed mid-task:
 |------------|-------------|---------------|
 | 2026-05-18 | 691c3b9     | Fixed score-risk false positive, rewrote validate_retrieval.py, seeded RTA subsections |
 ```
+
+---
+
+## Self-Verification Protocol
+
+After implementing any UI feature, API change, or data pipeline fix, **verify visually before
+declaring done**. TypeScript compilation passing is necessary but not sufficient — always close
+the loop with a browser tool.
+
+### Tool Priority for This Project
+
+1. **Claude Preview** — default for all Next.js UI changes (fastest)
+2. **Claude in Chrome** — use when you need to inspect real API payloads or test file upload
+3. **Playwright** — use for full end-to-end flows (PDF upload → analysis → report panels)
+4. **Computer Use** — not needed for this project (web-only)
+
+### Standard Verification Flow After Any UI Change
+
+```
+1. preview_start          → ensure dev server is running (once per session)
+2. preview_screenshot /   → confirm landing page renders
+3. preview_screenshot /report/[lease-id]  → confirm report page renders
+4. preview_click          → click each panel tab that was affected
+5. preview_screenshot     → confirm panel has real data (not empty/blank)
+6. preview_console_logs   → must show zero JS errors
+7. preview_eval           → assert key data present, e.g.:
+     document.querySelectorAll('[data-panel]').length > 0
+```
+
+### Verifying Specific LeaseGuard Features
+
+**After any report panel change:**
+```
+preview_screenshot /report/[id]   → full page
+preview_click "Agent Trace" tab   → (or whichever panel changed)
+preview_screenshot                → panel populated with data
+preview_eval → window.__NEXT_DATA__ to inspect serialised props if needed
+```
+
+**After any API route change (`app/api/report/[id]/route.ts`):**
+```
+Use Chrome MCP:
+  navigate → http://localhost:3000/api/report/[id]
+  read_page → inspect raw JSON response
+  Confirm new fields present (e.g. _tool_call_logs, full_text in sources)
+```
+
+**After any agent pipeline change (`lib/agent.ts`):**
+```
+Use Playwright for full E2E:
+  browser_navigate → http://localhost:3000
+  browser_fill_form + upload a test PDF (faultyLease.pdf or compliantLease.pdf)
+  browser_wait_for → analysis complete (poll /api/job/[id] until status=complete)
+  browser_navigate → /report/[lease-id]
+  browser_take_screenshot → all 8 panels render
+  browser_network_requests → confirm /api/report/[id] returns expected shape
+```
+
+**After any MCP tool change (`mcp-server/src/tools/*.ts`):**
+```
+1. cd mcp-server && npm run build   → must be clean
+2. python scripts/validate_retrieval.py  → must be ≥80% (6/7 tests)
+3. Then run the Playwright E2E flow above on a real lease upload
+```
+
+### What Counts as "Verified"
+
+A feature is verified when ALL of the following are true:
+- [ ] Build is clean (`npx tsc --noEmit` and `cd mcp-server && npm run build`)
+- [ ] Screenshot shows the panel/page renders with real data (not empty, not loading spinner)
+- [ ] Console logs are clean (no JS errors or unhandled promise rejections)
+- [ ] API response contains the expected fields (spot-checked via Chrome MCP or Playwright)
+- [ ] No adjacent panels are broken (screenshot the full report page, not just the changed tab)
+
+### Test Lease IDs
+
+Keep a known-good lease ID in HANDOFF.md `## Quick Health Check` for visual regression checks.
+Re-use it every session to avoid re-uploading. If it expires (90-day report TTL), re-upload
+`scripts/source-docs/ontario_standard_lease.pdf` and update the ID.
