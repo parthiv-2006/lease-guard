@@ -64,7 +64,7 @@ const ONTARIO_REQUIRED_PROTECTIONS: RequiredProtection[] = [
     statute_section: "Section 12 RTA",
     risk_if_missing:
       "Without explicit rent terms, disputes about amount, due date, and acceptable payment methods are harder to resolve.",
-    severity: "medium",
+    severity: "high",
   },
   {
     clause_type: "entry_rights",
@@ -82,7 +82,7 @@ const ONTARIO_REQUIRED_PROTECTIONS: RequiredProtection[] = [
     statute_section: "Section 22 RTA",
     risk_if_missing:
       "Absence of a quiet enjoyment clause leaves the tenant without a contractual remedy; RTA s.22 still applies but should be reinforced.",
-    severity: "medium",
+    severity: "high",
   },
   {
     clause_type: "security_deposit",
@@ -118,7 +118,7 @@ const ONTARIO_REQUIRED_PROTECTIONS: RequiredProtection[] = [
     statute_section: "Sections 59–84 RTA",
     risk_if_missing:
       "No clause describing early termination means the tenant may face unclear consequences if they need to leave before lease end.",
-    severity: "medium",
+    severity: "high",
   },
   {
     clause_type: "rent_increase",
@@ -127,7 +127,7 @@ const ONTARIO_REQUIRED_PROTECTIONS: RequiredProtection[] = [
     statute_section: "Section 120 RTA",
     risk_if_missing:
       "Without an explicit rent increase clause, the landlord may attempt unilateral increases. RTA s.120 limits increases but a clause memorialises the agreement.",
-    severity: "medium",
+    severity: "high",
   },
   {
     clause_type: "renewal_terms",
