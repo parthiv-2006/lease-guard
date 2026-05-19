@@ -649,11 +649,10 @@ export async function runLeaseAnalysis(
     for (const ac of analyzedClauses) {
       logger
         .call<unknown>(mcp, "benchmark_clause", {
-          clause_id: ac.clause_id,
           clause_type: ac.clause_type,
-          raw_text: ac.clause_text,
+          clause_text: ac.clause_text,
           risk_score: ac.risk_score_result.risk_score,
-          lease_id: leaseId,
+          jurisdiction_code: jurisdictionCode,
         })
         .catch(() => {
           /* Benchmark failures never block the pipeline */
