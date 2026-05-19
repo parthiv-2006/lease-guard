@@ -786,7 +786,9 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
 
   // ── Clauses — from DB rows fetched by the report API ──────────────────────
   const rawClauses = (data._clauses as Array<Record<string, unknown>>) ?? [];
-  const clauses: Report["clauses"] = rawClauses.map((c) => ({
+  const clauses: Report["clauses"] = rawClauses
+    .filter((c) => !String(c.clause_number ?? "").startsWith("synthetic"))
+    .map((c) => ({
     id: c.id as string,
     number: (c.clause_number as string) ?? "",
     heading: (c.heading as string) ?? "",
@@ -866,7 +868,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
       act_name: ref.split(/\ss\.\d/)[0]?.trim() ?? ref,
       section_number: sectionMatch?.[1] ?? "",
       section_title: sectionMatch?.[2]?.trim() ?? ref,
-      full_text: "",
+      full_text: (s.full_text as string) ?? "",
       url: (s.url as string) ?? "",
       relevance_score: 0,
       corpus_version: (data.corpus_version as string) ?? "",
