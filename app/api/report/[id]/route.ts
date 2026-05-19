@@ -24,8 +24,8 @@ export async function GET(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch report + lease metadata + clauses in parallel
-  const [reportResult, leaseResult, clausesResult] = await Promise.all([
+  // Fetch report + lease metadata + clauses + agent trace in parallel
+  const [reportResult, leaseResult, clausesResult, traceResult] = await Promise.all([
     supabase
       .from("reports")
       .select("*")
@@ -48,6 +48,13 @@ export async function GET(
       )
       .eq("lease_id", id)
       .order("clause_number"),
+    supabase
+      .from("tool_call_logs")
+      .select(
+        "id, tool_name, sequence_num, duration_ms, success, error_message, input_summary, output_summary, called_at"
+      )
+      .eq("lease_id", id)
+      .order("sequence_num"),
   ]);
 
   const { data, error } = reportResult;
@@ -81,6 +88,7 @@ export async function GET(
     expires_at: data.expires_at,
     _lease: leaseResult.data ?? {},
     _clauses: clausesResult.data ?? [],
+    _tool_call_logs: traceResult.data ?? [],
   };
 
   return NextResponse.json(report);

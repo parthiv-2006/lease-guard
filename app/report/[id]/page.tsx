@@ -919,7 +919,18 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     missing_protections,
     negotiation_points,
     sources,
-    agent_trace: [],
+    agent_trace: ((data._tool_call_logs as unknown[]) ?? []).map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        id: r.id as string,
+        sequence: r.sequence_num as number,
+        tool_name: r.tool_name as string,
+        duration_ms: (r.duration_ms as number) ?? 0,
+        success: (r.success as boolean) ?? true,
+        input_summary: (r.input_summary as Record<string, unknown>) ?? {},
+        output_summary: (r.output_summary as Record<string, unknown>) ?? {},
+      };
+    }),
     expires_at: data.expires_at as string | undefined,
     share_url: data.share_url as string | null | undefined,
     disclaimer: data.disclaimer as string | undefined,
