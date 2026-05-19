@@ -57,7 +57,12 @@ export interface RiskScore {
   is_standard: boolean;
   plain_english_explanation: string;
   risk_reasoning: string;
-  statutory_violations: Array<{ statute_section: string; violation_description: string }>;
+  statutory_violations: Array<{
+    statute_section: string;
+    violation_description: string;
+    violation_type: string;       // e.g. "entry_without_notice" — used for enforceability gate (3.4)
+    quoted_text: string;          // exact snippet from retrieved statute that supports this finding (3.1)
+  }>;
   confidence: number;
 }
 
