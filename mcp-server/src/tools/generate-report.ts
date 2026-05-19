@@ -257,6 +257,7 @@ interface Source {
   type: "statute" | "decision";
   reference: string;
   url: string;
+  full_text?: string;
 }
 
 export async function execute(input: unknown): Promise<unknown> {
@@ -321,6 +322,7 @@ export async function execute(input: unknown): Promise<unknown> {
           type: "statute",
           reference: `${statute.act_name} s.${statute.section_number} — ${statute.section_title}`,
           url: statute.url,
+          full_text: statute.text,
         });
       }
     }

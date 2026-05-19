@@ -181,7 +181,7 @@ export async function execute(input: unknown): Promise<unknown> {
   // Attempt vector search
   try {
     const embedding = await embed(queryString);
-    statutes = await vectorSearch(embedding, jurisdiction_code, 0.45, 3);
+    statutes = await vectorSearch(embedding, jurisdiction_code, 0.60, 5);
   } catch (err) {
     embeddingFailed = true;
     // Log but continue to fallback
@@ -196,7 +196,7 @@ export async function execute(input: unknown): Promise<unknown> {
       const fallbackResults = await keywordFallback(
         queryString,
         jurisdiction_code,
-        3
+        5
       );
 
       if (fallbackResults.length > 0) {
@@ -205,7 +205,7 @@ export async function execute(input: unknown): Promise<unknown> {
         const newResults = fallbackResults.filter(
           (r) => !existingIds.has(r.id)
         );
-        statutes = [...statutes, ...newResults].slice(0, 3);
+        statutes = [...statutes, ...newResults].slice(0, 5);
         fallbackUsed = true;
       }
     } catch (err) {
