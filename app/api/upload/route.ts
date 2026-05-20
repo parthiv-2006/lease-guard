@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
   const { error: storageError } = await supabase.storage
     .from("leases")
-    .upload(storagePath, bytes, {
+    .upload(storagePath, Buffer.from(bytes), {
       contentType: "application/pdf",
       upsert: false,
     });
