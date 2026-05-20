@@ -375,15 +375,35 @@ export function CopyButton({
 
 // ── Feedback bar ──────────────────────────────────────────────────────────────
 
-export function FeedbackBar({ clauseId }: { clauseId: string }) {
+export function FeedbackBar({ leaseId, clauseId }: { leaseId: string; clauseId: string }) {
   const [vote, setVote] = useState<"up" | "down" | null>(null);
+  const [reasonSelected, setReasonSelected] = useState<string | null>(null);
 
   function handleVote(v: "up" | "down") {
     setVote(v);
+    if (v === "up") {
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lease_id: leaseId,
+          accurate: true,
+          comment: `Clause: ${clauseId}`,
+        }),
+      }).catch(() => {});
+    }
+  }
+
+  function handleReasonSelect(reason: string) {
+    setReasonSelected(reason);
     fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clause_id: clauseId, vote: v }),
+      body: JSON.stringify({
+        lease_id: leaseId,
+        accurate: false,
+        comment: `Clause: ${clauseId} | Reason: ${reason}`,
+      }),
     }).catch(() => {});
   }
 
@@ -448,15 +468,40 @@ export function FeedbackBar({ clauseId }: { clauseId: string }) {
           {label}
         </button>
       ))}
-      {vote && (
+
+      {vote === "down" && !reasonSelected && (
+        <select
+          onChange={(e) => handleReasonSelect(e.target.value)}
+          style={{
+            padding: "3px 8px",
+            borderRadius: "4px",
+            border: "1px solid #ddd8cf",
+            fontSize: "11px",
+            fontFamily: "'DM Sans', sans-serif",
+            background: "#fff",
+            color: "#6b6560",
+            cursor: "pointer",
+          }}
+          defaultValue=""
+        >
+          <option value="" disabled>Select reason...</option>
+          <option value="Clause is actually compliant">Clause is actually compliant</option>
+          <option value="Wrong statute cited">Wrong statute cited</option>
+          <option value="Missing context">Missing context</option>
+          <option value="Other">Other</option>
+        </select>
+      )}
+
+      {(vote === "up" || (vote === "down" && reasonSelected)) && (
         <span
           style={{
             fontSize: "11px",
-            color: "#9a9590",
+            color: "#15803d",
             fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 500,
           }}
         >
-          Thank you.
+          Thank you for your feedback!
         </span>
       )}
     </div>
