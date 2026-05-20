@@ -362,7 +362,7 @@ export function RedFlagsPanel({
   onClauseActivate?: (clauseId: string) => void;
 }) {
   const redFlags = report.clauses
-    .filter((c) => c.risk_level === "high" || c.risk_level === "critical")
+    .filter((c) => c.risk_score >= 6)
     .sort((a, b) => b.risk_score - a.risk_score);
 
   return (
