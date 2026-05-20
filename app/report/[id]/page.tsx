@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Icon, RiskBadge } from "../../components/shared";
 import { OverviewPanel } from "../../components/overview-panel";
@@ -15,6 +15,7 @@ import {
 } from "../../components/panels";
 import { NegotiationCopilot } from "../../components/negotiation-copilot";
 import type { Report, PanelId } from "../../components/types";
+import { PDFViewer } from "../../components/pdf-viewer";
 
 // ── Nav config ────────────────────────────────────────────────────────────────
 
@@ -480,19 +481,49 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   const [activePanel, setActivePanel] = useState<PanelId>("overview");
   const [showShare, setShowShare] = useState(false);
   const [showCopilot, setShowCopilot] = useState(false);
+  const [splitScreen, setSplitScreen] = useState(false);
+  const [activeClauseId, setActiveClauseId] = useState<string | null>(null);
+  const [pdfWidthPct, setPdfWidthPct] = useState(48);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const onClauseActivate = (id: string) => setActiveClauseId(id);
 
   const panels: Record<PanelId, React.ReactNode> = {
     overview: (
       <OverviewPanel report={report} onNavigate={setActivePanel} />
     ),
-    redflags: <RedFlagsPanel report={report} />,
-    clauses: <ClauseExplorerPanel report={report} />,
-    negotiation: <NegotiationPanel report={report} onLaunchCopilot={() => setShowCopilot(true)} />,
+    redflags: <RedFlagsPanel report={report} onClauseActivate={onClauseActivate} />,
+    clauses: <ClauseExplorerPanel report={report} onClauseActivate={onClauseActivate} />,
+    negotiation: <NegotiationPanel report={report} onLaunchCopilot={() => setShowCopilot(true)} onClauseActivate={onClauseActivate} />,
     missing: <MissingPanel report={report} />,
-    contradictions: <ContradictionsPanel report={report} />,
-    sources: <SourcesPanel report={report} />,
+    contradictions: <ContradictionsPanel report={report} onClauseActivate={onClauseActivate} />,
+    sources: <SourcesPanel report={report} onClauseActivate={onClauseActivate} />,
     trace: <AgentTracePanel report={report} />,
   };
+
+  function handleDividerDrag(e: React.MouseEvent) {
+    e.preventDefault();
+    const main = mainRef.current;
+    if (!main) return;
+    const startX = e.clientX;
+    const startPct = pdfWidthPct;
+    const mainW = main.offsetWidth;
+
+    function onMove(ev: MouseEvent) {
+      const delta = ((ev.clientX - startX) / mainW) * 100;
+      setPdfWidthPct(Math.max(25, Math.min(70, startPct + delta)));
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "ew-resize";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   return (
     <div
@@ -510,11 +541,12 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         onShare={() => setShowShare(true)}
       />
 
-      {/* Main content */}
+      {/* Right column */}
       <div
+        ref={mainRef}
         style={{
           flex: 1,
-          overflow: "auto",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
@@ -527,9 +559,9 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             borderBottom: "1px solid #e8e4dc",
             display: "flex",
             alignItems: "center",
-            padding: "0 32px",
+            padding: "0 24px",
             background: "#f6f3ee",
-            gap: "16px",
+            gap: "14px",
             flexShrink: 0,
             position: "sticky",
             top: 0,
@@ -578,19 +610,198 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             Corpus: {report.overall.corpus_version}
             {report.overall.corpus_date && ` · ${report.overall.corpus_date}`}
           </span>
+
+          {/* Split-view toggle */}
+          <button
+            onClick={() => setSplitScreen((s) => !s)}
+            title={splitScreen ? "Close PDF view" : "View lease PDF alongside report"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 500,
+              background: splitScreen ? "#181614" : "transparent",
+              border: `1px solid ${splitScreen ? "#181614" : "#ddd8cf"}`,
+              color: splitScreen ? "#fff" : "#6b6560",
+              transition: "all 0.15s",
+              letterSpacing: "0.02em",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              if (!splitScreen) {
+                e.currentTarget.style.borderColor = "#9a9590";
+                e.currentTarget.style.color = "#181614";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!splitScreen) {
+                e.currentTarget.style.borderColor = "#ddd8cf";
+                e.currentTarget.style.color = "#6b6560";
+              }
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke={splitScreen ? "#fff" : "#6b6560"}
+              strokeWidth="1.5"
+            >
+              <rect x="1" y="2" width="5.5" height="12" rx="1" />
+              <rect x="9.5" y="2" width="5.5" height="12" rx="1" />
+            </svg>
+            {splitScreen ? "Close PDF" : "View PDF"}
+          </button>
         </div>
 
-        {/* Panel content */}
-        <div
-          style={{
-            flex: 1,
-            padding: "36px 40px 60px",
-            maxWidth: "860px",
-            width: "100%",
-          }}
-        >
-          {panels[activePanel]}
-        </div>
+        {/* Content area — split or normal */}
+        {splitScreen ? (
+          <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+
+            {/* PDF pane */}
+            <div
+              style={{
+                flexShrink: 0,
+                width: `${pdfWidthPct}%`,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <PDFViewer
+                clauses={report.clauses}
+                activeClauseId={activeClauseId}
+                pdfUrl={report.lease.pdf_url}
+                filename={report.lease.filename}
+              />
+            </div>
+
+            {/* Drag handle */}
+            <div
+              onMouseDown={handleDividerDrag}
+              style={{
+                width: "5px",
+                flexShrink: 0,
+                cursor: "ew-resize",
+                background: "transparent",
+                transition: "background 0.15s",
+                zIndex: 5,
+                position: "relative",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#ddd8cf")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              {/* Grip dots */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%,-50%)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "3px",
+                  pointerEvents: "none",
+                }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 3,
+                      height: 3,
+                      borderRadius: "50%",
+                      background: "#c5bfb5",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Panels pane */}
+            <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
+              {/* Active clause callout strip */}
+              {activeClauseId && (() => {
+                const c = report.clauses.find((cl) => cl.id === activeClauseId);
+                return c ? (
+                  <div
+                    style={{
+                      padding: "7px 24px",
+                      background: "#f6f9ff",
+                      borderBottom: "1px solid #dbeafe",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="#1d4ed8"
+                      strokeWidth="1.5"
+                    >
+                      <rect x="1" y="2" width="5.5" height="12" rx="1" />
+                      <rect x="9.5" y="2" width="5.5" height="12" rx="1" />
+                    </svg>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "#1d4ed8",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      Clause {c.number} — {c.heading} highlighted in PDF
+                    </span>
+                    <button
+                      onClick={() => setActiveClauseId(null)}
+                      style={{
+                        marginLeft: "auto",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#9a9590",
+                        fontSize: "11px",
+                        fontFamily: "'DM Sans', sans-serif",
+                        padding: "0 2px",
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : null;
+              })()}
+              <div style={{ padding: "28px 28px 60px" }}>
+                {panels[activePanel]}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Normal single-column layout */
+          <div style={{ flex: 1, overflow: "auto" }}>
+            <div
+              style={{
+                padding: "36px 40px 60px",
+                maxWidth: "860px",
+                width: "100%",
+              }}
+            >
+              {panels[activePanel]}
+            </div>
+          </div>
+        )}
       </div>
 
       {showShare && (
@@ -917,6 +1128,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     extraction_method: (leaseRow.extraction_method as string) ?? "text",
     jurisdiction: (data.jurisdiction as string) ?? (leaseRow.jurisdiction as string) ?? "Ontario",
     filename,
+    pdf_url: (data.pdf_url as string) ?? null,
   };
 
   const overall: Report["overall"] = {
