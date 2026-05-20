@@ -335,7 +335,7 @@ to be passed through `generate_report` into `full_report_json`.
 | 4.1 | Replace regex contradiction detection with LLM | `mcp-server/src/tools/detect-contradiction.ts` | ✅ Anthropic SDK, tool_choice JSON, confidence gate 0.65, regex fallback (commit 79acfc5). Needs real ANTHROPIC_API_KEY for LLM path. |
 | 5.1 | Create labelled clause test suite | `scripts/test-leases/labels.json` | ✅ 15 cases (8 unenforceable, 7 compliant) across entry rights, deposit, rent increase, maintenance, dispute resolution, late fees (commit 9246847) |
 | 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.mjs` | ✅ 15/15 PASS — Precision 100%, Recall 100%, FP rate 0%; exits 0 (commit 9246847) |
-| 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | 🔜 |
+| 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | ✅ Reason dropdown added and wired to /api/feedback (commit 2056910) |
 | 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | 🔜 |
 | 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | ✅ `full_text` passed through `sourcesMap` and `normaliseApiResponse()` (commit 6321858) |
 
