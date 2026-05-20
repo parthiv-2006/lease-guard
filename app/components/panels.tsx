@@ -4,7 +4,7 @@
 // ClauseCard, RedFlagsPanel, ClauseExplorerPanel, NegotiationPanel,
 // MissingPanel, ContradictionsPanel, SourcesPanel, AgentTracePanel
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TraceTimeline } from "./trace-timeline";
 import {
   RiskBadge,
@@ -27,13 +27,24 @@ interface ClauseCardProps {
   leaseId: string;
   negotiation?: NegotiationPoint;
   defaultOpen?: boolean;
+  onClauseActivate?: (clauseId: string) => void;
 }
 
-function ClauseCard({ clause, leaseId, negotiation, defaultOpen }: ClauseCardProps) {
+function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivate }: ClauseCardProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const col = riskColor(clause.risk_level);
   const bg = riskBg(clause.risk_level);
   const border = riskBorder(clause.risk_level);
+
+  useEffect(() => {
+    if (defaultOpen) onClauseActivate?.(clause.id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleToggle() {
+    const next = !open;
+    setOpen(next);
+    if (next) onClauseActivate?.(clause.id);
+  }
 
   return (
     <div
@@ -46,7 +57,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen }: ClauseCardPro
     >
       {/* Header */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         style={{
           width: "100%",
           display: "flex",
@@ -343,7 +354,13 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen }: ClauseCardPro
 
 // ── Red Flags Panel ───────────────────────────────────────────────────────────
 
-export function RedFlagsPanel({ report }: { report: Report }) {
+export function RedFlagsPanel({
+  report,
+  onClauseActivate,
+}: {
+  report: Report;
+  onClauseActivate?: (clauseId: string) => void;
+}) {
   const redFlags = report.clauses
     .filter((c) => c.risk_level === "high" || c.risk_level === "critical")
     .sort((a, b) => b.risk_score - a.risk_score);
@@ -367,6 +384,7 @@ export function RedFlagsPanel({ report }: { report: Report }) {
               leaseId={report.lease.id}
               negotiation={neg}
               defaultOpen={i === 0}
+              onClauseActivate={onClauseActivate}
             />
           );
         })}
@@ -377,7 +395,13 @@ export function RedFlagsPanel({ report }: { report: Report }) {
 
 // ── Clause Explorer Panel ─────────────────────────────────────────────────────
 
-export function ClauseExplorerPanel({ report }: { report: Report }) {
+export function ClauseExplorerPanel({
+  report,
+  onClauseActivate,
+}: {
+  report: Report;
+  onClauseActivate?: (clauseId: string) => void;
+}) {
   const [filter, setFilter] = useState<RiskLevel | "all">("all");
   const [sort, setSort] = useState<"risk_desc" | "risk_asc" | "number">(
     "risk_desc"
@@ -488,6 +512,7 @@ export function ClauseExplorerPanel({ report }: { report: Report }) {
               clause={clause}
               leaseId={report.lease.id}
               negotiation={neg}
+              onClauseActivate={onClauseActivate}
             />
           );
         })}
@@ -498,7 +523,15 @@ export function ClauseExplorerPanel({ report }: { report: Report }) {
 
 // ── Negotiation Guide Panel ───────────────────────────────────────────────────
 
-function NegotiationCard({ n, report }: { n: NegotiationPoint; report: Report }) {
+function NegotiationCard({
+  n,
+  report,
+  onClauseActivate,
+}: {
+  n: NegotiationPoint;
+  report: Report;
+  onClauseActivate?: (clauseId: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const priorityColor: Record<string, string> = {
     high: "#b91c1c",
@@ -506,6 +539,12 @@ function NegotiationCard({ n, report }: { n: NegotiationPoint; report: Report })
     low: "#15803d",
   };
   const col = priorityColor[n.priority] ?? "#6b7280";
+
+  function handleToggle() {
+    const next = !open;
+    setOpen(next);
+    if (next && n.clause_id) onClauseActivate?.(n.clause_id);
+  }
 
   return (
     <div
@@ -517,7 +556,7 @@ function NegotiationCard({ n, report }: { n: NegotiationPoint; report: Report })
       }}
     >
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         style={{
           width: "100%",
           display: "flex",
@@ -776,9 +815,11 @@ function NegotiationCard({ n, report }: { n: NegotiationPoint; report: Report })
 export function NegotiationPanel({
   report,
   onLaunchCopilot,
+  onClauseActivate,
 }: {
   report: Report;
   onLaunchCopilot?: () => void;
+  onClauseActivate?: (clauseId: string) => void;
 }) {
   const byPriority: Record<string, NegotiationPoint[]> = {
     high: [],
@@ -859,7 +900,12 @@ export function NegotiationPanel({
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
               {items.map((n) => (
-                <NegotiationCard key={n.id} n={n} report={report} />
+                <NegotiationCard
+                  key={n.id}
+                  n={n}
+                  report={report}
+                  onClauseActivate={onClauseActivate}
+                />
               ))}
             </div>
           </div>
@@ -1056,7 +1102,13 @@ export function MissingPanel({ report }: { report: Report }) {
 
 // ── Contradictions Panel ──────────────────────────────────────────────────────
 
-export function ContradictionsPanel({ report }: { report: Report }) {
+export function ContradictionsPanel({
+  report,
+  onClauseActivate,
+}: {
+  report: Report;
+  onClauseActivate?: (clauseId: string) => void;
+}) {
   const sevColor: Record<string, string> = {
     high: "#b91c1c",
     medium: "#b45309",
@@ -1143,7 +1195,7 @@ export function ContradictionsPanel({ report }: { report: Report }) {
                       {x.severity} severity
                     </span>
                   </div>
-                  {/* Conflicting clause tags */}
+                  {/* Conflicting clause tags — clickable to highlight in PDF */}
                   <div
                     style={{
                       display: "flex",
@@ -1152,7 +1204,9 @@ export function ContradictionsPanel({ report }: { report: Report }) {
                       flexWrap: "wrap",
                     }}
                   >
-                    <span
+                    <button
+                      onClick={() => onClauseActivate?.(x.clause_a_id)}
+                      title="Highlight in PDF"
                       style={{
                         fontSize: "12px",
                         padding: "3px 10px",
@@ -1160,10 +1214,19 @@ export function ContradictionsPanel({ report }: { report: Report }) {
                         border: "1px solid #e8e4dc",
                         borderRadius: "4px",
                         color: "#5c5751",
+                        cursor: "pointer",
+                        transition: "border-color 0.15s",
+                        fontFamily: "'DM Sans', sans-serif",
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.borderColor = "#c5bfb5")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.borderColor = "#e8e4dc")
+                      }
                     >
                       {x.clause_a_label}
-                    </span>
+                    </button>
                     <svg
                       width="14"
                       height="14"
@@ -1178,7 +1241,9 @@ export function ContradictionsPanel({ report }: { report: Report }) {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <span
+                    <button
+                      onClick={() => onClauseActivate?.(x.clause_b_id)}
+                      title="Highlight in PDF"
                       style={{
                         fontSize: "12px",
                         padding: "3px 10px",
@@ -1186,10 +1251,19 @@ export function ContradictionsPanel({ report }: { report: Report }) {
                         border: "1px solid #e8e4dc",
                         borderRadius: "4px",
                         color: "#5c5751",
+                        cursor: "pointer",
+                        transition: "border-color 0.15s",
+                        fontFamily: "'DM Sans', sans-serif",
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.borderColor = "#c5bfb5")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.borderColor = "#e8e4dc")
+                      }
                     >
                       {x.clause_b_label}
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1246,7 +1320,13 @@ export function ContradictionsPanel({ report }: { report: Report }) {
 
 // ── Sources Panel ─────────────────────────────────────────────────────────────
 
-export function SourcesPanel({ report }: { report: Report }) {
+export function SourcesPanel({
+  report,
+  onClauseActivate,
+}: {
+  report: Report;
+  onClauseActivate?: (clauseId: string) => void;
+}) {
   return (
     <div>
       <SectionHeader
@@ -1341,14 +1421,30 @@ export function SourcesPanel({ report }: { report: Report }) {
                 </span>
                 {s.relevant_clauses?.length > 0 && (
                   <span style={{ fontSize: "11px", color: "#9a9590" }}>
-                    Used by: Clause
-                    {s.relevant_clauses.length > 1 ? "s" : ""}{" "}
-                    {s.relevant_clauses
-                      .map((id) => {
-                        const c = report.clauses.find((cl) => cl.id === id);
-                        return c ? `${c.number} (${c.heading})` : id;
-                      })
-                      .join(", ")}
+                    Used by:{" "}
+                    {s.relevant_clauses.map((id, i) => {
+                      const c = report.clauses.find((cl) => cl.id === id);
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => onClauseActivate?.(id)}
+                          title="Highlight in PDF"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: "0 2px",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            color: "#1d4ed8",
+                            textDecoration: "underline",
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {c ? `Clause ${c.number}` : id}
+                          {i < s.relevant_clauses.length - 1 ? "," : ""}
+                        </button>
+                      );
+                    })}
                   </span>
                 )}
               </div>
