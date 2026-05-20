@@ -949,6 +949,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
         id: r.id as string,
         sequence: r.sequence_num as number,
         tool_name: r.tool_name as string,
+        called_at: (r.called_at as string) ?? "",
         duration_ms: (r.duration_ms as number) ?? 0,
         success: (r.success as boolean) ?? true,
         input_summary: (r.input_summary as Record<string, unknown>) ?? {},

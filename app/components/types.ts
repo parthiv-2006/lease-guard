@@ -79,6 +79,8 @@ export interface TraceStep {
   id: string;
   sequence: number;
   tool_name: string;
+  /** ISO 8601 wall-clock start time of this tool call. May be absent on very old reports. */
+  called_at: string;
   duration_ms: number;
   success: boolean;
   input_summary: Record<string, unknown>;
