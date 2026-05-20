@@ -318,6 +318,31 @@ to be passed through `generate_report` into `full_report_json`.
 
 ---
 
+## Layer 8 — Developer & Transparency UX
+
+### 8.1 Live Execution Trace Timeline (Gantt chart) ✅ 2026-05-20
+
+Replace the text-based `AgentTracePanel` vertical list with an interactive Gantt chart
+that visualises parallel tool calls, RAG latency phases, and overall pipeline throughput.
+
+**What was built:**
+- `app/components/trace-timeline.utils.ts` — pure computation helpers: t0/tEnd geometry,
+  greedy swim-lane packing (interval scheduling), ruler tick generation, formatting helpers.
+  All exported for unit testing (34 tests in `__tests__/trace-timeline.test.ts`).
+- `app/components/trace-timeline.tsx` — full Gantt chart UI: CSS `%`-width bars positioned
+  by real wall-clock `called_at` timestamps, per-tool swim lanes, amber RAG call highlighting,
+  `RAG` badge on `lookup_statute` / `lookup_tribunal`, time ruler with nice intervals,
+  hover tooltip (offset, duration, output fields), click-to-expand Input/Output drawer.
+  Falls back gracefully when `called_at` is null (sequential reconstruction + banner).
+- `panels.tsx` — `AgentTracePanel` now has `⏱ Timeline / ≡ List` pill toggle.
+  Original vertical list preserved as `TraceList` sub-component.
+- `types.ts` — `TraceStep.called_at` added. `page.tsx` normaliser maps it.
+- No external charting library, no schema change, no new API calls.
+
+**Commits:** `95f696e` → `be08a41` (5 atomic commits, pushed to `origin/main`)
+
+---
+
 ## Summary Checklist
 
 | # | Action | Files | Status |
@@ -338,6 +363,7 @@ to be passed through `generate_report` into `full_report_json`.
 | 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | ✅ Reason dropdown added and wired to /api/feedback (commit 2056910) |
 | 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | 🔜 |
 | 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | ✅ `full_text` passed through `sourcesMap` and `normaliseApiResponse()` (commit 6321858) |
+| 8.1 | Live Execution Trace Timeline (Gantt chart) | `app/components/trace-timeline.{tsx,utils.ts}` | ✅ Swim-lane Gantt, RAG highlighting, ruler, 34 unit tests, 100/100 passing (commit be08a41) |
 
 ---
 
@@ -356,4 +382,5 @@ These are documented failures from smoke testing. Fix them before any other work
 *Current corpus version: 2026-05-20 (2372 chunks — RTA subsections + regs + standard form)*
 *validate_retrieval.py: 7/7 (100%) under hybrid search as of 9246847*
 *eval-accuracy.mjs: 15/15 (100%) — Precision 100%, Recall 100%, FP 0% as of 9246847*
+*Test suite: 100/100 passing (7 suites, includes 34 Gantt computation unit tests) as of be08a41*
 *Smoke tested on: faultyLease.pdf, compliantLease.pdf (2.2 Low, 0 false positives as of 4c9a812)*
