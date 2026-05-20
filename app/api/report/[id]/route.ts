@@ -35,7 +35,8 @@ export async function GET(
     supabase
       .from("leases")
       .select(
-        "id, uploaded_at, jurisdiction, jurisdiction_code, page_count, extraction_method, file_path"
+        "id, uploaded_at, jurisdiction, jurisdiction_code, page_count, extraction_method, file_path, " +
+        "property_address, property_unit, property_city, property_postal_code"
       )
       .eq("id", id)
       .single(),

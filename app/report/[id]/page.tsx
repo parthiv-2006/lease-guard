@@ -881,10 +881,24 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
   const filePath = (leaseRow.file_path as string) ?? "";
   const filename = filePath.split("/").pop() ?? "lease.pdf";
 
+  // Build display address: prefer extracted property_address; fall back to filename stub
+  const propertyAddress = (leaseRow.property_address as string) ?? "";
+  const propertyUnit    = (leaseRow.property_unit    as string) ?? "";
+  const propertyCity    = (leaseRow.property_city    as string) ?? "";
+
+  const displayAddress = propertyAddress
+    ? (propertyUnit ? `${propertyUnit} – ${propertyAddress}` : propertyAddress)
+    : "Rental Unit";
+
+  const displayCity = propertyCity
+    || (data.jurisdiction as string)
+    || (leaseRow.jurisdiction as string)
+    || "";
+
   const lease: Report["lease"] = {
     id,
-    address: "Lease",
-    city: (data.jurisdiction as string) ?? (leaseRow.jurisdiction as string) ?? "",
+    address: displayAddress,
+    city: displayCity,
     landlord: "",
     term: "",
     monthly_rent: "",
