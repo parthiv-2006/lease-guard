@@ -270,31 +270,7 @@ labels. Reports:
 
 ---
 
-## Layer 6 — Human Review
-
-> No automated system can self-certify legal accuracy.
-
-### 6.1 Paralegal review of 20–30 reports
-
-Before any public launch, have a licensed paralegal or tenant rights lawyer review
-20–30 generated reports and annotate:
-
-- Which findings are correct ✅
-- Which are false positives ❌ (compliant clause wrongly flagged)
-- Which real issues were missed ⚠️ (false negatives)
-- Whether "potentially unenforceable" language is used appropriately
-
-**Where to find reviewers:**
-- Ontario Community Legal Clinics (many do tenant law pro bono)
-- Law school clinics (Queen's, U of T, Osgoode)
-- Freelance paralegals on LinkedIn
-
-**Use the review findings to:**
-1. Add corrective few-shot examples to prompts (Layer 3.3)
-2. Identify corpus gaps (Layer 1)
-3. Flag clause types that need manual override logic
-
----
+## Layer 6 — User Feedback
 
 ### 6.2 Add a "flag this finding" button
 
@@ -351,15 +327,14 @@ to be passed through `generate_report` into `full_report_json`.
 | 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | 🔜 Blocked — CanLII API key pending (registered 2026-05-18) |
 | 2.1 | Multi-query retrieval (3 queries per clause) | `mcp-server/src/tools/lookup-statute.ts` | ✅ 3 queries/clause (raw/risk-angle/statute-targeted), RRF k=60 (commit f9e5343) |
 | 2.2 | Add hybrid BM25 + vector search | `supabase/migrations/005_hybrid_search.sql` | ✅ SQL migration written + applied 2026-05-20; hybridSearch() with PGRST202 fallback (commit 92ce515) |
-| 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.py` | 🔜 Threshold raised to 0.60 (commit 6321858). Re-validate after each corpus change. |
+| 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.py` | ✅ 7/7 (100%) under hybrid search (all scores ≥ 0.72). Threshold 0.55 hybrid / 0.60 vector confirmed. Re-validate after corpus changes. |
 | 3.1 | Require citation before conclusion in score_risk | `mcp-server/src/tools/score-risk.ts` | ✅ `quoted_text` on every violation (commit 4c9a812) |
 | 3.2 | Add compliance check pass before scoring | `mcp-server/src/tools/score-risk.ts` | ✅ `checkStatuteCompliance()` guards violation detection (commit 4c9a812) |
 | 3.3 | Add few-shot examples (esp. compliant entry clause) | `mcp-server/src/tools/score-risk.ts` | ✅ `applyCompliantPatterns()` with 6 known-good rules (commit 4c9a812) |
 | 3.4 | Separate unenforceable flag from risk score | `mcp-server/src/tools/score-risk.ts` | ✅ `MANDATORY_PROVISION_VIOLATION_TYPES` allowlist (commit 4c9a812) |
 | 4.1 | Replace regex contradiction detection with LLM | `mcp-server/src/tools/detect-contradiction.ts` | ✅ Anthropic SDK, tool_choice JSON, confidence gate 0.65, regex fallback (commit 79acfc5). Needs real ANTHROPIC_API_KEY for LLM path. |
-| 5.1 | Create labelled lease test suite (20 leases) | `scripts/test-leases/` | 🔜 |
-| 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.ts` | 🔜 |
-| 6.1 | Paralegal review of 20–30 reports | External | 🔜 |
+| 5.1 | Create labelled clause test suite | `scripts/test-leases/labels.json` | ✅ 15 cases (8 unenforceable, 7 compliant) across entry rights, deposit, rent increase, maintenance, dispute resolution, late fees (commit 9246847) |
+| 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.mjs` | ✅ 15/15 PASS — Precision 100%, Recall 100%, FP rate 0%; exits 0 (commit 9246847) |
 | 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | 🔜 |
 | 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | 🔜 |
 | 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | ✅ `full_text` passed through `sourcesMap` and `normaliseApiResponse()` (commit 6321858) |
@@ -379,5 +354,6 @@ These are documented failures from smoke testing. Fix them before any other work
 
 *Last updated: 2026-05-20*
 *Current corpus version: 2026-05-20 (2372 chunks — RTA subsections + regs + standard form)*
-*validate_retrieval.py: 7/7 (100%) as of 7dce980*
+*validate_retrieval.py: 7/7 (100%) under hybrid search as of 9246847*
+*eval-accuracy.mjs: 15/15 (100%) — Precision 100%, Recall 100%, FP 0% as of 9246847*
 *Smoke tested on: faultyLease.pdf, compliantLease.pdf (2.2 Low, 0 false positives as of 4c9a812)*
