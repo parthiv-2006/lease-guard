@@ -1,0 +1,427 @@
+{
+  "version": "1.0",
+  "description": "Labelled clause test suite for LeaseGuard accuracy evaluation. 15 Ontario residential lease clauses with known ground-truth outputs. Covers 8 unenforceable clauses and 7 compliant clauses across all major clause types.",
+  "jurisdiction": "CA-ON",
+  "ground_truth_basis": "Ontario Residential Tenancies Act, 2006 (RTA), as currently in force",
+  "test_cases": [
+    {
+      "id": "tc01",
+      "description": "Entry without notice — clearly unenforceable",
+      "clause_text": "The landlord may enter the unit at any time without notice for inspection purposes.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s26",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "26",
+          "section_title": "Entry without notice",
+          "text": "26(1) A landlord may enter a rental unit only in accordance with section 26 or 27. A landlord may enter a rental unit under clause (1)(b) without written notice if the notice has been waived in writing by the tenant, or under clause (1)(c) if before entering, the landlord informs or makes a reasonable effort to inform the tenant of the landlord's intention to enter not less than 24 hours before the time of entry. A landlord may enter a rental unit without notice in cases of emergency or if the tenant consents to the entry at the time of entry.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK31",
+          "relevance_score": 0.92,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s27",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "27",
+          "section_title": "Entry with notice",
+          "text": "27(1) A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry under the following circumstances. (3) A notice under subsection (1) or (2) shall specify the reason for entry and shall be given in a form approved by the Board.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK32",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc02",
+      "description": "Entry with vague 'reasonable notice' — not 24h written notice",
+      "clause_text": "The landlord may enter the rental unit after providing reasonable notice to the tenant.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 9
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s27-b",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "27",
+          "section_title": "Entry with notice",
+          "text": "27(1) A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry. The notice must be in writing and must specify the reason for entry and the time of entry. Oral notice or vague notice is not sufficient to satisfy the requirements of this section.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK32",
+          "relevance_score": 0.86,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s26-b",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "26",
+          "section_title": "Entry without notice",
+          "text": "26 A landlord may enter a rental unit without written notice only in cases of emergency. In all other cases, at least 24 hours written notice is required. A landlord who enters without proper written notice violates the tenant's right to privacy under section 25.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK31",
+          "relevance_score": 0.82,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc03",
+      "description": "Excessive security deposit — three months rent",
+      "clause_text": "The tenant shall pay a security deposit of $6,600, equal to three months' rent, prior to occupancy.",
+      "clause_type": "security_deposit",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 8,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s105",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "105",
+          "section_title": "Security deposits, definition",
+          "text": "105(1) A landlord shall not require or receive from a tenant any security deposit except a rent deposit that satisfies the conditions set out in section 106. (2) The maximum amount of a rent deposit that a landlord may require or receive is the lesser of the amount of one month's rent or the amount of rent for one rental period. Requiring a deposit greater than one month's rent is void and unenforceable.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK101",
+          "relevance_score": 0.94,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s106",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "106",
+          "section_title": "Rent deposit may be required",
+          "text": "106(1) A landlord may require a tenant to pay a rent deposit with respect to a tenancy if the landlord does so before entering into the tenancy agreement. (2) The amount of a rent deposit shall not be more than the lesser of the amount of one month's rent or the amount of rent for one rental period. A deposit exceeding this limit must be returned to the tenant.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK102",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc04",
+      "description": "Non-refundable damage deposit — prohibited under RTA",
+      "clause_text": "The tenant shall pay a non-refundable damage deposit of $500 upon signing this agreement.",
+      "clause_type": "security_deposit",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 8,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s105-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "105",
+          "section_title": "Security deposits, definition",
+          "text": "105(1) A landlord shall not require or receive from a tenant any security deposit except a rent deposit as described in section 106. Any amount collected as a damage deposit, pet deposit, key deposit (except as permitted under section 105(2)), or non-refundable deposit is prohibited. Such amounts are void and the landlord must return them to the tenant.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK101",
+          "relevance_score": 0.93,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc05",
+      "description": "Unlimited rent increase with only 30 days notice",
+      "clause_text": "The landlord may increase rent by any amount at any time with 30 days written notice to the tenant.",
+      "clause_type": "rent_increase",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s116",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "116",
+          "section_title": "Notice of rent increase required",
+          "text": "116(1) A landlord shall not increase the rent charged to a tenant for a rental unit without first giving the tenant at least 90 days written notice of the landlord's intention to do so. (2) A notice under subsection (1) is void if it was given while a previous notice under that subsection given to the same tenant was still in effect.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK115",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s120",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "120",
+          "section_title": "Guideline",
+          "text": "120(1) No landlord shall charge rent for a rental unit in an amount that is greater than the lawful rent permitted under this Part. The maximum rent increase is set by the annual Rent Increase Guideline published by the Ministry. A landlord may not increase rent by an amount that exceeds the Guideline without an order from the Landlord and Tenant Board.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK119",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc06",
+      "description": "All maintenance offloaded to tenant — contradicts s.20",
+      "clause_text": "The tenant is solely responsible for all repairs and maintenance of the rental unit, including structural repairs, appliances, plumbing, and electrical systems.",
+      "clause_type": "maintenance_repairs",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s20",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "20",
+          "section_title": "Landlord's responsibility to repair",
+          "text": "20(1) A landlord is responsible for providing and maintaining a residential complex, including the rental units in it, in a good state of repair and fit for habitation and for complying with health, safety, housing and maintenance standards. (2) Subsection (1) applies even if the tenant was aware of a state of non-repair or a contravention of a standard before entering into the tenancy agreement. A landlord cannot contract out of this obligation.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK25",
+          "relevance_score": 0.93,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s33",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "33",
+          "section_title": "Tenant's responsibility for cleanliness",
+          "text": "33 The tenant is responsible for ordinary cleanliness of the rental unit, except to the extent that the tenancy agreement requires the landlord to clean it. The tenant is responsible for repair of damage to the rental unit or the residential complex caused by the wilful or negligent conduct of the tenant, another occupant of the rental unit or a person permitted in the residential complex by the tenant.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK38",
+          "relevance_score": 0.81,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc07",
+      "description": "Full waiver of RTA rights — void under s.3",
+      "clause_text": "The tenant hereby waives all rights under the Residential Tenancies Act, including the right to file applications at the Landlord and Tenant Board.",
+      "clause_type": "dispute_resolution",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s3",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "3",
+          "section_title": "Act prevails",
+          "text": "3 Subject to subsection 194(2), a provision in a tenancy agreement, or in any agreement relating to a tenancy, that is inconsistent with this Act or the regulations is void. 2006, c. 17, s. 3. A tenant cannot waive rights granted by the Act. Any clause purporting to do so is unenforceable.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK7",
+          "relevance_score": 0.95,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s4",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "4",
+          "section_title": "Waiver of Act",
+          "text": "4 Subject to sections 194 and 195, a landlord or tenant may not waive a requirement of this Act or the regulations. Any purported waiver of rights under the Residential Tenancies Act, including the right to apply to the Landlord and Tenant Board, is void and of no effect. 2006, c. 17, s. 4.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK8",
+          "relevance_score": 0.92,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc08",
+      "description": "Daily late fee — prohibited additional charge",
+      "clause_text": "The tenant shall pay a late fee of $50 for each day rent remains unpaid after the first of the month.",
+      "clause_type": "rent_payment",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s134",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "134",
+          "section_title": "Additional charges prohibited",
+          "text": "134(1) Unless otherwise prescribed, no landlord shall, directly or indirectly, with respect to any rental unit charge or collect any amount of money, including a fee, fine, penalty, or service charge, other than the rent charged for the rental unit. A daily late fee is an additional charge and is therefore prohibited.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK134",
+          "relevance_score": 0.89,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc09",
+      "description": "Compliant entry clause with 24h written notice [FALSE POSITIVE GUARD]",
+      "clause_text": "The Landlord may enter the rental unit only in accordance with the Residential Tenancies Act, requiring 24-hour written notice except in cases of emergency or with the Tenant's written consent.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s27-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "27",
+          "section_title": "Entry with notice",
+          "text": "27(1) A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry. The notice must specify the reason and time of entry.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK32",
+          "relevance_score": 0.87,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s26-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "26",
+          "section_title": "Entry without notice",
+          "text": "26 A landlord may enter a rental unit without written notice in cases of emergency or if the tenant consents to the entry at the time of entry. The landlord shall give at least 24 hours written notice in all other circumstances.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK31",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc10",
+      "description": "Compliant last-month rent deposit [FALSE POSITIVE GUARD]",
+      "clause_text": "The Tenant shall provide a rent deposit equal to one month's rent ($2,200) to be held as a last month's rent deposit and applied to the last month of the tenancy, in accordance with the Residential Tenancies Act.",
+      "clause_type": "security_deposit",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s106-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "106",
+          "section_title": "Rent deposit may be required",
+          "text": "106(1) A landlord may require a tenant to pay a rent deposit with respect to a tenancy before entering into the tenancy agreement. (2) The amount of a rent deposit shall not be more than the lesser of the amount of one month's rent or the amount of rent for one rental period. The deposit is applied to the last rental period.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK102",
+          "relevance_score": 0.89,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc11",
+      "description": "Standard rent payment clause [FALSE POSITIVE GUARD]",
+      "clause_text": "The tenant shall pay rent of $2,200 on the first day of each month.",
+      "clause_type": "rent_payment",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s12",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "12",
+          "section_title": "Tenancy agreement",
+          "text": "12(1) Every written tenancy agreement entered into on or after June 17, 1998 shall set out the legal name and address of the landlord to whom rent is to be paid. A tenancy agreement shall specify the amount of rent and the day on which it is due. Standard rent payment clauses specifying an amount and due date are compliant.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK21",
+          "relevance_score": 0.81,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc12",
+      "description": "RTA-compliant rent increase with guideline and 90 days notice [FALSE POSITIVE GUARD]",
+      "clause_text": "The landlord may increase rent in accordance with the Ontario Rent Increase Guideline, with 90 days written notice to the tenant.",
+      "clause_type": "rent_increase",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s116-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "116",
+          "section_title": "Notice of rent increase required",
+          "text": "116(1) A landlord shall not increase the rent charged to a tenant without first giving the tenant at least 90 days written notice. A rent increase that complies with the Rent Increase Guideline and provides 90 days notice is lawful.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK115",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc13",
+      "description": "Cleanliness obligation only — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "The tenant shall keep the rental unit in a clean and sanitary condition, ordinary wear and tear excepted.",
+      "clause_type": "maintenance_repairs",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s33-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "33",
+          "section_title": "Tenant's responsibility for cleanliness",
+          "text": "33 The tenant is responsible for ordinary cleanliness of the rental unit, except to the extent that the tenancy agreement requires the landlord to clean it. Requiring a tenant to maintain cleanliness is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK38",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc14",
+      "description": "No smoking clause — standard boilerplate [FALSE POSITIVE GUARD]",
+      "clause_text": "No smoking or vaping is permitted in the rental unit or in any common areas of the residential complex.",
+      "clause_type": "standard_boilerplate",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": []
+    },
+    {
+      "id": "tc15",
+      "description": "Compliant entry with emergency exception [FALSE POSITIVE GUARD]",
+      "clause_text": "The landlord may enter the rental unit with 24 hours written notice, or without notice in the event of an emergency requiring immediate access.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s26-d",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "26",
+          "section_title": "Entry without notice",
+          "text": "26 A landlord may enter a rental unit without written notice in cases of emergency. In all other circumstances, the landlord shall give the tenant at least 24 hours written notice before entry. A clause permitting 24-hour written notice plus emergency exception is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK31",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    }
+  ]
+}
