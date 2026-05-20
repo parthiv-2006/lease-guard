@@ -181,7 +181,57 @@ function reciprocalRankFusion(resultLists: Statute[][], k = 60): Statute[] {
 }
 
 // ---------------------------------------------------------------------------
-// vectorSearch — single embedding → pgvector cosine search
+// hybridSearch — ROADMAP 2.2: pgvector cosine + PostgreSQL FTS merged via
+// in-database RRF.  Calls the search_statutes_hybrid RPC introduced in
+// migration 005.  If the migration has not been applied yet (PGRST202),
+// gracefully falls back to the pure-vector vectorSearch() below.
+// ---------------------------------------------------------------------------
+async function hybridSearch(
+  embedding: number[],
+  queryText: string,
+  jurisdictionCode: string,
+  threshold: number,
+  limit: number
+): Promise<Statute[]> {
+  const { data, error } = await supabase.rpc("search_statutes_hybrid", {
+    query_embedding: embedding,
+    query_text: queryText,
+    jurisdiction: jurisdictionCode,
+    match_threshold: threshold,
+    match_count: limit,
+  });
+
+  if (error) {
+    // PGRST202 = RPC function not found — migration 005 not yet applied
+    if (
+      error.code === "PGRST202" ||
+      (error.message ?? "").includes("search_statutes_hybrid")
+    ) {
+      console.warn(
+        "[lookup-statute] search_statutes_hybrid not found — falling back to pure vector search. " +
+          "Apply supabase/migrations/005_hybrid_search.sql to enable hybrid search."
+      );
+      return vectorSearch(embedding, jurisdictionCode, threshold, limit);
+    }
+    throw new Error(`Supabase hybrid search failed: ${error.message}`);
+  }
+
+  if (!Array.isArray(data)) return [];
+
+  return (data as StatuteRow[]).map((row) => ({
+    id: row.id,
+    act_name: row.act_name,
+    section_number: row.section_number,
+    section_title: row.section_title,
+    text: row.full_text,
+    url: row.url,
+    relevance_score: row.relevance_score,
+    last_verified: row.corpus_version,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// vectorSearch — single embedding → pgvector cosine search (fallback)
 // ---------------------------------------------------------------------------
 async function vectorSearch(
   embedding: number[],
@@ -311,11 +361,14 @@ export async function execute(input: unknown): Promise<unknown> {
       embed(q3, "RETRIEVAL_QUERY"),
     ]);
 
-    // Run 3 vector searches in parallel (threshold 0.60, top 5 each)
+    // Run 3 hybrid searches in parallel (ROADMAP 2.2: vector + FTS + in-DB RRF)
+    // Threshold 0.55 (slightly lower than pure-vector 0.60 — FTS compensates for
+    // near-misses and the DB-level RRF re-ranks by combined signal).
+    // Falls back to pure vector if migration 005 has not been applied.
     const [results1, results2, results3] = await Promise.all([
-      vectorSearch(emb1, jurisdiction_code, 0.60, 5),
-      vectorSearch(emb2, jurisdiction_code, 0.60, 5),
-      vectorSearch(emb3, jurisdiction_code, 0.60, 5),
+      hybridSearch(emb1, q1, jurisdiction_code, 0.55, 5),
+      hybridSearch(emb2, q2, jurisdiction_code, 0.55, 5),
+      hybridSearch(emb3, q3, jurisdiction_code, 0.55, 5),
     ]);
 
     // Merge via Reciprocal Rank Fusion and keep top 5
