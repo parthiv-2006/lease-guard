@@ -65,7 +65,7 @@ VALID_CLAUSE_TYPES: frozenset[str] = frozenset({
 })
 
 SECTION_CLAUSE_MAP: dict[str, str] = {
-    "12": "rent_payment",
+    "12": "standard_boilerplate",   # s.12 = tenancy agreement format requirements (not rent payment schedule)
     "20": "maintenance_repairs",
     "22": "quiet_enjoyment",
     "26": "entry_rights",   # s.26 was missing — caused subsection rows to be tagged "general"
