@@ -393,6 +393,14 @@ def main() -> None:
     # --- Assemble full text ---
     raw_text = "\n\n".join(p.strip() for p in cleaned_pages if p.strip())
 
+    # Normalise smart quotes / curly apostrophes that PyMuPDF maps to replacement chars
+    raw_text = (
+        raw_text
+        .replace("’", "'").replace("‘", "'")   # curly apostrophes
+        .replace("“", '"').replace("”", '"')   # curly double quotes
+        .replace("□", "'").replace("�", "'")   # replacement squares/chars
+    )
+
     if not raw_text.strip():
         _fatal("empty_document", "No text could be extracted from this PDF.")
 
