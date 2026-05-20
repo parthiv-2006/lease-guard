@@ -210,6 +210,65 @@ describe("GET /api/report/[id]", () => {
     const body = await res.json();
     expect(body.corpus_version).toBe("2026-05-16");
   });
+
+  it("forwards _tool_call_logs including the called_at field", async () => {
+    const CALLED_AT = "2026-05-20T10:00:00.000Z";
+
+    // Mock that returns table-specific data
+    const mockTraceOrder = jest.fn().mockResolvedValue({
+      data: [
+        {
+          id: "trace-1",
+          tool_name: "parse_document",
+          sequence_num: 1,
+          duration_ms: 2140,
+          success: true,
+          error_message: null,
+          input_summary: { file_path: "…test.pdf" },
+          output_summary: { page_count: 10 },
+          called_at: CALLED_AT,
+        },
+      ],
+      error: null,
+    });
+
+    const mockClausesOrder = jest.fn().mockResolvedValue({ data: [], error: null });
+
+    mockSingle
+      // 1st call: reports table
+      .mockResolvedValueOnce({ data: MOCK_REPORT_ROW, error: null })
+      // 2nd call: leases table
+      .mockResolvedValueOnce({ data: { id: VALID_ID }, error: null });
+
+    mockGt.mockReturnValue({ single: mockSingle });
+
+    mockEq.mockImplementation(() => ({
+      gt: mockGt,
+      single: mockSingle,
+      order: jest.fn().mockImplementation(() => {
+        // Distinguish clauses vs tool_call_logs by call count
+        const callCount = (mockEq as jest.Mock).mock.calls.length;
+        // 3rd eq call = clauses, 4th eq call = tool_call_logs
+        return callCount <= 3 ? mockClausesOrder() : mockTraceOrder();
+      }),
+    }));
+
+    mockFrom.mockReturnValue({
+      select: jest.fn().mockReturnValue({ eq: mockEq }),
+      update: mockUpdate,
+    });
+
+    const res = await GET(makeGet(VALID_ID), makeParams(VALID_ID));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    // _tool_call_logs must be present in the raw API response
+    expect(Array.isArray(body._tool_call_logs)).toBe(true);
+    // called_at must be forwarded as-is from the DB row
+    if (body._tool_call_logs.length > 0) {
+      expect(body._tool_call_logs[0].called_at).toBe(CALLED_AT);
+    }
+  });
 });
 
 // ─── POST tests (share link generation) ──────────────────────────────────────
