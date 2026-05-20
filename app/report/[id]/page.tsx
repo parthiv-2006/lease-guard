@@ -13,6 +13,7 @@ import {
   SourcesPanel,
   AgentTracePanel,
 } from "../../components/panels";
+import { NegotiationCopilot } from "../../components/negotiation-copilot";
 import type { Report, PanelId } from "../../components/types";
 
 // ── Nav config ────────────────────────────────────────────────────────────────
@@ -478,6 +479,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   const router = useRouter();
   const [activePanel, setActivePanel] = useState<PanelId>("overview");
   const [showShare, setShowShare] = useState(false);
+  const [showCopilot, setShowCopilot] = useState(false);
 
   const panels: Record<PanelId, React.ReactNode> = {
     overview: (
@@ -485,7 +487,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
     ),
     redflags: <RedFlagsPanel report={report} />,
     clauses: <ClauseExplorerPanel report={report} />,
-    negotiation: <NegotiationPanel report={report} />,
+    negotiation: <NegotiationPanel report={report} onLaunchCopilot={() => setShowCopilot(true)} />,
     missing: <MissingPanel report={report} />,
     contradictions: <ContradictionsPanel report={report} />,
     sources: <SourcesPanel report={report} />,
@@ -597,6 +599,14 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           report={report}
         />
       )}
+
+      <NegotiationCopilot
+        isOpen={showCopilot}
+        onClose={() => setShowCopilot(false)}
+        leaseId={reportId}
+        negotiationPoints={report.negotiation_points}
+        propertyAddress={report.lease.address || "the rental unit"}
+      />
     </div>
   );
 }

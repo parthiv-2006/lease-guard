@@ -23,11 +23,12 @@ import type { Report, Clause, NegotiationPoint, RiskLevel } from "./types";
 
 interface ClauseCardProps {
   clause: Clause;
+  leaseId: string;
   negotiation?: NegotiationPoint;
   defaultOpen?: boolean;
 }
 
-function ClauseCard({ clause, negotiation, defaultOpen }: ClauseCardProps) {
+function ClauseCard({ clause, leaseId, negotiation, defaultOpen }: ClauseCardProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const col = riskColor(clause.risk_level);
   const bg = riskBg(clause.risk_level);
@@ -332,7 +333,7 @@ function ClauseCard({ clause, negotiation, defaultOpen }: ClauseCardProps) {
             </div>
           )}
 
-          <FeedbackBar clauseId={clause.id} />
+          <FeedbackBar leaseId={leaseId} clauseId={clause.id} />
         </div>
       )}
     </div>
@@ -362,6 +363,7 @@ export function RedFlagsPanel({ report }: { report: Report }) {
             <ClauseCard
               key={clause.id}
               clause={clause}
+              leaseId={report.lease.id}
               negotiation={neg}
               defaultOpen={i === 0}
             />
@@ -480,7 +482,12 @@ export function ClauseExplorerPanel({ report }: { report: Report }) {
             (n) => n.clause_id === clause.id
           );
           return (
-            <ClauseCard key={clause.id} clause={clause} negotiation={neg} />
+            <ClauseCard
+              key={clause.id}
+              clause={clause}
+              leaseId={report.lease.id}
+              negotiation={neg}
+            />
           );
         })}
       </div>
@@ -758,14 +765,20 @@ function NegotiationCard({ n, report }: { n: NegotiationPoint; report: Report })
             </div>
           </div>
 
-          <FeedbackBar clauseId={n.id} />
+          <FeedbackBar leaseId={report.lease.id} clauseId={n.id} />
         </div>
       )}
     </div>
   );
 }
 
-export function NegotiationPanel({ report }: { report: Report }) {
+export function NegotiationPanel({
+  report,
+  onLaunchCopilot,
+}: {
+  report: Report;
+  onLaunchCopilot?: () => void;
+}) {
   const byPriority: Record<string, NegotiationPoint[]> = {
     high: [],
     medium: [],
@@ -781,6 +794,31 @@ export function NegotiationPanel({ report }: { report: Report }) {
         title="Negotiation Guide"
         count={report.negotiation_points.length}
         subtitle="Prioritised by impact. Walk-away clauses are flagged separately."
+        action={
+          <button
+            onClick={onLaunchCopilot}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 14px",
+              background: "#181614",
+              border: "1px solid #181614",
+              color: "#fff",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 500,
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#2a2825")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#181614")}
+          >
+            <Icon name="negotiate" size={13} color="#fff" />
+            Open Negotiation Copilot
+          </button>
+        }
       />
       {(["high", "medium", "low"] as const).map((priority) => {
         const items = byPriority[priority];
