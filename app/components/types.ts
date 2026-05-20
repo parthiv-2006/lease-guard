@@ -99,6 +99,7 @@ export interface LeaseInfo {
   extraction_method: string;
   jurisdiction: string;
   filename: string;
+  pdf_url?: string | null;
 }
 
 export interface OverallInfo {

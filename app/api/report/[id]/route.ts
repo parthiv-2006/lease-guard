@@ -75,6 +75,16 @@ export async function GET(
     );
   }
 
+  // Generate a 1-hour signed URL so the browser can render the real PDF
+  let pdfSignedUrl: string | null = null;
+  const leaseRow = leaseResult.data as Record<string, unknown> | null;
+  if (leaseRow && typeof leaseRow.file_path === "string") {
+    const { data: signedData } = await supabase.storage
+      .from("leases")
+      .createSignedUrl(leaseRow.file_path, 3600);
+    pdfSignedUrl = signedData?.signedUrl ?? null;
+  }
+
   // Inject disclaimer + DB-fetched clause and lease data so the UI can render
   // the full clause list (generate_report only stores red_flags, not all clauses)
   const report = {
@@ -87,6 +97,7 @@ export async function GET(
       ? `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/report/${id}?token=${data.share_token}`
       : null,
     expires_at: data.expires_at,
+    pdf_url: pdfSignedUrl,
     _lease: leaseResult.data ?? {},
     _clauses: clausesResult.data ?? [],
     _tool_call_logs: traceResult.data ?? [],
