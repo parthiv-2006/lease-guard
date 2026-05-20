@@ -447,11 +447,20 @@ function detectStatutoryViolations(
     // ── Entry without notice — RTA s.26/27 ───────────────────────────────────
     // Do NOT flag if the clause qualifies "without notice" with emergency/consent
     // exception language — that is RTA s.26(2)/s.26(3) compliant behaviour.
+    // Also catches vague "reasonable notice" that does not specify 24h + written.
     if (
       (lowerClause.includes("enter") || lowerClause.includes("access")) &&
       (lowerClause.includes("without notice") ||
         lowerClause.includes("any time") ||
-        lowerClause.includes("at any time")) &&
+        lowerClause.includes("at any time") ||
+        // Vague notice: mentions "notice" but not "24 hour"/"24-hour"/"24 hours" + "written"
+        (lowerClause.includes("notice") &&
+          !lowerClause.includes("24 hour") &&
+          !lowerClause.includes("24-hour") &&
+          !lowerClause.includes("24 hours") &&
+          !lowerClause.includes("written notice") &&
+          (statute.section_number === "26" || statute.section_number.startsWith("26") ||
+           statute.section_number === "27" || statute.section_number.startsWith("27")))) &&
       !lowerClause.includes("emergency") &&
       !lowerClause.includes("urgent") &&
       !lowerClause.includes("in accordance") &&
@@ -485,12 +494,19 @@ function detectStatutoryViolations(
     }
 
     // ── Rent increase without guideline — RTA s.120 ───────────────────────────
+    // Catches both "rent increase" and "increase rent" word orders.
+    // Also catches insufficient notice period (< 90 days) even if guideline mentioned.
     if (
-      lowerClause.includes("rent increase") &&
+      (lowerClause.includes("rent increase") ||
+        lowerClause.includes("increase rent") ||
+        /increas.*rent/.test(lowerClause)) &&
       (lowerClause.includes("any amount") ||
         /landlord.*may.*increas/.test(lowerClause) ||
-        lowerClause.includes("sole discretion")) &&
-      statuteText.includes("guideline")
+        lowerClause.includes("sole discretion") ||
+        /\b(?:30|60)\s*day/.test(lowerClause)) &&
+      !lowerClause.includes("guideline") &&
+      !lowerClause.includes("in accordance") &&
+      (statuteText.includes("guideline") || statuteText.includes("90"))
     ) {
       violations.push({
         statute_section: sectionRef,
@@ -593,14 +609,20 @@ function detectStatutoryViolations(
       continue;
     }
 
-    // ── Daily late fee penalty — RTA s.59 ────────────────────────────────────
+    // ── Daily late fee penalty — RTA s.59 / s.134 ───────────────────────────
+    // s.134: additional charges prohibited. s.59: only N4 process available.
+    // Catches: "per day", "for each day", "per diem", and "late fee/penalty + $amount".
     if (
       (/\$\s*\d+(?:\.\d+)?\s*per\s*day/.test(lowerClause) ||
         /\d+\s*dollar[s]?\s*per\s*day/.test(lowerClause) ||
+        /\$\s*\d+.*(?:per\s*day|for\s*each\s*day|per\s*diem)/.test(lowerClause) ||
+        /(?:per\s*day|for\s*each\s*day).*\$\s*\d+/.test(lowerClause) ||
         (lowerClause.includes("late") &&
-          lowerClause.includes("penalty") &&
-          /\$\d+/.test(lowerClause))) &&
-      statute.section_number === "59"
+          (lowerClause.includes("penalty") || lowerClause.includes("fee")) &&
+          /\$\d+/.test(lowerClause) &&
+          (lowerClause.includes("per day") || lowerClause.includes("for each day") ||
+           lowerClause.includes("each day") || lowerClause.includes("daily")))) &&
+      (statute.section_number === "59" || statute.section_number === "134")
     ) {
       violations.push({
         statute_section: sectionRef,
@@ -629,11 +651,14 @@ function detectStatutoryViolations(
     }
 
     // ── Excess security deposit — RTA s.105/106 ──────────────────────────────
+    // Catches: non-refundable deposits, large dollar amounts (handles comma-formatted
+    // numbers like $6,600), and multi-month text like "three months' rent".
     if (
       (lowerClause.includes("deposit") || lowerClause.includes("security")) &&
       (lowerClause.includes("non-refundable") ||
         lowerClause.includes("nonrefundable") ||
-        /\$\s*[2-9]\d{3,}/.test(lowerClause)) &&
+        /\$\s*[2-9][\d,]{2,}/.test(lowerClause) ||               // $2,000+ (comma-safe)
+        /(?:two|three|four|five|[2-5])\s+month/.test(lowerClause)) &&  // "three months' rent"
       (statute.section_number === "105" || statute.section_number.startsWith("106"))
     ) {
       violations.push({
