@@ -674,6 +674,60 @@ function detectStatutoryViolations(
   return violations;
 }
 
+// ── Text-pattern score bonus ──────────────────────────────────────────────────
+// Catches obvious RTA violations that the statute-gated checks miss when the
+// wrong clause type is assigned (e.g. deposit language inside rent_payment).
+// Does NOT affect is_potentially_unenforceable — that still needs statute backing.
+function detectTextPatternScore(clauseText: string): number {
+  const t = clauseText.toLowerCase();
+  let bonus = 0;
+
+  // Non-refundable deposit or fee — RTA s.105/s.134
+  if ((t.includes("non-refundable") || t.includes("nonrefundable")) &&
+      (t.includes("deposit") || t.includes("fee") || t.includes("cleaning"))) {
+    bonus += 4;
+  }
+
+  // Daily late-payment penalty — RTA s.134 (additional charges prohibited)
+  if (/\$\s*\d+.*per\s*day/.test(t) || /per\s*day.*\$\s*\d+/.test(t) ||
+      (t.includes("per day") && (t.includes("penalty") || t.includes("fee") || t.includes("late")))) {
+    bonus += 4;
+  }
+
+  // Tenant assumes ALL repair / maintenance responsibility — RTA s.20
+  if ((t.includes("100%") || t.includes("all repairs") || t.includes("all maintenance") ||
+       t.includes("all costs") || t.includes("sole responsibility")) &&
+      (t.includes("repair") || t.includes("maintenance") || t.includes("appliance"))) {
+    bonus += 3;
+  }
+
+  // Surveillance cameras inside unit — RTA s.28 privacy
+  if ((t.includes("camera") || t.includes("surveillance") || t.includes("cctv") ||
+       t.includes("monitoring")) &&
+      (t.includes("unit") || t.includes("premises") || t.includes("living") || t.includes("inside"))) {
+    bonus += 3;
+  }
+
+  // Self-help eviction language — vacate within hours/days without LTB
+  if ((t.includes("vacate") || t.includes("leave the premises") || t.includes("immediate eviction")) &&
+      /within\s+\d+\s*(hour|day)/.test(t)) {
+    bonus += 3;
+  }
+
+  // Surcharge / fee per guest — RTA s.134
+  if (/\$\s*\d+.*per\s*(guest|person|visitor)/.test(t) ||
+      /per\s*(guest|person|visitor).*\$\s*\d+/.test(t)) {
+    bonus += 2;
+  }
+
+  // Mandatory cleaning fee regardless of condition — RTA s.134
+  if (t.includes("cleaning fee") && t.includes("regardless")) {
+    bonus += 3;
+  }
+
+  return bonus;
+}
+
 // ── Base scoring ──────────────────────────────────────────────────────────────
 function scoreClause(
   clauseText: string,
@@ -802,8 +856,9 @@ export async function execute(input: unknown): Promise<unknown> {
 
   // Add violation bonus on top of pattern-adjusted score
   const violationBonus = Math.min(4, violations.length * 3);
+  const textPatternBonus = detectTextPatternScore(clause_text);
   let finalScore = Math.round(
-    Math.min(10, Math.max(1, patternAdjustedScore + violationBonus))
+    Math.min(10, Math.max(1, patternAdjustedScore + violationBonus + textPatternBonus))
   );
 
   // ── Risk level ─────────────────────────────────────────────────────────────

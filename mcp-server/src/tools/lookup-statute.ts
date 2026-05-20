@@ -63,7 +63,7 @@ interface LookupResult {
 // ---------------------------------------------------------------------------
 const CLAUSE_TYPE_QUERY_PHRASES: Record<string, string> = {
   rent_payment:
-    "rent payment obligation due date monthly Ontario Residential Tenancies Act section 12",
+    "rent payment obligation due date monthly non-refundable deposit fee prohibited additional charge late penalty Ontario RTA section 12 105 106 134",
   rent_increase:
     "rent increase notice guideline percentage cap Ontario RTA section 116 120 128",
   security_deposit:
@@ -93,7 +93,7 @@ const CLAUSE_TYPE_QUERY_PHRASES: Record<string, string> = {
   parking_storage:
     "parking storage locker additional services fee Ontario RTA",
   guest_policy:
-    "guest occupant visitor overnight policy Ontario RTA",
+    "guest occupant visitor overnight policy additional charge surcharge fee prohibited Ontario RTA section 134",
   standard_boilerplate:
     "standard lease terms Ontario RTA Residential Tenancies Act form",
   unknown:
