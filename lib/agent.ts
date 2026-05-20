@@ -300,6 +300,93 @@ class ToolCallLogger {
   }
 }
 
+// ─── Address extraction ───────────────────────────────────────────────────────
+
+/**
+ * Extract rental unit address fields from raw lease text.
+ * Handles Ontario Standard Form layout and common free-form patterns.
+ * Returns empty strings for any field that cannot be reliably extracted.
+ * Never throws — address extraction failure is non-fatal.
+ */
+function extractLeaseAddress(rawText: string): {
+  address: string;
+  unit: string;
+  city: string;
+  postal_code: string;
+} {
+  const empty = { address: "", unit: "", city: "", postal_code: "" };
+  if (!rawText || rawText.length < 20) return empty;
+
+  // Normalise whitespace
+  const text = rawText.replace(/[ \t]+/g, " ").replace(/\r\n/g, "\n");
+
+  let raw = "";
+
+  // Pattern 1 — Ontario Standard Form: "full address of [the] rental unit:"
+  const stdForm = text.match(
+    /full address of (?:the )?rental unit[^\n:]*:?[ \t]*\n?[ \t]*([^\n]{10,120})/i
+  );
+  if (stdForm) raw = stdForm[1].trim();
+
+  // Pattern 2 — labelled field: "Rental Unit:", "Premises:", "Property Address:"
+  if (!raw) {
+    const label = text.match(
+      /(?:^|\n)[ \t]*(?:rental unit|premises|rental premises|property address|unit address)[ \t]*:[ \t]*([^\n]{10,120})/im
+    );
+    if (label) raw = label[1].trim();
+  }
+
+  // Pattern 3 — "located at", "situate at", "known as"
+  if (!raw) {
+    const locAt = text.match(
+      /(?:located at|situate(?:d)? at|known as|being and described as)\s+([^\n]{10,120})/i
+    );
+    if (locAt) raw = locAt[1].trim();
+  }
+
+  // Pattern 4 — street-number + street-suffix pattern in first 3 000 chars
+  if (!raw) {
+    const topHalf = text.slice(0, Math.min(text.length, 3000));
+    const street = topHalf.match(
+      /(?:^|\n)\s*(\d{1,5}[- ]?[A-Za-z0-9]?[,\s]+[A-Za-z][A-Za-z\s.'‑-]{3,50}(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Boulevard|Blvd|Way|Crescent|Cres|Court|Ct|Lane|Ln|Place|Pl)[^\n]{0,60})/i
+    );
+    if (street) raw = street[1].trim();
+  }
+
+  if (!raw) return empty;
+
+  // ── Extract sub-fields from the raw address string ──────────────────────────
+
+  // Postal code: Canadian format A1A 1A1
+  const postalMatch = raw.match(/([A-Z]\d[A-Z][ -]?\d[A-Z]\d)/i);
+  const postal_code = postalMatch
+    ? postalMatch[1].toUpperCase().replace(/^(.{3})[ -]?(.{3})$/, "$1 $2")
+    : "";
+
+  // Unit number
+  const unitMatch = raw.match(/\b(?:unit|apt\.?|apartment|suite|#)\s*([0-9A-Za-z-]+)/i);
+  const unit = unitMatch
+    ? `${unitMatch[0].split(/\s+/)[0]} ${unitMatch[1]}`.trim()
+    : "";
+
+  // City — the token(s) immediately before ", ON" or ", Ontario"
+  const cityMatch = raw.match(/,\s*([A-Za-z][A-Za-z\s]{1,30}?)(?:,\s*|\s+)(?:ON|Ontario)\b/i);
+  const city = cityMatch ? cityMatch[1].trim() : "";
+
+  // Full address — clean up province/postal noise, cap at 120 chars
+  const address = raw
+    .replace(/,\s*Ontario\b/gi, "")
+    .replace(/,?\s*\bON\b/g, "")
+    .replace(/[A-Z]\d[A-Z][ -]?\d[A-Z]\d/gi, "")
+    .replace(/,\s*,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .replace(/,\s*$/, "")
+    .trim()
+    .slice(0, 120);
+
+  return { address, unit, city, postal_code };
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 /**
@@ -377,6 +464,9 @@ export async function runLeaseAnalysis(
 
     const { jurisdiction, jurisdiction_code: jurisdictionCode } = jurisdictionResult;
 
+    // ── 4b. Extract property address (best-effort, never throws) ──────────
+    const addressInfo = extractLeaseAddress(rawText);
+
     // ── 5. Update DB: mark processing, store metadata ──────────────────────
     await supabase
       .from("leases")
@@ -388,6 +478,10 @@ export async function runLeaseAnalysis(
         jurisdiction,
         jurisdiction_code: jurisdictionCode,
         jurisdiction_confidence: confidenceToEnum(jurisdictionResult.confidence),
+        ...(addressInfo.address      && { property_address:     addressInfo.address }),
+        ...(addressInfo.unit         && { property_unit:        addressInfo.unit }),
+        ...(addressInfo.city         && { property_city:        addressInfo.city }),
+        ...(addressInfo.postal_code  && { property_postal_code: addressInfo.postal_code }),
       })
       .eq("id", leaseId);
 
