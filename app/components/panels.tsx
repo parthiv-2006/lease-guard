@@ -5,6 +5,7 @@
 // MissingPanel, ContradictionsPanel, SourcesPanel, AgentTracePanel
 
 import { useState, useMemo } from "react";
+import { TraceTimeline } from "./trace-timeline";
 import {
   RiskBadge,
   ClauseTypeTag,
@@ -1378,13 +1379,12 @@ export function SourcesPanel({ report }: { report: Report }) {
 
 // ── Agent Trace Panel ─────────────────────────────────────────────────────────
 
-export function AgentTracePanel({ report }: { report: Report }) {
+/** Vertical list view — the original text-based trace, preserved as a fallback. */
+function TraceList({ steps }: { steps: Report["agent_trace"] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const totalMs = report.agent_trace.reduce(
-    (sum, t) => sum + (t.duration_ms || 0),
-    0
-  );
+  const totalMs = steps.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
+  const allSucceeded = steps.every((t) => t.success);
 
   const toolColors: Record<string, string> = {
     parse_document: "#1d4ed8",
@@ -1400,15 +1400,232 @@ export function AgentTracePanel({ report }: { report: Report }) {
     generate_report: "#374151",
   };
 
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+      {steps.map((step, i) => {
+        const col = toolColors[step.tool_name] ?? "#6b7280";
+        const isOpen = expanded === step.id;
+
+        return (
+          <div key={step.id} style={{ display: "flex", gap: "0" }}>
+            {/* Left rail */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: "36px",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: "1px",
+                  flex: "0 0 8px",
+                  background: i === 0 ? "transparent" : "#e8e4dc",
+                }}
+              />
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: step.success ? col : "#b91c1c",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    color: "#fff",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  {step.sequence}
+                </span>
+              </div>
+              <div
+                style={{
+                  width: "1px",
+                  flex: 1,
+                  minHeight: "8px",
+                  background:
+                    i === steps.length - 1 ? "transparent" : "#e8e4dc",
+                }}
+              />
+            </div>
+
+            {/* Card */}
+            <div
+              style={{ flex: 1, paddingLeft: "12px", paddingBottom: "8px" }}
+            >
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e8e4dc",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  marginBottom: "2px",
+                }}
+              >
+                <button
+                  onClick={() => setExpanded(isOpen ? null : step.id)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "11px 14px",
+                    background: isOpen ? "#faf9f6" : "#fff",
+                    border: "none",
+                    borderBottom: isOpen ? "1px solid #e8e4dc" : "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <code
+                    style={{
+                      fontSize: "12px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: col,
+                      fontWeight: 500,
+                      flex: 1,
+                      textAlign: "left",
+                    }}
+                  >
+                    {step.tool_name}
+                  </code>
+                  <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                    {step.duration_ms >= 1000
+                      ? `${(step.duration_ms / 1000).toFixed(2)}s`
+                      : `${step.duration_ms}ms`}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      padding: "1px 7px",
+                      borderRadius: "3px",
+                      background: step.success ? "#f0fdf4" : "#fef2f2",
+                      border: `1px solid ${step.success ? "#bbf7d0" : "#fecaca"}`,
+                      color: step.success ? "#15803d" : "#b91c1c",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {step.success ? "OK" : "ERR"}
+                  </span>
+                  <span
+                    style={{
+                      transform: isOpen ? "rotate(180deg)" : "none",
+                      transition: "transform 0.2s",
+                    }}
+                  >
+                    <Icon name="chevronDown" size={13} color="#9a9590" />
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div
+                    style={{
+                      padding: "14px",
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "12px",
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          letterSpacing: "0.07em",
+                          textTransform: "uppercase",
+                          color: "#9a9590",
+                          fontWeight: 500,
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Input
+                      </div>
+                      <pre
+                        style={{
+                          margin: 0,
+                          fontSize: "11px",
+                          fontFamily: "'JetBrains Mono', monospace",
+                          color: "#5c5751",
+                          background: "#f6f3ee",
+                          padding: "10px",
+                          borderRadius: "5px",
+                          overflow: "auto",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {JSON.stringify(step.input_summary, null, 2)}
+                      </pre>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          letterSpacing: "0.07em",
+                          textTransform: "uppercase",
+                          color: "#9a9590",
+                          fontWeight: 500,
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Output
+                      </div>
+                      <pre
+                        style={{
+                          margin: 0,
+                          fontSize: "11px",
+                          fontFamily: "'JetBrains Mono', monospace",
+                          color: "#181614",
+                          background: "#f6f3ee",
+                          padding: "10px",
+                          borderRadius: "5px",
+                          overflow: "auto",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {JSON.stringify(step.output_summary, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function AgentTracePanel({ report }: { report: Report }) {
+  const [view, setView] = useState<"gantt" | "list">("gantt");
+
+  const totalMs = report.agent_trace.reduce(
+    (sum, t) => sum + (t.duration_ms || 0),
+    0
+  );
   const allSucceeded = report.agent_trace.every((t) => t.success);
 
   return (
     <div>
       <SectionHeader
         title="Agent Reasoning Trace"
-        subtitle={`${report.agent_trace.length} tool calls · ${(totalMs / 1000).toFixed(1)}s total · ${allSucceeded ? "All calls succeeded" : "Some calls failed"}`}
+        subtitle={`${report.agent_trace.length} tool calls · ${(totalMs / 1000).toFixed(1)}s total · ${
+          allSucceeded ? "All calls succeeded" : "Some calls failed"
+        }`}
       />
 
+      {/* Grounding explanation */}
       <div
         style={{
           marginBottom: "20px",
@@ -1421,217 +1638,53 @@ export function AgentTracePanel({ report }: { report: Report }) {
           lineHeight: 1.55,
         }}
       >
-        This trace shows exactly how LeaseGuard analysed your lease — every
-        tool called, in order, with its inputs and outputs. This is the
-        evidence that the analysis is grounded in retrieved law, not LLM
-        opinion.
+        This trace shows exactly how LeaseGuard analysed your lease — every tool
+        called, in order, with its inputs and outputs. This is the evidence that the
+        analysis is grounded in retrieved law, not LLM opinion.
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-        {report.agent_trace.map((step, i) => {
-          const col = toolColors[step.tool_name] ?? "#6b7280";
-          const isOpen = expanded === step.id;
-
-          return (
-            <div key={step.id} style={{ display: "flex", gap: "0" }}>
-              {/* Left rail */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  width: "36px",
-                  flexShrink: 0,
-                }}
-              >
-                <div
-                  style={{
-                    width: "1px",
-                    flex: "0 0 8px",
-                    background: i === 0 ? "transparent" : "#e8e4dc",
-                  }}
-                />
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: step.success ? col : "#b91c1c",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#fff",
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}
-                  >
-                    {step.sequence}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    width: "1px",
-                    flex: 1,
-                    minHeight: "8px",
-                    background:
-                      i === report.agent_trace.length - 1
-                        ? "transparent"
-                        : "#e8e4dc",
-                  }}
-                />
-              </div>
-
-              {/* Card */}
-              <div
-                style={{ flex: 1, paddingLeft: "12px", paddingBottom: "8px" }}
-              >
-                <div
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #e8e4dc",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    marginBottom: "2px",
-                  }}
-                >
-                  <button
-                    onClick={() => setExpanded(isOpen ? null : step.id)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "11px 14px",
-                      background: isOpen ? "#faf9f6" : "#fff",
-                      border: "none",
-                      borderBottom: isOpen ? "1px solid #e8e4dc" : "none",
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
-                  >
-                    <code
-                      style={{
-                        fontSize: "12px",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        color: col,
-                        fontWeight: 500,
-                        flex: 1,
-                        textAlign: "left",
-                      }}
-                    >
-                      {step.tool_name}
-                    </code>
-                    <span style={{ fontSize: "11px", color: "#9a9590" }}>
-                      {step.duration_ms >= 1000
-                        ? `${(step.duration_ms / 1000).toFixed(2)}s`
-                        : `${step.duration_ms}ms`}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        padding: "1px 7px",
-                        borderRadius: "3px",
-                        background: step.success ? "#f0fdf4" : "#fef2f2",
-                        border: `1px solid ${step.success ? "#bbf7d0" : "#fecaca"}`,
-                        color: step.success ? "#15803d" : "#b91c1c",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {step.success ? "OK" : "ERR"}
-                    </span>
-                    <span
-                      style={{
-                        transform: isOpen ? "rotate(180deg)" : "none",
-                        transition: "transform 0.2s",
-                      }}
-                    >
-                      <Icon name="chevronDown" size={13} color="#9a9590" />
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div
-                      style={{
-                        padding: "14px",
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            fontSize: "10px",
-                            letterSpacing: "0.07em",
-                            textTransform: "uppercase",
-                            color: "#9a9590",
-                            fontWeight: 500,
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Input
-                        </div>
-                        <pre
-                          style={{
-                            margin: 0,
-                            fontSize: "11px",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            color: "#5c5751",
-                            background: "#f6f3ee",
-                            padding: "10px",
-                            borderRadius: "5px",
-                            overflow: "auto",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {JSON.stringify(step.input_summary, null, 2)}
-                        </pre>
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: "10px",
-                            letterSpacing: "0.07em",
-                            textTransform: "uppercase",
-                            color: "#9a9590",
-                            fontWeight: 500,
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Output
-                        </div>
-                        <pre
-                          style={{
-                            margin: 0,
-                            fontSize: "11px",
-                            fontFamily: "'JetBrains Mono', monospace",
-                            color: "#181614",
-                            background: "#f6f3ee",
-                            padding: "10px",
-                            borderRadius: "5px",
-                            overflow: "auto",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {JSON.stringify(step.output_summary, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* View toggle */}
+      <div
+        style={{
+          display: "flex",
+          gap: "6px",
+          marginBottom: "20px",
+          background: "#f6f3ee",
+          border: "1px solid #e8e4dc",
+          borderRadius: "8px",
+          padding: "4px",
+          width: "fit-content",
+        }}
+      >
+        {(["gantt", "list"] as const).map((v) => (
+          <button
+            key={v}
+            id={`trace-view-${v}`}
+            onClick={() => setView(v)}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "6px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "12px",
+              fontFamily: "'DM Sans', sans-serif",
+              fontWeight: 500,
+              background: view === v ? "#fff" : "transparent",
+              color: view === v ? "#181614" : "#9a9590",
+              boxShadow: view === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s",
+            }}
+          >
+            {v === "gantt" ? "⏱ Timeline" : "≡ List"}
+          </button>
+        ))}
       </div>
+
+      {view === "gantt" ? (
+        <TraceTimeline steps={report.agent_trace} />
+      ) : (
+        <TraceList steps={report.agent_trace} />
+      )}
     </div>
   );
 }
