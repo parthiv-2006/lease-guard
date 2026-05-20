@@ -346,23 +346,23 @@ to be passed through `generate_report` into `full_report_json`.
 
 | # | Action | Files | Status |
 |---|--------|-------|--------|
-| 1.1 | Seed full RTA with all subsections | `scripts/build_corpus.py` | 🔜 |
-| 1.2 | Seed Ontario Regulations (516/06, 517/06, Form T) | `scripts/build_corpus.py` | 🔜 |
-| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | 🔜 |
-| 2.1 | Multi-query retrieval (3 queries per clause) | `mcp-server/src/tools/lookup-statute.ts` | 🔜 |
-| 2.2 | Add hybrid BM25 + vector search | `supabase/migrations/005_fts_index.sql` | 🔜 |
-| 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.ts` | 🔜 |
+| 1.1 | Seed full RTA with all subsections | `scripts/build_corpus.py` | ✅ 2372 chunks — granular subsections + s.12 all 5 sub-clauses (commits 691c3b9, 7dce980) |
+| 1.2 | Seed Ontario Regulations (516/06, 517/06, Form T) | `scripts/build_regulations.py` | ✅ O.Reg.516/06 + O.Reg.517/06 + Standard Form seeded (commit 2a0357a) |
+| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | 🔜 Blocked — CanLII API key pending (registered 2026-05-18) |
+| 2.1 | Multi-query retrieval (3 queries per clause) | `mcp-server/src/tools/lookup-statute.ts` | ✅ 3 queries/clause (raw/risk-angle/statute-targeted), RRF k=60 (commit f9e5343) |
+| 2.2 | Add hybrid BM25 + vector search | `supabase/migrations/005_hybrid_search.sql` | ✅ SQL migration written + applied 2026-05-20; hybridSearch() with PGRST202 fallback (commit 92ce515) |
+| 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.py` | 🔜 Threshold raised to 0.60 (commit 6321858). Re-validate after each corpus change. |
 | 3.1 | Require citation before conclusion in score_risk | `mcp-server/src/tools/score-risk.ts` | ✅ `quoted_text` on every violation (commit 4c9a812) |
 | 3.2 | Add compliance check pass before scoring | `mcp-server/src/tools/score-risk.ts` | ✅ `checkStatuteCompliance()` guards violation detection (commit 4c9a812) |
 | 3.3 | Add few-shot examples (esp. compliant entry clause) | `mcp-server/src/tools/score-risk.ts` | ✅ `applyCompliantPatterns()` with 6 known-good rules (commit 4c9a812) |
 | 3.4 | Separate unenforceable flag from risk score | `mcp-server/src/tools/score-risk.ts` | ✅ `MANDATORY_PROVISION_VIOLATION_TYPES` allowlist (commit 4c9a812) |
-| 4.1 | Replace regex contradiction detection with LLM | `mcp-server/src/tools/detect-contradiction.ts` | 🔜 |
+| 4.1 | Replace regex contradiction detection with LLM | `mcp-server/src/tools/detect-contradiction.ts` | ✅ Anthropic SDK, tool_choice JSON, confidence gate 0.65, regex fallback (commit 79acfc5). Needs real ANTHROPIC_API_KEY for LLM path. |
 | 5.1 | Create labelled lease test suite (20 leases) | `scripts/test-leases/` | 🔜 |
 | 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.ts` | 🔜 |
 | 6.1 | Paralegal review of 20–30 reports | External | 🔜 |
 | 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | 🔜 |
 | 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | 🔜 |
-| 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | 🔜 |
+| 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | ✅ `full_text` passed through `sourcesMap` and `normaliseApiResponse()` (commit 6321858) |
 
 ---
 
@@ -377,6 +377,7 @@ These are documented failures from smoke testing. Fix them before any other work
 
 ---
 
-*Last updated: 2026-05-19*
-*Current corpus version: 2026-05-19*
+*Last updated: 2026-05-20*
+*Current corpus version: 2026-05-20 (2372 chunks — RTA subsections + regs + standard form)*
+*validate_retrieval.py: 7/7 (100%) as of 7dce980*
 *Smoke tested on: faultyLease.pdf, compliantLease.pdf (2.2 Low, 0 false positives as of 4c9a812)*
