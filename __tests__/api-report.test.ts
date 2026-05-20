@@ -93,7 +93,14 @@ function mockFoundReport(overrides: Partial<typeof MOCK_REPORT_ROW> = {}) {
   const row = { ...MOCK_REPORT_ROW, ...overrides };
   mockSingle.mockResolvedValue({ data: row, error: null });
   mockGt.mockReturnValue({ single: mockSingle });
-  mockEq.mockReturnValue({ gt: mockGt });
+  
+  const mockOrder = jest.fn().mockResolvedValue({ data: [], error: null });
+  mockEq.mockReturnValue({
+    gt: mockGt,
+    single: mockSingle,
+    order: mockOrder,
+  });
+
   mockFrom.mockReturnValue({
     select: jest.fn().mockReturnValue({ eq: mockEq }),
     update: mockUpdate,
@@ -103,7 +110,14 @@ function mockFoundReport(overrides: Partial<typeof MOCK_REPORT_ROW> = {}) {
 function mockNotFound() {
   mockSingle.mockResolvedValue({ data: null, error: { message: "Not found" } });
   mockGt.mockReturnValue({ single: mockSingle });
-  mockEq.mockReturnValue({ gt: mockGt });
+  
+  const mockOrder = jest.fn().mockResolvedValue({ data: [], error: null });
+  mockEq.mockReturnValue({
+    gt: mockGt,
+    single: mockSingle,
+    order: mockOrder,
+  });
+
   mockFrom.mockReturnValue({
     select: jest.fn().mockReturnValue({ eq: mockEq }),
   });
