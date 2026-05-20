@@ -155,6 +155,7 @@ const HIGH_WEIGHT_TYPES: ClauseType[] = [
   "early_termination",
   "dispute_resolution",
   "liability_indemnification",
+  "security_deposit",
 ];
 
 const DISCLAIMER =
@@ -175,7 +176,16 @@ function weightedRiskScore(
     totalWeight += weight;
   }
 
-  return Math.round((weightedSum / totalWeight) * 10) / 10;
+  const base = Math.round((weightedSum / totalWeight) * 10) / 10;
+
+  // When any single clause is critical (≥ 8), blend in the worst clause so
+  // the headline score reflects the severity rather than being diluted by
+  // standard low-risk clauses.
+  const maxScore = Math.max(...clauses.map((c) => c.risk_score_result.risk_score));
+  if (maxScore >= 8) {
+    return Math.round((base * 0.6 + maxScore * 0.4) * 10) / 10;
+  }
+  return base;
 }
 
 function overallRiskLevel(score: number): "low" | "medium" | "high" | "critical" {
@@ -283,9 +293,9 @@ export async function execute(input: unknown): Promise<unknown> {
   const overall_risk_score = weightedRiskScore(analyzed_clauses);
   const overall_risk_level = overallRiskLevel(overall_risk_score);
 
-  // Red flags: clauses with risk_score >= 7, sorted descending
+  // Red flags: clauses with risk_score >= 6, sorted descending
   const red_flags = analyzed_clauses
-    .filter((c) => c.risk_score_result.risk_score >= 7)
+    .filter((c) => c.risk_score_result.risk_score >= 6)
     .sort(
       (a, b) =>
         b.risk_score_result.risk_score - a.risk_score_result.risk_score
