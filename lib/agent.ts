@@ -530,6 +530,12 @@ export async function runLeaseAnalysis(
         const acA = byType.get(typeA)!;
         const acB = byType.get(typeB)!;
         try {
+          // ROADMAP 4.1: pass retrieved statutes so the LLM can cite specific law
+          const formatStatutes = (statutes: Statute[]) =>
+            statutes
+              .slice(0, 4)
+              .map((s) => `${s.section_number}: ${s.text.slice(0, 250)}`);
+
           const result = await logger.call<ContradictionResult>(
             mcp!,
             "detect_contradiction",
@@ -544,6 +550,8 @@ export async function runLeaseAnalysis(
                 text: acB.clause_text,
                 type: acB.clause_type,
               } as unknown as Record<string, unknown>,
+              statutes_a: formatStatutes(acA.retrieved_statutes) as unknown as Record<string, unknown>[],
+              statutes_b: formatStatutes(acB.retrieved_statutes) as unknown as Record<string, unknown>[],
             }
           );
 
