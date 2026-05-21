@@ -102,6 +102,9 @@ async function main() {
     if (await traceTab.count() > 0) {
       await traceTab.click();
       await page.waitForTimeout(500);
+      // Switch to List view so that benchmark_clause is visible (it is filtered out of Gantt view)
+      await page.locator("#trace-view-list").click();
+      await page.waitForTimeout(300);
       const traceText = await page.evaluate(() => document.body.innerText);
       check("Agent Trace shows tool names", traceText.includes("parse_document") || traceText.includes("parse"));
       check("Agent Trace shows benchmark_clause", traceText.includes("benchmark_clause") || traceText.includes("benchmark"));
