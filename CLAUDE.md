@@ -16,7 +16,7 @@ for real law. The LLM never asserts legal facts from training knowledge alone.
 | Layer | Technology | Role |
 |-------|-----------|------|
 | Agent | Claude (Anthropic API) | MCP tool orchestrator |
-| Embeddings | Gemini text-embedding-004 | Vector embeddings only — not the agent |
+| Embeddings | Gemini gemini-embedding-001 (REST only) | Vector embeddings only — never use the SDK |
 | Vector DB | Supabase pgvector | Statute + decision + benchmark corpus |
 | Database | Supabase PostgreSQL | Leases, clauses, reports, jobs |
 | File Storage | Supabase Storage | Uploaded PDFs |
@@ -54,7 +54,7 @@ MCP Server (TypeScript, Vercel serverless or Railway)
     ├── classify_clause       → LLM
     ├── lookup_statute        → Supabase pgvector (Gemini embeddings)
     ├── lookup_tribunal       → Supabase pgvector (Gemini embeddings)
-    ├── score_clause_risk     → LLM (requires retrieved statutes as input)
+    ├── score_clause_risk     → TypeScript regex + rule engine (deterministic, NOT LLM)
     ├── detect_contradiction  → LLM (stateful, cross-clause)
     ├── check_missing_clauses → Supabase checklist lookup
     ├── benchmark_clause      → Supabase PostgreSQL
@@ -90,10 +90,10 @@ The benchmark feature is invisible until `sample_size ≥ 10` per clause type. B
 run the analysis pipeline against the Ontario Standard Form of Lease (government-published)
 and 20-30 sample leases to seed the corpus. Script: `/scripts/seed_benchmark.ts`.
 
-### Similarity threshold needs validation
-The 0.45 cosine similarity floor for statute retrieval is a starting estimate. Run
-`/scripts/validate_retrieval.ts` against known clause/statute pairs before setting this
-in production. Adjust upward if false positives appear.
+### Similarity threshold — validated, re-validate after corpus changes
+Thresholds: **0.60** (pure vector) and **0.55** (hybrid BM25+vector). Validated 7/7 (100%)
+via `python scripts/validate_retrieval.py` on 2026-05-20. Re-run after any corpus change
+(new regulations, LTB decisions). Target: 7/7 — tune threshold if it drops before continuing.
 
 ### "Unenforceable", not "illegal"
 Under Ontario's RTA, problematic clauses are almost always **void and unenforceable**,
@@ -118,48 +118,38 @@ or "may not be enforceable," never "illegal," unless a specific offense provisio
 
 ---
 
-## File Structure (target)
+## File Structure (current)
+
+See `docs/HANDOFF.md ## File Structure` for the full annotated tree.
+Key locations for quick reference:
 
 ```
 /
-├── CLAUDE.md
-├── REQUIREMENTS.md
-├── PRD.md
-├── EXPLAINER.md
-├── app/                        # Next.js app directory
-│   ├── api/
-│   │   ├── upload/route.ts     # PDF upload, job creation
-│   │   ├── job/[id]/route.ts   # Job status polling
-│   │   └── report/[id]/route.ts
-│   ├── page.tsx                # Landing / upload
-│   └── report/[id]/page.tsx    # Report view
-├── mcp-server/                 # TypeScript MCP server
-│   ├── index.ts
-│   ├── tools/
-│   │   ├── parse-document.ts
-│   │   ├── detect-jurisdiction.ts
-│   │   ├── segment-clauses.ts
-│   │   ├── classify-clause.ts
-│   │   ├── lookup-statute.ts
-│   │   ├── lookup-tribunal.ts
-│   │   ├── score-risk.ts
-│   │   ├── detect-contradiction.ts
-│   │   ├── check-missing.ts
-│   │   ├── benchmark-clause.ts
-│   │   ├── generate-negotiation.ts
-│   │   └── generate-report.ts
-│   └── types.ts
-├── scripts/
-│   ├── parse_pdf.py            # Python PDF extraction (PyMuPDF + Tesseract)
-│   ├── build_corpus.py         # Scrape + embed RTA and LTB guidelines
-│   ├── seed_benchmark.ts       # Pre-seed benchmark corpus
-│   └── validate_retrieval.ts  # Test statute retrieval accuracy
+├── CLAUDE.md                        ← You are here. Law file + session protocols.
+├── instrumentation.ts               ← Disables TLS verification in dev (Windows SSL fix)
+├── docs/
+│   ├── HANDOFF.md                   ← Session state. Gitignored. Updated by "end session".
+│   ├── RESOLVED.md                  ← Archive of all fixed issues. Committed. Append when fixing.
+│   ├── LEGAL_ACCURACY_ROADMAP.md    ← Legal accuracy checklist.
+│   └── CORPUS_ENHANCEMENT_PLAN.md   ← Layer 1 corpus work plan.
+├── app/
+│   ├── page.tsx                     ← Landing + upload + processing
+│   ├── report/[id]/page.tsx         ← Report shell + normaliseApiResponse()
+│   ├── components/                  ← panels.tsx, pdf-viewer.tsx, trace-timeline.tsx, shared.tsx
+│   └── api/                         ← upload/, job/[id]/, report/[id]/, feedback/
 ├── lib/
-│   ├── supabase.ts
-│   ├── anthropic.ts
-│   └── gemini.ts               # Embeddings only
-└── supabase/
-    └── migrations/             # Database schema migrations
+│   ├── agent.ts                     ← 14-step pipeline with parallel batches
+│   └── mcp-client.ts               ← stdio subprocess, 90s timeout
+├── mcp-server/src/
+│   ├── start.ts                     ← ENTRY POINT — loads dotenv then dynamic import
+│   ├── lib/embeddings.ts            ← Gemini REST, 768-dim, RETRIEVAL_QUERY default
+│   └── tools/                       ← 12 tools: score-risk.ts, lookup-statute.ts, etc.
+├── scripts/
+│   ├── build_corpus.py              ← RTA granular subsection rows
+│   ├── build_regulations.py         ← O.Reg.516/06 + O.Reg.517/06 + Standard Form
+│   ├── validate_retrieval.py        ← Retrieval accuracy — must pass 7/7
+│   └── eval-accuracy.mjs            ← Scoring accuracy — must pass 15/15
+└── supabase/migrations/             ← 001–006, all applied
 ```
 
 ---
@@ -243,12 +233,37 @@ Never commit these. Use `.env.local` locally and Vercel environment variables in
 
 ---
 
+## Documentation System
+
+Four layers, each with a distinct purpose. Write to the right layer — never duplicate across layers.
+
+| Layer | File | Purpose | Updated when |
+|-------|------|---------|-------------|
+| **Session state** | `docs/HANDOFF.md` | Active issues, launch blockers, key decisions, env vars, health checks, session log | Every "end session" trigger |
+| **Resolved archive** | `docs/RESOLVED.md` | All fixed issues with root cause + commit hash | When an issue in Known Issues is resolved |
+| **Persistent memory** | `memory/` (`~/.claude/projects/.../memory/`) | Permanent gotchas, user prefs, project state — survives machine failures | When a new `[PERMANENT]` gotcha is found, or project phase changes |
+| **Legal accuracy roadmap** | `docs/LEGAL_ACCURACY_ROADMAP.md` | Checklist of legal accuracy improvements, with completion dates | When a checklist item is completed (mark ✅) |
+
+### What goes where
+
+- **`docs/HANDOFF.md`** — session state, active issues, key decisions table, current infrastructure, environment variables, health check commands, session log. Rewritten in full every session end.
+- **`docs/RESOLVED.md`** — every ✅ fixed issue from Known Issues. Move it there when fixed; never delete. Future-you will want the root cause when a similar bug recurs.
+- **`memory/gotchas_permanent.md`** — permanent constraints that cause silent failures and are not derivable from reading current code (e.g. gRPC broken on Windows, jurisdiction code format, field name mismatches). Append when a new one is found.
+- **`memory/project_state.md`** — current phase and launch blockers. Update when blockers are resolved or new ones added.
+- **`docs/LEGAL_ACCURACY_ROADMAP.md`** — legal accuracy checklist items. Mark ✅ with date when done.
+
+### What never goes in memory
+
+Code patterns, function names, file paths, API shapes, or anything derivable by reading the current codebase. Memory is for facts that survive machine failure and can't be recovered from the code.
+
+---
+
 ## Session Handoff Protocol
 
-### HANDOFF.md — local only, never committed
+### HANDOFF.md — local only, never committed directly
 
-`HANDOFF.md` lives in the project root and is **gitignored**. It is a living document that
-travels with the local checkout only and must never be pushed to the remote repository.
+`docs/HANDOFF.md` is **gitignored** — local only, never committed directly to `main`. It is
+backed up to the `handoff-backup` remote branch at every session end (see "end session" trigger).
 
 ---
 
@@ -260,9 +275,20 @@ without asking for confirmation:
 1. Run `git log --oneline -5` to get the latest commit hashes for the session log.
 2. Run `git status` to confirm nothing is uncommitted that should be.
 3. Push any unpushed commits: `git push origin main`.
-4. Rewrite `HANDOFF.md` in full using the structure below, incorporating everything
+4. Rewrite `docs/HANDOFF.md` in full using the structure below, incorporating everything
    learned this session — new gotchas, bugs fixed, files changed, next steps.
-5. Confirm to the user: "Session closed. HANDOFF.md updated. X commits pushed."
+5. Back up `docs/HANDOFF.md` to the `handoff-backup` remote branch:
+   ```powershell
+   git add -f docs/HANDOFF.md
+   git commit --no-verify -m "chore: handoff backup $(Get-Date -Format 'yyyy-MM-dd')"
+   git push origin HEAD:handoff-backup --force
+   git reset HEAD~1
+   ```
+6. Move any ✅-fixed issues from `docs/HANDOFF.md` `## Known Issues` to `docs/RESOLVED.md`
+   with the resolution date and commit hash.
+7. If any new `[PERMANENT]` gotcha was discovered this session, append it to
+   `memory/gotchas_permanent.md` and add a pointer line to `memory/MEMORY.md`.
+8. Confirm to the user: "Session closed. HANDOFF.md updated. X commits pushed. Handoff backed up to `handoff-backup` branch."
 
 Do NOT ask "should I update the handoff?" — just do it when "end session" is typed.
 
@@ -270,11 +296,12 @@ Do NOT ask "should I update the handoff?" — just do it when "end session" is t
 
 ### At the start of every session
 
-1. Read `HANDOFF.md` in full before touching any code.
-2. Check the `## Active Right Now` section first — this shows mid-session work from
-   the previous session that was left in progress.
-3. If `HANDOFF.md` does not exist, recreate it from `LEGAL_ACCURACY_ROADMAP.md` and
-   the most recent session summary in the Claude Code transcript.
+1. Read `docs/HANDOFF.md` in full before touching any code.
+2. Check `## Active Right Now` and `## Launch Blockers` first.
+3. Spot-check `memory/gotchas_permanent.md` for permanent constraints relevant to today's work.
+4. If `docs/HANDOFF.md` does not exist: read `memory/project_state.md` and
+   `memory/gotchas_permanent.md` to reconstruct context, then recreate HANDOFF.md from
+   those sources + `docs/LEGAL_ACCURACY_ROADMAP.md`.
 
 ---
 
@@ -362,41 +389,10 @@ the loop with a browser tool.
      document.querySelectorAll('[data-panel]').length > 0
 ```
 
-### Verifying Specific LeaseGuard Features
+### LeaseGuard-Specific Verification Flows
 
-**After any report panel change:**
-```
-preview_screenshot /report/[id]   → full page
-preview_click "Agent Trace" tab   → (or whichever panel changed)
-preview_screenshot                → panel populated with data
-preview_eval → window.__NEXT_DATA__ to inspect serialised props if needed
-```
-
-**After any API route change (`app/api/report/[id]/route.ts`):**
-```
-Use Chrome MCP:
-  navigate → http://localhost:3000/api/report/[id]
-  read_page → inspect raw JSON response
-  Confirm new fields present (e.g. _tool_call_logs, full_text in sources)
-```
-
-**After any agent pipeline change (`lib/agent.ts`):**
-```
-Use Playwright for full E2E:
-  browser_navigate → http://localhost:3000
-  browser_fill_form + upload a test PDF (faultyLease.pdf or compliantLease.pdf)
-  browser_wait_for → analysis complete (poll /api/job/[id] until status=complete)
-  browser_navigate → /report/[lease-id]
-  browser_take_screenshot → all 8 panels render
-  browser_network_requests → confirm /api/report/[id] returns expected shape
-```
-
-**After any MCP tool change (`mcp-server/src/tools/*.ts`):**
-```
-1. cd mcp-server && npm run build   → must be clean
-2. python scripts/validate_retrieval.py  → must be ≥80% (6/7 tests)
-3. Then run the Playwright E2E flow above on a real lease upload
-```
+See `docs/HANDOFF.md ## Self-Verification Protocol` for per-change-type flows
+(report panel, API route, agent pipeline, MCP tool) and known-good lease IDs.
 
 ### What Counts as "Verified"
 
