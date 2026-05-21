@@ -66,6 +66,67 @@ function norm(s: string): string {
     .trim();
 }
 
+function normAndMap(items: string[]): { flatText: string; charToItemIndex: number[] } {
+  const joinedChars: string[] = [];
+  const joinedMap: number[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const str = items[i] || "";
+    for (let j = 0; j < str.length; j++) {
+      joinedChars.push(str[j]);
+      joinedMap.push(i);
+    }
+    if (i < items.length - 1) {
+      joinedChars.push(" ");
+      joinedMap.push(-1);
+    }
+  }
+
+  const resultChars: string[] = [];
+  const resultMap: number[] = [];
+  let inWhitespace = false;
+
+  for (let k = 0; k < joinedChars.length; k++) {
+    const char = joinedChars[k];
+    const itemIdx = joinedMap[k];
+
+    if (/\s/.test(char)) {
+      if (!inWhitespace) {
+        resultChars.push(" ");
+        resultMap.push(itemIdx);
+        inWhitespace = true;
+      }
+    } else {
+      inWhitespace = false;
+      let mappedChar = char.toLowerCase();
+      if (/[‘’‚‛′‵`]/.test(mappedChar)) {
+        mappedChar = "'";
+      } else if (/[“”„‟″‶]/.test(mappedChar)) {
+        mappedChar = '"';
+      } else if (/[–—]/.test(mappedChar)) {
+        mappedChar = "-";
+      }
+      resultChars.push(mappedChar);
+      resultMap.push(itemIdx);
+    }
+  }
+
+  let start = 0;
+  while (start < resultChars.length && resultChars[start] === " ") {
+    start++;
+  }
+
+  let end = resultChars.length;
+  while (end > start && resultChars[end - 1] === " ") {
+    end--;
+  }
+
+  const flatText = resultChars.slice(start, end).join("");
+  const charToItemIndex = resultMap.slice(start, end);
+
+  return { flatText, charToItemIndex };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  MOCK document  (Phase-1 fallback — shown when no real PDF URL is available)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -502,25 +563,27 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
       const cls = levelClass[clause.risk_level];
 
       for (const [, { items, spans }] of textDataRef.current.entries()) {
-        const flatText = norm(items.join(" "));
+        const { flatText, charToItemIndex } = normAndMap(items);
         let matchIdx = flatText.indexOf(bodyPrefix);
         const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
         if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
         if (matchIdx === -1 || !activePrefix) continue;
 
         const matchEnd = matchIdx + activePrefix.length;
-        let pos = 0;
-        for (let i = 0; i < items.length; i++) {
-          const itemLen = norm(items[i]).length + 1;
-          const itemStart = pos;
-          const itemEnd = pos + itemLen;
-          if (itemEnd > matchIdx && itemStart < matchEnd && spans[i]) {
-            spans[i].classList.add(cls);
-            annSpansRef.current.push(spans[i]);
+        const matchedIndices = new Set<number>();
+        for (let idx = matchIdx; idx < matchEnd; idx++) {
+          const itemIdx = charToItemIndex[idx];
+          if (itemIdx !== undefined && itemIdx !== -1) {
+            matchedIndices.add(itemIdx);
           }
-          pos = itemEnd;
-          if (pos > matchEnd) break;
         }
+
+        matchedIndices.forEach((itemIdx) => {
+          if (spans[itemIdx]) {
+            spans[itemIdx].classList.add(cls);
+            annSpansRef.current.push(spans[itemIdx]);
+          }
+        });
         break; // annotate only first occurrence per clause
       }
     }
@@ -542,26 +605,27 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
     const headingPrefix = clause.heading ? norm(clause.heading).slice(0, 40) : null;
 
     for (const [pageNum, { items, spans }] of textDataRef.current.entries()) {
-      const flatText = norm(items.join(" "));
+      const { flatText, charToItemIndex } = normAndMap(items);
       let matchIdx = flatText.indexOf(bodyPrefix);
       const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
       if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
       if (matchIdx === -1 || !activePrefix) continue;
 
       const matchEnd = matchIdx + activePrefix.length;
-      let pos = 0;
       const matchSpans: HTMLSpanElement[] = [];
-
-      for (let i = 0; i < items.length; i++) {
-        const itemLen = norm(items[i]).length + 1;
-        const itemStart = pos;
-        const itemEnd = pos + itemLen;
-        if (itemEnd > matchIdx && itemStart < matchEnd && spans[i]) {
-          matchSpans.push(spans[i]);
+      const matchedIndices = new Set<number>();
+      for (let idx = matchIdx; idx < matchEnd; idx++) {
+        const itemIdx = charToItemIndex[idx];
+        if (itemIdx !== undefined && itemIdx !== -1) {
+          matchedIndices.add(itemIdx);
         }
-        pos = itemEnd;
-        if (pos > matchEnd) break;
       }
+
+      matchedIndices.forEach((itemIdx) => {
+        if (spans[itemIdx]) {
+          matchSpans.push(spans[itemIdx]);
+        }
+      });
 
       if (matchSpans.length === 0) continue;
 
