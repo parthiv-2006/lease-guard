@@ -540,12 +540,12 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: R
           textLayerDiv.style.width = `${cssVp.width}px`;
           textLayerDiv.style.height = `${cssVp.height}px`;
 
-          const task = pdfjsLib.renderTextLayer({
+          const textLayer = new pdfjsLib.TextLayer({
             textContentSource: textContent,
             container: textLayerDiv,
             viewport: cssVp,
           });
-          await task.promise;
+          await textLayer.render();
 
           // Collect spans for clause-search (span[i] == textContent.items[i])
           const spans = Array.from(textLayerDiv.querySelectorAll<HTMLSpanElement>("span"));
