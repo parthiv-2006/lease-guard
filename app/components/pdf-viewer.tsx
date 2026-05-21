@@ -388,6 +388,7 @@ interface RealPDFProps {
   clauses: Clause[];
   activeClauseId: string | null;
   filename: string;
+  leaseId?: string;
 }
 
 // Per-page text data collected after renderTextLayer completes
@@ -396,12 +397,13 @@ type PageTextData = {
   spans: HTMLSpanElement[]; // span[i] corresponds to items[i]
 };
 
-function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFProps) {
+function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: RealPDFProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pagesReady, setPagesReady] = useState(false);
+  const [currentPdfUrl, setCurrentPdfUrl] = useState(pdfUrl);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfDocRef = useRef<any>(null);
@@ -409,6 +411,13 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
   const textDataRef = useRef<Map<number, PageTextData>>(new Map());
   const prevHighlightRef = useRef<HTMLSpanElement[]>([]);
   const annSpansRef = useRef<HTMLSpanElement[]>([]); // persistent annotation spans
+  const hasRetriedRef = useRef(false);
+
+  // Sync with prop updates
+  useEffect(() => {
+    setCurrentPdfUrl(pdfUrl);
+    hasRetriedRef.current = false;
+  }, [pdfUrl]);
 
   // ── Load the PDF document ──────────────────────────────────────────────────
   useEffect(() => {
@@ -434,20 +443,39 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
           pdfjsLib.GlobalWorkerOptions.workerSrc =
             `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
         }
-        const pdf = await pdfjsLib.getDocument({ url: pdfUrl, withCredentials: false }).promise;
+        const pdf = await pdfjsLib.getDocument({ url: currentPdfUrl, withCredentials: false }).promise;
         if (cancelled) return;
         pdfDocRef.current = pdf;
         setPageCount(pdf.numPages);
       } catch (err) {
-        if (!cancelled) {
-          console.error("[RealPDFViewer] load error:", err);
-          setLoadError("Could not load the PDF. The link may have expired.");
+        if (cancelled) return;
+        console.error("[RealPDFViewer] load error:", err);
+
+        if (leaseId && !hasRetriedRef.current) {
+          hasRetriedRef.current = true;
+          console.log("[RealPDFViewer] URL load failed, requesting a fresh signed URL...");
+          try {
+            const token = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : "";
+            const refreshRes = await fetch(`/api/pdf-url/${leaseId}${token ? `?token=${token}` : ""}`);
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              if (refreshData?.pdf_url && refreshData.pdf_url !== currentPdfUrl) {
+                console.log("[RealPDFViewer] Successfully obtained fresh URL, retrying...");
+                setCurrentPdfUrl(refreshData.pdf_url);
+                return;
+              }
+            }
+          } catch (refreshErr) {
+            console.error("[RealPDFViewer] Failed to refresh signed URL:", refreshErr);
+          }
         }
+
+        setLoadError("Could not load the PDF. The link may have expired.");
       }
     })();
 
     return () => { cancelled = true; };
-  }, [pdfUrl]);
+  }, [currentPdfUrl, leaseId]);
 
   // ── Render each page once the page-count is known ─────────────────────────
   useEffect(() => {
@@ -748,9 +776,10 @@ interface PDFViewerProps {
   activeClauseId: string | null;
   pdfUrl?: string | null;
   filename?: string;
+  leaseId?: string;
 }
 
-export function PDFViewer({ clauses, activeClauseId, pdfUrl, filename }: PDFViewerProps) {
+export function PDFViewer({ clauses, activeClauseId, pdfUrl, filename, leaseId }: PDFViewerProps) {
   if (pdfUrl) {
     return (
       <RealPDFViewer
@@ -758,6 +787,7 @@ export function PDFViewer({ clauses, activeClauseId, pdfUrl, filename }: PDFView
         clauses={clauses}
         activeClauseId={activeClauseId}
         filename={filename ?? "lease.pdf"}
+        leaseId={leaseId}
       />
     );
   }
