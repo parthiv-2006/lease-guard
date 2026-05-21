@@ -27,13 +27,26 @@ function injectTextLayerCSS() {
       transform-origin: 0% 0%;
       pointer-events: auto;
     }
-    .lg-pdf-text-layer span.lg-hl {
-      background-color: rgba(234,179,8,0.30);
-      border-radius: 2px;
+    /* Persistent risk-level annotation highlights */
+    .lg-pdf-text-layer span.lg-ann-medium {
+      background-color: rgba(234,179,8,0.22);
+      border-bottom: 1.5px solid rgba(234,179,8,0.75);
+      border-radius: 1px;
     }
-    .lg-pdf-text-layer span.lg-hl-flash {
-      background-color: rgba(234,179,8,0.60);
-      box-shadow: 0 0 0 1.5px rgba(234,179,8,0.70);
+    .lg-pdf-text-layer span.lg-ann-high {
+      background-color: rgba(249,115,22,0.22);
+      border-bottom: 1.5px solid rgba(249,115,22,0.80);
+      border-radius: 1px;
+    }
+    .lg-pdf-text-layer span.lg-ann-critical {
+      background-color: rgba(239,68,68,0.22);
+      border-bottom: 1.5px solid rgba(239,68,68,0.85);
+      border-radius: 1px;
+    }
+    /* Active-clause flash on top of any persistent annotation */
+    .lg-pdf-text-layer span.lg-ann-flash {
+      background-color: rgba(234,179,8,0.60) !important;
+      box-shadow: 0 0 0 1.5px rgba(234,179,8,0.75);
     }
   `;
   document.head.appendChild(style);
@@ -42,7 +55,15 @@ function injectTextLayerCSS() {
 // ── Text normalisation ────────────────────────────────────────────────────────
 
 function norm(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, " ").trim();
+  return s
+    .toLowerCase()
+    // normalise curly/smart quotes so DB text matches pdfjs-extracted text
+    .replace(/[‘’‚‛′‵`]/g, "'")
+    .replace(/[“”„‟″‶]/g, '"')
+    // en-dash / em-dash → hyphen
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -319,16 +340,29 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [pagesReady, setPagesReady] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfDocRef = useRef<any>(null);
   const renderedPagesRef = useRef<Set<number>>(new Set());
   const textDataRef = useRef<Map<number, PageTextData>>(new Map());
   const prevHighlightRef = useRef<HTMLSpanElement[]>([]);
+  const annSpansRef = useRef<HTMLSpanElement[]>([]); // persistent annotation spans
 
   // ── Load the PDF document ──────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+
+    // Reset per-URL state so a new URL re-renders all pages from scratch
+    renderedPagesRef.current = new Set();
+    textDataRef.current = new Map();
+    prevHighlightRef.current = [];
+    annSpansRef.current = [];
+    pdfDocRef.current = null;
+    setPageCount(0);
+    setLoadError(null);
+    setPagesReady(false);
+
     injectTextLayerCSS();
 
     (async () => {
@@ -379,58 +413,124 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2);
-        const slotWidth = pageSlot.clientWidth || 620;
+        // Wrap each page individually so a single bad page doesn't abort the loop
+        try {
+          const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 3);
 
-        const page = await pdf.getPage(pageNum);
-        const unscaledVp = page.getViewport({ scale: 1 });
+          // Measure available width from the container (minus its 24px horizontal padding).
+          // getBoundingClientRect is reliable even before clientWidth settles.
+          const containerWidth = containerRef.current
+            ? containerRef.current.getBoundingClientRect().width - 24
+            : 0;
+          const slotWidth = Math.max(containerWidth || 620, 320);
 
-        // CSS-pixel viewport (for text layer + layout)
-        const cssScale = slotWidth / unscaledVp.width;
-        const cssVp = page.getViewport({ scale: cssScale });
+          const page = await pdf.getPage(pageNum);
+          const unscaledVp = page.getViewport({ scale: 1 });
 
-        // HiDPI viewport (for canvas rendering)
-        const renderVp = page.getViewport({ scale: cssScale * dpr });
+          // Fit the page to the available CSS-pixel width exactly.
+          // DPR multiplication on the canvas already ensures crisp HiDPI output.
+          const cssScale = slotWidth / unscaledVp.width;
+          const cssVp = page.getViewport({ scale: cssScale });
 
-        // Set canvas to device pixels, display at CSS pixels
-        canvas.width = Math.floor(renderVp.width);
-        canvas.height = Math.floor(renderVp.height);
-        canvas.style.width = `${cssVp.width}px`;
-        canvas.style.height = `${cssVp.height}px`;
+          // HiDPI viewport (for canvas rendering)
+          const renderVp = page.getViewport({ scale: cssScale * dpr });
 
-        // Update slot height so the text layer overlay fits
-        pageSlot.style.height = `${cssVp.height}px`;
+          // Set canvas to device pixels, display at CSS pixels
+          canvas.width = Math.floor(renderVp.width);
+          canvas.height = Math.floor(renderVp.height);
+          canvas.style.width = `${cssVp.width}px`;
+          canvas.style.height = `${cssVp.height}px`;
 
-        await page.render({ canvasContext: ctx, viewport: renderVp }).promise;
+          // Update slot height so the text layer overlay fits
+          pageSlot.style.height = `${cssVp.height}px`;
 
-        // Text layer — uses CSS viewport so coordinates are in CSS pixels
-        const textContent = await page.getTextContent();
-        textLayerDiv.style.width = `${cssVp.width}px`;
-        textLayerDiv.style.height = `${cssVp.height}px`;
+          await page.render({ canvasContext: ctx, viewport: renderVp }).promise;
 
-        const task = pdfjsLib.renderTextLayer({
-          textContentSource: textContent,
-          container: textLayerDiv,
-          viewport: cssVp,
-        });
-        await task.promise;
+          // Text layer — uses CSS viewport so coordinates are in CSS pixels
+          const textContent = await page.getTextContent();
+          textLayerDiv.style.width = `${cssVp.width}px`;
+          textLayerDiv.style.height = `${cssVp.height}px`;
 
-        // Collect spans for clause-search (span[i] == textContent.items[i])
-        const spans = Array.from(textLayerDiv.querySelectorAll<HTMLSpanElement>("span"));
-        const items: string[] = textContent.items.map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (it: any) => (typeof it.str === "string" ? it.str : "")
-        );
-        textDataRef.current.set(pageNum, { items, spans });
+          const task = pdfjsLib.renderTextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport: cssVp,
+          });
+          await task.promise;
+
+          // Collect spans for clause-search (span[i] == textContent.items[i])
+          const spans = Array.from(textLayerDiv.querySelectorAll<HTMLSpanElement>("span"));
+          const items: string[] = textContent.items.map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (it: any) => (typeof it.str === "string" ? it.str : "")
+          );
+          textDataRef.current.set(pageNum, { items, spans });
+        } catch (pageErr) {
+          // Log but continue — never let one bad page abort the rest
+          console.error(`[RealPDFViewer] page ${pageNum} render error:`, pageErr);
+          renderedPagesRef.current.delete(pageNum); // allow retry on next effect run
+        }
       }
+      // All pages processed — trigger annotation pass
+      setPagesReady(true);
     })();
   }, [pageCount]);
 
+  // ── Persistent annotations for medium / high / critical clauses ───────────
+  useEffect(() => {
+    if (!pagesReady) return;
+
+    // Clear previous annotation spans
+    annSpansRef.current.forEach((s) => {
+      s.classList.remove("lg-ann-medium", "lg-ann-high", "lg-ann-critical");
+    });
+    annSpansRef.current = [];
+
+    const ANNOTATED_LEVELS = new Set(["medium", "high", "critical"]);
+    const levelClass: Record<string, string> = {
+      medium: "lg-ann-medium",
+      high: "lg-ann-high",
+      critical: "lg-ann-critical",
+    };
+
+    for (const clause of clauses) {
+      if (!ANNOTATED_LEVELS.has(clause.risk_level)) continue;
+      if (!clause.raw_text) continue;
+
+      const bodyPrefix = norm(clause.raw_text).slice(0, 40);
+      const headingPrefix = clause.heading ? norm(clause.heading).slice(0, 40) : null;
+      const cls = levelClass[clause.risk_level];
+
+      for (const [, { items, spans }] of textDataRef.current.entries()) {
+        const flatText = norm(items.join(" "));
+        let matchIdx = flatText.indexOf(bodyPrefix);
+        const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
+        if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
+        if (matchIdx === -1 || !activePrefix) continue;
+
+        const matchEnd = matchIdx + activePrefix.length;
+        let pos = 0;
+        for (let i = 0; i < items.length; i++) {
+          const itemLen = norm(items[i]).length + 1;
+          const itemStart = pos;
+          const itemEnd = pos + itemLen;
+          if (itemEnd > matchIdx && itemStart < matchEnd && spans[i]) {
+            spans[i].classList.add(cls);
+            annSpansRef.current.push(spans[i]);
+          }
+          pos = itemEnd;
+          if (pos > matchEnd) break;
+        }
+        break; // annotate only first occurrence per clause
+      }
+    }
+  }, [pagesReady, clauses]);
+
   // ── Highlight the active clause ────────────────────────────────────────────
   useEffect(() => {
-    // Remove previous highlights
+    // Remove previous active-clause flash
     prevHighlightRef.current.forEach((span) => {
-      span.classList.remove("lg-hl", "lg-hl-flash");
+      span.classList.remove("lg-ann-flash");
     });
     prevHighlightRef.current = [];
 
@@ -438,23 +538,24 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
     const clause = clauses.find((c) => c.id === activeClauseId);
     if (!clause?.raw_text) return;
 
-    const searchPrefix = norm(clause.raw_text).slice(0, 60);
+    const bodyPrefix = norm(clause.raw_text).slice(0, 40);
+    const headingPrefix = clause.heading ? norm(clause.heading).slice(0, 40) : null;
 
     for (const [pageNum, { items, spans }] of textDataRef.current.entries()) {
       const flatText = norm(items.join(" "));
-      const matchIdx = flatText.indexOf(searchPrefix);
-      if (matchIdx === -1) continue;
+      let matchIdx = flatText.indexOf(bodyPrefix);
+      const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
+      if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
+      if (matchIdx === -1 || !activePrefix) continue;
 
-      // Map character position back to which spans overlap the match range
-      const matchEnd = matchIdx + searchPrefix.length;
+      const matchEnd = matchIdx + activePrefix.length;
       let pos = 0;
       const matchSpans: HTMLSpanElement[] = [];
 
       for (let i = 0; i < items.length; i++) {
-        const itemLen = norm(items[i]).length + 1; // +1 for the joining space
+        const itemLen = norm(items[i]).length + 1;
         const itemStart = pos;
         const itemEnd = pos + itemLen;
-
         if (itemEnd > matchIdx && itemStart < matchEnd && spans[i]) {
           matchSpans.push(spans[i]);
         }
@@ -464,14 +565,14 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename }: RealPDFPro
 
       if (matchSpans.length === 0) continue;
 
-      // Apply highlight classes
+      // Flash on top of any persistent annotation colour
       matchSpans.forEach((span) => {
-        span.classList.add("lg-hl", "lg-hl-flash");
+        span.classList.add("lg-ann-flash");
         prevHighlightRef.current.push(span);
       });
-      // Flash fades after 1.8 s, persistent highlight stays
+      // Remove flash after 1.8 s — persistent annotation colour remains
       setTimeout(() => {
-        matchSpans.forEach((s) => s.classList.remove("lg-hl-flash"));
+        matchSpans.forEach((s) => s.classList.remove("lg-ann-flash"));
       }, 1800);
 
       // Scroll the page slot into view
