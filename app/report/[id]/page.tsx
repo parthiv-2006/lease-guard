@@ -679,6 +679,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                 activeClauseId={activeClauseId}
                 pdfUrl={report.lease.pdf_url}
                 filename={report.lease.filename}
+                leaseId={reportId}
               />
             </div>
 
