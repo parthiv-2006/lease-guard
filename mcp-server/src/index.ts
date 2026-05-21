@@ -1,9 +1,12 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import express from "express";
+import cors from "cors";
 
 import {
   toolDefinition as parseDocumentDef,
@@ -175,10 +178,41 @@ async function main() {
     }
   });
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  if (process.env.PORT) {
+    const app = express();
+    app.use(cors());
+    app.use(express.json());
 
-  console.error("[LeaseGuard MCP] Server started and listening on stdio");
+    const sessions = new Map<string, SSEServerTransport>();
+
+    app.get("/sse", async (req, res) => {
+      const transport = new SSEServerTransport("/messages", res);
+      await server.connect(transport);
+      sessions.set(transport.sessionId, transport);
+      transport.onclose = () => {
+        sessions.delete(transport.sessionId);
+      };
+    });
+
+    app.post("/messages", async (req, res) => {
+      const sessionId = req.query.sessionId as string;
+      const transport = sessions.get(sessionId);
+      if (!transport) {
+        res.status(404).send("Session not found");
+        return;
+      }
+      await transport.handlePostMessage(req, res, req.body);
+    });
+
+    const port = parseInt(process.env.PORT, 10);
+    app.listen(port, () => {
+      console.error(`[LeaseGuard MCP] SSE Server started and listening on port ${port}`);
+    });
+  } else {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("[LeaseGuard MCP] Server started and listening on stdio");
+  }
 }
 
 main().catch((err) => {
