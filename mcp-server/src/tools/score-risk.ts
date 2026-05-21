@@ -136,6 +136,8 @@ const MANDATORY_PROVISION_VIOLATION_TYPES = new Set([
   "rta_waiver",
   "daily_late_fee",
   "mandatory_arbitration",
+  "self_help_eviction",    // RTA s.19 — only Sheriff + LTB order may enforce eviction
+  "unlawful_termination",  // RTA s.44/48 — minimum 60 days written notice required
 ]);
 
 // ── 3.1: Quoted text extraction ───────────────────────────────────────────────
@@ -575,18 +577,39 @@ function detectStatutoryViolations(
     }
 
     // ── Maintenance offloading — RTA s.20 ────────────────────────────────────
+    // Catches broad responsibility-shifting language including major systems
     if (
+      statute.section_number === "20" &&
       lowerClause.includes("tenant") &&
-      (lowerClause.includes("responsible for") || lowerClause.includes("responsible for all")) &&
-      (lowerClause.includes("repair") ||
+      (
+        lowerClause.includes("responsible for") ||
+        lowerClause.includes("responsible for all") ||
+        lowerClause.includes("bear all") ||
+        lowerClause.includes("bears all") ||
+        lowerClause.includes("shall maintain") ||
+        lowerClause.includes("shall repair") ||
+        lowerClause.includes("all repair") ||
+        lowerClause.includes("all maintenance") ||
+        lowerClause.includes("all costs") ||
+        lowerClause.includes("sole responsibility") ||
+        lowerClause.includes("at the tenant's expense") ||
+        lowerClause.includes("at tenant's expense")
+      ) &&
+      (
+        lowerClause.includes("repair") ||
         lowerClause.includes("maintenance") ||
-        lowerClause.includes("plumbing")) &&
-      statute.section_number === "20"
+        lowerClause.includes("plumbing") ||
+        lowerClause.includes("electrical") ||
+        lowerClause.includes("furnace") ||
+        lowerClause.includes("hvac") ||
+        lowerClause.includes("appliance") ||
+        lowerClause.includes("structural")
+      )
     ) {
       violations.push({
         statute_section: sectionRef,
         violation_type: "maintenance_offloaded",
-        violation_description: `Clause shifts repair/maintenance responsibility to tenant, contradicting ${sectionRef} — landlord has a non-delegable duty to maintain the unit in good repair`,
+        violation_description: `Clause shifts repair/maintenance responsibility to the tenant, contradicting ${sectionRef} — the landlord has a non-delegable statutory duty to maintain the unit and all its systems in a good state of repair`,
         quoted_text: extractQuotedText(statute.text, ["maintain", "good repair", "landlord", "obligation"]),
       });
       continue;
@@ -694,29 +717,57 @@ function detectTextPatternScore(clauseText: string): number {
     bonus += 4;
   }
 
-  // Tenant assumes ALL repair / maintenance responsibility — RTA s.20
-  if ((t.includes("100%") || t.includes("all repairs") || t.includes("all maintenance") ||
-       t.includes("all costs") || t.includes("sole responsibility")) &&
-      (t.includes("repair") || t.includes("maintenance") || t.includes("appliance"))) {
+  // Tenant assumes maintenance responsibility — RTA s.20
+  // Tier A: broad responsibility-shifting language (+3)
+  if (
+    (t.includes("100%") || t.includes("all repairs") || t.includes("all maintenance") ||
+     t.includes("all costs") || t.includes("sole responsibility") ||
+     t.includes("bear all") || t.includes("at the tenant's expense") ||
+     t.includes("tenant's expense") || t.includes("tenant shall repair") ||
+     t.includes("tenant is responsible for repair") || t.includes("responsible for all repair") ||
+     t.includes("responsible for any repair")) &&
+    (t.includes("repair") || t.includes("maintenance") || t.includes("appliance"))
+  ) {
+    bonus += 3;
+  }
+  // Tier B: major systems explicitly offloaded to tenant (+3 additional — these are critical)
+  if (
+    (t.includes("furnace") || t.includes("plumbing") || t.includes("electrical") ||
+     t.includes("hvac") || t.includes("boiler") || t.includes("water heater")) &&
+    (t.includes("tenant") || t.includes("renter")) &&
+    (t.includes("responsible") || t.includes("repair") || t.includes("cost") ||
+     t.includes("maintain") || t.includes("expense") || t.includes("bear"))
+  ) {
     bonus += 3;
   }
 
-  // Surveillance cameras inside unit — RTA s.28 privacy
-  if ((t.includes("camera") || t.includes("surveillance") || t.includes("cctv") ||
-       t.includes("monitoring")) &&
-      (t.includes("unit") || t.includes("premises") || t.includes("living") || t.includes("inside"))) {
-    bonus += 3;
+  // Surveillance cameras inside unit — PIPEDA + RTA s.28 privacy (+4)
+  if (
+    (t.includes("camera") || t.includes("surveillance") || t.includes("cctv") ||
+     t.includes("monitoring device") || t.includes("recording device")) &&
+    (t.includes("unit") || t.includes("premises") || t.includes("living") ||
+     t.includes("inside") || t.includes("interior") || t.includes("bedroom") ||
+     t.includes("bathroom"))
+  ) {
+    bonus += 4;
   }
 
-  // Self-help eviction language — vacate within hours/days without LTB
-  if ((t.includes("vacate") || t.includes("leave the premises") || t.includes("immediate eviction")) &&
-      /within\s+\d+\s*(hour|day)/.test(t)) {
-    bonus += 3;
+  // Self-help eviction language — RTA s.19 (+5 — criminal exposure, hardcoded void)
+  if (
+    t.includes("change the locks") || t.includes("change locks") || t.includes("alter the locks") ||
+    (t.includes("vacate") && /within\s+\d+\s*(hour|day)/i.test(t)) ||
+    (t.includes("vacate") && t.includes("immediately")) ||
+    (t.includes("leave the premises") && /within\s+\d+\s*(hour|day)/i.test(t)) ||
+    t.includes("remove the tenant") || t.includes("tenant's belongings will be")
+  ) {
+    bonus += 5;
   }
 
   // Surcharge / fee per guest — RTA s.134
-  if (/\$\s*\d+.*per\s*(guest|person|visitor)/.test(t) ||
-      /per\s*(guest|person|visitor).*\$\s*\d+/.test(t)) {
+  if (
+    /\$\s*\d+.*per\s*(guest|person|visitor)/.test(t) ||
+    /per\s*(guest|person|visitor).*\$\s*\d+/.test(t)
+  ) {
     bonus += 2;
   }
 
@@ -726,6 +777,116 @@ function detectTextPatternScore(clauseText: string): number {
   }
 
   return bonus;
+}
+
+// ── Statute-independent critical violation detection ─────────────────────────
+// These patterns are so clearly void under Ontario RTA that they warrant
+// is_potentially_unenforceable: true even when no statute was retrieved.
+// Only include violations where the text alone is conclusive — no ambiguity.
+function detectCriticalTextViolations(clauseText: string): Array<{
+  statute_section: string;
+  violation_type: string;
+  violation_description: string;
+  quoted_text: string;
+}> {
+  const t = clauseText.toLowerCase();
+  const found: Array<{
+    statute_section: string;
+    violation_type: string;
+    violation_description: string;
+    quoted_text: string;
+  }> = [];
+
+  // ── Self-help eviction — RTA s.19 ────────────────────────────────────────
+  // Changing locks, seizing belongings, requiring immediate vacation without LTB
+  const selfHelpEviction =
+    t.includes("change the locks") ||
+    t.includes("change locks") ||
+    t.includes("alter the locks") ||
+    t.includes("remove the tenant") ||
+    t.includes("remove tenant's belongings") ||
+    t.includes("seize the tenant") ||
+    t.includes("tenant's belongings will be") ||
+    (t.includes("vacate") && /within\s+\d+\s*(hour|day)/i.test(t)) ||
+    (t.includes("vacate") && t.includes("immediately")) ||
+    (t.includes("leave the premises") && /within\s+\d+\s*(hour|day)/i.test(t));
+
+  if (selfHelpEviction) {
+    found.push({
+      statute_section: "RTA s.19",
+      violation_type: "self_help_eviction",
+      violation_description:
+        "Clause attempts to authorize self-help eviction (changing locks, removing belongings, or requiring immediate vacation without an LTB order) — illegal under RTA s.19. Only a Sheriff acting on a Board eviction order may remove a tenant.",
+      quoted_text:
+        "A landlord shall not alter the locking system on a door giving entry to a rental unit or residential complex, or cause the locking system to be altered, during the tenant's occupancy of the rental unit without giving the tenant replacement keys (RTA s.19).",
+    });
+  }
+
+  // ── Unlawful termination notice — RTA s.44/48 ────────────────────────────
+  // Verbal notice or notice period shorter than RTA minimums (60 days for most terminations)
+  const unlawfulTermination =
+    (t.includes("verbal") || t.includes("verbally") || t.includes("oral notice")) &&
+    (t.includes("notice") || t.includes("terminat") || t.includes("vacate")) ||
+    (/\b([1-9]|[12]\d|3[0-9]|4[0-9]|5[0-9])\s*day[s]?\s*(written\s+)?notice/.test(t) &&
+      (t.includes("terminat") || t.includes("vacate") || t.includes("end the tenancy")));
+
+  if (unlawfulTermination) {
+    found.push({
+      statute_section: "RTA s.44",
+      violation_type: "unlawful_termination",
+      violation_description:
+        "Clause provides for verbal notice or a notice period shorter than the RTA minimum (60 days written notice for most terminations) — void under RTA s.44. Tenancy can only be terminated through a proper written notice using prescribed LTB forms.",
+      quoted_text:
+        "A notice of termination shall be in writing, signed by the person giving the notice, and shall identify the rental unit for which the notice is given (RTA s.43).",
+    });
+  }
+
+  // ── RTA rights waiver — RTA s.3 ──────────────────────────────────────────
+  // Broad waiver language beyond what detectStatutoryViolations() catches
+  const rtaWaiver =
+    (t.includes("waive") || t.includes("waiver")) &&
+    (t.includes("all rights") ||
+      t.includes("any rights") ||
+      t.includes("right to dispute") ||
+      t.includes("right to appeal") ||
+      t.includes("right to apply") ||
+      t.includes("rights under") ||
+      t.includes("rta rights") ||
+      t.includes("statutory rights")) ||
+    (t.includes("by signing") &&
+      (t.includes("waive") || t.includes("forfeit") || t.includes("relinquish")));
+
+  if (rtaWaiver) {
+    found.push({
+      statute_section: "RTA s.3",
+      violation_type: "rta_waiver",
+      violation_description:
+        "Clause attempts to make the tenant waive RTA rights — automatically void under RTA s.3(1). A tenant cannot waive any right, benefit, or protection conferred by the Act, regardless of what the tenancy agreement says.",
+      quoted_text:
+        "This Act applies despite any agreement or waiver to the contrary (RTA s.3(1)).",
+    });
+  }
+
+  // ── Major-system maintenance offload without statute retrieval ────────────
+  // Catches "tenant responsible for furnace/plumbing/electrical" even if s.20 not retrieved
+  const majorSystemOffload =
+    (t.includes("tenant") || t.includes("renter")) &&
+    (t.includes("furnace") || t.includes("plumbing") || t.includes("electrical") || t.includes("hvac")) &&
+    (t.includes("responsible") || t.includes("bear") || t.includes("cost") ||
+     t.includes("repair") || t.includes("maintain") || t.includes("expense"));
+
+  if (majorSystemOffload) {
+    found.push({
+      statute_section: "RTA s.20",
+      violation_type: "maintenance_offloaded",
+      violation_description:
+        "Clause shifts responsibility for major building systems (furnace, plumbing, electrical, or HVAC) to the tenant — void under RTA s.20. The landlord's duty to keep the unit in good repair is non-delegable and cannot be contracted away.",
+      quoted_text:
+        "A landlord is responsible for providing and maintaining a residential complex, including the rental units in it, in a good state of repair and fit for habitation (RTA s.20(1)).",
+    });
+  }
+
+  return found;
 }
 
 // ── Base scoring ──────────────────────────────────────────────────────────────
@@ -837,9 +998,18 @@ export async function execute(input: unknown): Promise<unknown> {
   }
 
   // ── Detect statutory violations (3.1 + 3.2 integrated) ────────────────────
-  const violations = hasStatutes
+  const statuteViolations = hasStatutes
     ? detectStatutoryViolations(clause_text, retrieved_statutes)
     : [];
+
+  // ── Statute-independent critical text violations (always run) ──────────────
+  // These are so clearly void that statute retrieval is not required.
+  // De-dupe: skip if the same violation_type was already caught by statute path.
+  const existingTypes = new Set(statuteViolations.map((v) => v.violation_type));
+  const criticalTextViolations = detectCriticalTextViolations(clause_text).filter(
+    (v) => !existingTypes.has(v.violation_type)
+  );
+  const violations = [...statuteViolations, ...criticalTextViolations];
 
   // ── Base score ─────────────────────────────────────────────────────────────
   const { base_score, is_unusual, is_standard } = scoreClause(

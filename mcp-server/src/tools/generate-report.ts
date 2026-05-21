@@ -290,7 +290,24 @@ export async function execute(input: unknown): Promise<unknown> {
   } = parsed.data;
 
   // Weighted overall risk score
-  const overall_risk_score = weightedRiskScore(analyzed_clauses);
+  const rawScore = weightedRiskScore(analyzed_clauses);
+
+  // Void-provision floor: a lease with multiple unenforceable clauses is
+  // fundamentally predatory regardless of compliant filler clauses pulling
+  // the weighted average down. Count is based on is_potentially_unenforceable
+  // (RTA-confirmed void provisions only — not just high-scoring clauses).
+  //   2 void provisions → floor 7.5  (clearly dangerous, solidly high)
+  //   3 void provisions → floor 8.5  (deliberate pattern, critical)
+  //   4+ void provisions → floor 9.5 (predatory, near-maximum)
+  const unenforceableCount = analyzed_clauses.filter(
+    (c) => c.risk_score_result.is_potentially_unenforceable
+  ).length;
+  const voidFloor =
+    unenforceableCount >= 4 ? 9.5 :
+    unenforceableCount >= 3 ? 8.5 :
+    unenforceableCount >= 2 ? 7.5 :
+    0;
+  const overall_risk_score = Math.max(rawScore, voidFloor);
   const overall_risk_level = overallRiskLevel(overall_risk_score);
 
   // Red flags: clauses with risk_score >= 6, sorted descending
