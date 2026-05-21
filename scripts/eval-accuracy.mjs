@@ -129,9 +129,11 @@ class MiniMcpClient {
 }
 
 async function spawnMcpClient(serverPath) {
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.PORT;
   const proc = spawn("node", [serverPath], {
     stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env },
+    env: cleanEnv,
   });
   const client = new MiniMcpClient(proc);
   await client.initialize();

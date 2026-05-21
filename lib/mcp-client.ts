@@ -1,17 +1,8 @@
 /**
- * McpClient — manages a single MCP server subprocess for one lease analysis.
+ * McpClient — manages a single MCP server connection (stdio subprocess or SSE transport)
+ * for one lease analysis.
  *
- * Protocol: MCP JSON-RPC over stdio (newline-delimited JSON).
- * One process is spawned per analysis and kept alive for the full pipeline,
- * then cleanly shut down in the finally block of the agent.
- *
- * Lifecycle:
- *   const mcp = await McpClient.create(serverPath);
- *   try {
- *     const result = await mcp.callTool("classify_clause", { ... });
- *   } finally {
- *     mcp.close();
- *   }
+ * Protocol: MCP JSON-RPC over stdio (newline-delimited JSON) OR SSE.
  */
 
 import { spawn, ChildProcess } from "child_process";
@@ -74,44 +65,64 @@ const CLOSE_GRACE_MS = 2_000;
 // ---------------------------------------------------------------------------
 
 export class McpClient {
-  private readonly proc: ChildProcess;
+  private readonly proc?: ChildProcess;
+  private readonly abortController?: AbortController;
+  private readonly isSse: boolean;
+  private postUrl = "";
   private buffer = "";
   private nextId = 1;
   private readonly pending = new Map<number, PendingRequest>();
   private closed = false;
 
-  private constructor(proc: ChildProcess) {
-    this.proc = proc;
+  private endpointPromise?: Promise<string>;
+  private resolveEndpoint?: (url: string) => void;
 
-    // Accumulate stdout chunks and dispatch complete lines
-    proc.stdout!.setEncoding("utf8");
-    proc.stdout!.on("data", (chunk: string) => {
-      this.buffer += chunk;
-      const lines = this.buffer.split("\n");
-      // Keep the incomplete last segment in the buffer
-      this.buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed) this.dispatchLine(trimmed);
-      }
-    });
+  private constructor(options: {
+    proc?: ChildProcess;
+    abortController?: AbortController;
+    isSse: boolean;
+  }) {
+    this.proc = options.proc;
+    this.abortController = options.abortController;
+    this.isSse = options.isSse;
 
-    // Stderr goes to the parent process log — useful for debugging
-    proc.stderr?.on("data", (chunk: Buffer) => {
-      process.stderr.write(`[mcp-server] ${chunk.toString()}`);
-    });
+    if (this.isSse) {
+      let resolveEp: (url: string) => void;
+      this.endpointPromise = new Promise<string>((resolve) => {
+        resolveEp = resolve;
+      });
+      this.resolveEndpoint = resolveEp!;
+    } else if (this.proc) {
+      // Accumulate stdout chunks and dispatch complete lines
+      this.proc.stdout!.setEncoding("utf8");
+      this.proc.stdout!.on("data", (chunk: string) => {
+        this.buffer += chunk;
+        const lines = this.buffer.split("\n");
+        // Keep the incomplete last segment in the buffer
+        this.buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed) this.dispatchLine(trimmed);
+        }
+      });
 
-    proc.on("error", (err) => {
-      this.rejectAll(new Error(`MCP process error: ${err.message}`));
-    });
+      // Stderr goes to the parent process log — useful for debugging
+      this.proc.stderr?.on("data", (chunk: Buffer) => {
+        process.stderr.write(`[mcp-server] ${chunk.toString()}`);
+      });
 
-    proc.on("close", (code) => {
-      if (!this.closed && code !== 0 && code !== null) {
-        this.rejectAll(
-          new Error(`MCP process exited unexpectedly with code ${code}`)
-        );
-      }
-    });
+      this.proc.on("error", (err) => {
+        this.rejectAll(new Error(`MCP process error: ${err.message}`));
+      });
+
+      this.proc.on("close", (code) => {
+        if (!this.closed && code !== 0 && code !== null) {
+          this.rejectAll(
+            new Error(`MCP process exited unexpectedly with code ${code}`)
+          );
+        }
+      });
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -153,14 +164,74 @@ export class McpClient {
     this.pending.clear();
   }
 
-  private write(msg: JsonRpcRequest | JsonRpcNotification): void {
-    if (this.closed) throw new Error("McpClient is closed");
+  private async startSseReader(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let currentEvent = "";
+    let currentData = "";
+
     try {
-      this.proc.stdin!.write(JSON.stringify(msg) + "\n");
+      while (!this.closed) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        let lineEnd: number;
+        while ((lineEnd = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, lineEnd).replace(/\r$/, "");
+          buffer = buffer.slice(lineEnd + 1);
+
+          if (line === "") {
+            // End of SSE event block
+            if (currentEvent === "endpoint" && currentData) {
+              const sseUrl = `${process.env.MCP_SERVER_URL}/sse`;
+              this.postUrl = new URL(currentData, sseUrl).toString();
+              this.resolveEndpoint?.(this.postUrl);
+            } else if (currentEvent === "message" && currentData) {
+              this.dispatchLine(currentData);
+            }
+            currentEvent = "";
+            currentData = "";
+          } else if (line.startsWith("event:")) {
+            currentEvent = line.slice(6).trim();
+          } else if (line.startsWith("data:")) {
+            const val = line.slice(5).trim();
+            currentData = currentData ? currentData + "\n" + val : val;
+          }
+        }
+      }
     } catch (err) {
-      throw new Error(
-        `Failed to write to MCP stdin: ${err instanceof Error ? err.message : String(err)}`
-      );
+      if (!this.closed) {
+        this.rejectAll(err instanceof Error ? err : new Error(String(err)));
+      }
+    }
+  }
+
+  private async write(msg: JsonRpcRequest | JsonRpcNotification): Promise<void> {
+    if (this.closed) throw new Error("McpClient is closed");
+    if (this.isSse) {
+      if (!this.postUrl) {
+        throw new Error("POST URL not resolved yet");
+      }
+      const res = await fetch(this.postUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(msg),
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to POST message: ${res.statusText}`);
+      }
+    } else {
+      if (!this.proc || !this.proc.stdin) {
+        throw new Error("Stdio process is not initialized");
+      }
+      try {
+        this.proc.stdin.write(JSON.stringify(msg) + "\n");
+      } catch (err) {
+        throw new Error(
+          `Failed to write to MCP stdin: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
     }
   }
 
@@ -181,12 +252,18 @@ export class McpClient {
       }, timeoutMs);
 
       this.pending.set(id, { resolve, reject, timer });
-      this.write({ jsonrpc: "2.0", id, method, params });
+      this.write({ jsonrpc: "2.0", id, method, params }).catch((err) => {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(err);
+      });
     });
   }
 
   private notify(method: string, params?: unknown): void {
-    this.write({ jsonrpc: "2.0", method, params });
+    this.write({ jsonrpc: "2.0", method, params }).catch((err) => {
+      console.error(`Failed to send notification: ${err.message}`);
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -194,42 +271,84 @@ export class McpClient {
   // -------------------------------------------------------------------------
 
   /**
-   * Spawn the MCP server process and complete the initialize handshake.
+   * Spawn the MCP server process or connect to it over SSE.
    * Returns a ready-to-use McpClient.
    */
   static async create(serverPath: string): Promise<McpClient> {
-    const proc = spawn("node", [serverPath], {
-      stdio: ["pipe", "pipe", "pipe"],
-      // Pass the full environment so the server picks up SUPABASE_*, GEMINI_*, etc.
-      env: { ...process.env },
-    });
+    const mcpServerUrl = process.env.MCP_SERVER_URL;
 
-    const client = new McpClient(proc);
+    if (mcpServerUrl) {
+      const abortController = new AbortController();
+      const sseUrl = `${mcpServerUrl}/sse`;
 
-    // MCP initialize handshake (required before any tool/list calls)
-    await client.request(
-      "initialize",
-      {
-        protocolVersion: "2024-11-05",
-        capabilities: {},
-        clientInfo: { name: "leaseguard-agent", version: "1.0.0" },
-      },
-      INIT_TIMEOUT_MS
-    );
+      const response = await fetch(sseUrl, { signal: abortController.signal });
+      if (!response.ok) {
+        throw new Error(`Failed to connect to SSE at ${sseUrl}: ${response.statusText}`);
+      }
+      if (!response.body) {
+        throw new Error(`SSE response from ${sseUrl} has no body`);
+      }
 
-    // Acknowledge initialization — server starts accepting tool calls after this
-    client.notify("notifications/initialized");
+      const client = new McpClient({
+        isSse: true,
+        abortController,
+      });
 
-    return client;
+      const reader = response.body.getReader();
+      client.startSseReader(reader);
+
+      // Wait for the event: endpoint URL to resolve
+      await Promise.race([
+        client.endpointPromise!,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout waiting for SSE endpoint event")), 10000)
+        ),
+      ]);
+
+      // MCP initialize handshake
+      await client.request(
+        "initialize",
+        {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "leaseguard-agent", version: "1.0.0" },
+        },
+        INIT_TIMEOUT_MS
+      );
+
+      client.notify("notifications/initialized");
+      return client;
+    } else {
+      const cleanEnv = { ...process.env };
+      delete cleanEnv.PORT;
+      const proc = spawn("node", [serverPath], {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: cleanEnv,
+      });
+
+      const client = new McpClient({
+        proc,
+        isSse: false,
+      });
+
+      // MCP initialize handshake
+      await client.request(
+        "initialize",
+        {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "leaseguard-agent", version: "1.0.0" },
+        },
+        INIT_TIMEOUT_MS
+      );
+
+      client.notify("notifications/initialized");
+      return client;
+    }
   }
 
   /**
    * Call an MCP tool by name and return the parsed JSON result.
-   *
-   * Throws if:
-   *  - the request times out
-   *  - the JSON-RPC layer reports an error
-   *  - the tool itself returns { error: string } in its content
    */
   async callTool(name: string, args: unknown): Promise<unknown> {
     const result = (await this.request("tools/call", {
@@ -251,7 +370,7 @@ export class McpClient {
       );
     }
 
-    // Surface tool-level errors (Zod validation failures, subprocess crashes, etc.)
+    // Surface tool-level errors
     if (
       typeof parsed === "object" &&
       parsed !== null &&
@@ -268,27 +387,33 @@ export class McpClient {
   }
 
   /**
-   * Gracefully shut down the MCP server process.
-   * Safe to call multiple times.
+   * Gracefully shut down the connection.
    */
   close(): void {
     if (this.closed) return;
     this.closed = true;
 
-    try {
-      this.proc.stdin?.end();
-    } catch {
-      // ignore
-    }
-
-    // Give the process a moment to exit cleanly, then force-kill
-    const killTimer = setTimeout(() => {
-      if (!this.proc.killed) {
-        this.proc.kill("SIGKILL");
+    if (this.isSse) {
+      try {
+        this.abortController?.abort();
+      } catch {
+        // ignore
       }
-    }, CLOSE_GRACE_MS);
+      this.rejectAll(new Error("McpClient closed"));
+    } else {
+      try {
+        this.proc?.stdin?.end();
+      } catch {
+        // ignore
+      }
 
-    // Don't keep the Node.js event loop alive for this timer
-    if (killTimer.unref) killTimer.unref();
+      const killTimer = setTimeout(() => {
+        if (this.proc && !this.proc.killed) {
+          this.proc.kill("SIGKILL");
+        }
+      }, CLOSE_GRACE_MS);
+
+      if (killTimer.unref) killTimer.unref();
+    }
   }
 }
