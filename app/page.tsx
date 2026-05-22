@@ -633,9 +633,10 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
 interface ProcessingPageProps {
   leaseId: string;
   filename: string;
+  onReset: () => void;
 }
 
-function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
+function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -810,7 +811,7 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
             </div>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={() => onReset()}
               style={{
                 width: "100%",
                 padding: "11px 24px",
@@ -907,7 +908,7 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
             </div>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={() => onReset()}
               style={{
                 width: "100%",
                 padding: "11px 24px",
@@ -967,7 +968,7 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
           </div>
         </div>
         <button
-          onClick={() => router.push("/")}
+          onClick={() => onReset()}
           style={{
             padding: "10px 24px",
             borderRadius: "6px",
@@ -1351,8 +1352,14 @@ export default function HomePage() {
     setScreen("processing");
   }
 
+  function handleReset() {
+    setLeaseId("");
+    setFilename("");
+    setScreen("landing");
+  }
+
   if (screen === "processing") {
-    return <ProcessingPage leaseId={leaseId} filename={filename} />;
+    return <ProcessingPage leaseId={leaseId} filename={filename} onReset={handleReset} />;
   }
 
   return <LandingPage onUploadSuccess={handleUploadSuccess} />;
