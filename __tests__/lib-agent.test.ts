@@ -106,7 +106,11 @@ function setupHappyPathMcp() {
     switch (toolName) {
       case "parse_document":
         return {
-          raw_text: "ONTARIO RESIDENTIAL LEASE\n\n1. Rent: $2,000/month due on the 1st.",
+          raw_text:
+            "ONTARIO RESIDENTIAL LEASE\n\n" +
+            "This tenancy agreement is between the Landlord and the Tenant. " +
+            "The rental premises are located at 123 Main St, Toronto, ON. " +
+            "1. Rent: $2,000/month due on the 1st.",
           page_count: 2,
           extraction_method: "text",
           confidence: 0.95,
@@ -357,7 +361,10 @@ describe("runLeaseAnalysis — error handling", () => {
     mockCallTool.mockImplementation(async (toolName: string) => {
       if (toolName === "parse_document")
         return {
-          raw_text: "ONTARIO RESIDENTIAL LEASE — valid content here for parsing.",
+          raw_text:
+            "ONTARIO RESIDENTIAL LEASE\n\n" +
+            "This tenancy agreement is between the Landlord and the Tenant. " +
+            "The rental premises are at 456 Queen St, Toronto, ON.",
           page_count: 1,
           extraction_method: "text",
           confidence: 0.9,
@@ -398,7 +405,10 @@ describe("runLeaseAnalysis — error handling", () => {
     // parse_document succeeds, then detect_jurisdiction fails
     mockCallTool
       .mockResolvedValueOnce({
-        raw_text: "ONTARIO RESIDENTIAL LEASE — substantial content here to satisfy the length check.",
+        raw_text:
+          "ONTARIO RESIDENTIAL LEASE\n\n" +
+          "This tenancy agreement is between the Landlord and the Tenant. " +
+          "The rental premises are at 789 King St, Toronto, ON.",
         page_count: 1,
         extraction_method: "text",
         confidence: 0.9,
@@ -438,7 +448,10 @@ describe("runLeaseAnalysis — error handling", () => {
 
     // Segment returns two clauses
     mockCallTool.mockImplementationOnce(async () => ({
-      raw_text: "ONTARIO RESIDENTIAL LEASE — substantial content here for parsing.",
+      raw_text:
+        "ONTARIO RESIDENTIAL LEASE\n\n" +
+        "This tenancy agreement is between the Landlord and the Tenant. " +
+        "The rental premises are at 321 Bay St, Toronto, ON.",
       page_count: 2,
       extraction_method: "text",
       confidence: 0.9,
