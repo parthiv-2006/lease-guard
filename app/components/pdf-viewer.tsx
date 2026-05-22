@@ -547,12 +547,16 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: R
           });
           await textLayer.render();
 
-          // Collect spans for clause-search (span[i] == textContent.items[i])
+          // Collect spans for clause-search.
+          // textContent.items contains both TextItem (have .str, produce a span) and
+          // TextMarkedContent (have .type, produce NO span). We must filter to only
+          // TextItem objects so that items[i] and spans[i] are always in sync.
+          // Mixing both types causes index misalignment and silently breaks all highlights.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const items: string[] = (textContent.items as any[])
+            .filter((it) => typeof it.str === "string")
+            .map((it) => it.str as string);
           const spans = Array.from(textLayerDiv.querySelectorAll<HTMLSpanElement>("span"));
-          const items: string[] = textContent.items.map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (it: any) => (typeof it.str === "string" ? it.str : "")
-          );
           textDataRef.current.set(pageNum, { items, spans });
         } catch (pageErr) {
           // Log but continue — never let one bad page abort the rest
@@ -586,15 +590,31 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: R
       if (!ANNOTATED_LEVELS.has(clause.risk_level)) continue;
       if (!clause.raw_text) continue;
 
-      const bodyPrefix = norm(clause.raw_text).slice(0, 40);
-      const headingPrefix = clause.heading ? norm(clause.heading).slice(0, 40) : null;
+      const normedBody = norm(clause.raw_text);
+      const normedHeading = clause.heading ? norm(clause.heading) : null;
       const cls = levelClass[clause.risk_level];
 
       for (const [, { items, spans }] of textDataRef.current.entries()) {
         const { flatText, charToItemIndex } = normAndMap(items);
-        let matchIdx = flatText.indexOf(bodyPrefix);
-        const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
-        if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
+
+        // Try decreasing prefix lengths to tolerate hyphenation/whitespace
+        // differences between pdfjs and PyMuPDF text extraction.
+        let matchIdx = -1;
+        let activePrefix: string | null = null;
+        for (const len of [40, 25, 15]) {
+          const bp = normedBody.slice(0, len);
+          if (bp.length < len) break; // raw_text shorter than this length
+          matchIdx = flatText.indexOf(bp);
+          if (matchIdx !== -1) { activePrefix = bp; break; }
+        }
+        if (matchIdx === -1 && normedHeading) {
+          for (const len of [40, 25, 15]) {
+            const hp = normedHeading.slice(0, len);
+            if (hp.length < len) break;
+            matchIdx = flatText.indexOf(hp);
+            if (matchIdx !== -1) { activePrefix = hp; break; }
+          }
+        }
         if (matchIdx === -1 || !activePrefix) continue;
 
         const matchEnd = matchIdx + activePrefix.length;
@@ -629,14 +649,28 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: R
     const clause = clauses.find((c) => c.id === activeClauseId);
     if (!clause?.raw_text) return;
 
-    const bodyPrefix = norm(clause.raw_text).slice(0, 40);
-    const headingPrefix = clause.heading ? norm(clause.heading).slice(0, 40) : null;
+    const normedBody = norm(clause.raw_text);
+    const normedHeading = clause.heading ? norm(clause.heading) : null;
 
     for (const [pageNum, { items, spans }] of textDataRef.current.entries()) {
       const { flatText, charToItemIndex } = normAndMap(items);
-      let matchIdx = flatText.indexOf(bodyPrefix);
-      const activePrefix = matchIdx !== -1 ? bodyPrefix : (headingPrefix ?? null);
-      if (matchIdx === -1 && headingPrefix) matchIdx = flatText.indexOf(headingPrefix);
+
+      let matchIdx = -1;
+      let activePrefix: string | null = null;
+      for (const len of [40, 25, 15]) {
+        const bp = normedBody.slice(0, len);
+        if (bp.length < len) break;
+        matchIdx = flatText.indexOf(bp);
+        if (matchIdx !== -1) { activePrefix = bp; break; }
+      }
+      if (matchIdx === -1 && normedHeading) {
+        for (const len of [40, 25, 15]) {
+          const hp = normedHeading.slice(0, len);
+          if (hp.length < len) break;
+          matchIdx = flatText.indexOf(hp);
+          if (matchIdx !== -1) { activePrefix = hp; break; }
+        }
+      }
       if (matchIdx === -1 || !activePrefix) continue;
 
       const matchEnd = matchIdx + activePrefix.length;
