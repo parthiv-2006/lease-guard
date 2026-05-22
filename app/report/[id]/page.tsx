@@ -16,6 +16,7 @@ import {
 import { NegotiationCopilot } from "../../components/negotiation-copilot";
 import type { Report, PanelId } from "../../components/types";
 import { PDFViewer } from "../../components/pdf-viewer";
+import { exportReportPDF } from "../../../lib/pdf-export";
 
 // ── Nav config ────────────────────────────────────────────────────────────────
 
@@ -464,7 +465,7 @@ function ReportSidebar({
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "transparent")
           }
-          onClick={() => window.print()}
+          onClick={() => exportReportPDF(report)}
         >
           <Icon name="export" size={14} color="#7a7570" />
           Export PDF

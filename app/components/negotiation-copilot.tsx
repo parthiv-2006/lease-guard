@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Icon, CopyButton } from "./shared";
 import type { NegotiationPoint } from "./types";
+import { exportCopilotPDF } from "@/lib/pdf-export";
 
 interface NegotiationCopilotProps {
   isOpen: boolean;
@@ -567,7 +568,23 @@ Landlord Signature: ________________________  Date: ______________`
                     <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase" }}>
                       Email Content
                     </span>
-                    <CopyButton text={`Subject: ${result.email_subject}\n\n${result.email_body}`} label="Copy Email" />
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <CopyButton text={`Subject: ${result.email_subject}\n\n${result.email_body}`} label="Copy Email" />
+                      <button
+                        onClick={() => exportCopilotPDF({
+                          type: "email",
+                          subject: result.email_subject,
+                          body: result.email_body,
+                          tenantName,
+                          landlordName,
+                          propertyAddress,
+                        })}
+                        style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "5px", cursor: "pointer", fontSize: "11px", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, background: "#fff", border: "1px solid #ddd8cf", color: "#5c5751", transition: "all 0.15s" }}
+                      >
+                        <Icon name="export" size={12} color="#5c5751" />
+                        Save PDF
+                      </button>
+                    </div>
                   </div>
 
                   <div
@@ -605,7 +622,15 @@ Landlord Signature: ________________________  Date: ______________`
                     <div style={{ display: "flex", gap: "8px" }}>
                       <CopyButton text={addendumText} label="Copy Wording" />
                       <button
-                        onClick={() => window.print()}
+                        onClick={() => result && exportCopilotPDF({
+                          type: "addendum",
+                          title: result.addendum_title,
+                          intro: result.addendum_intro,
+                          clauses: result.addendum_clauses,
+                          tenantName,
+                          landlordName,
+                          propertyAddress,
+                        })}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
@@ -623,7 +648,7 @@ Landlord Signature: ________________________  Date: ______________`
                         }}
                       >
                         <Icon name="export" size={12} color="#5c5751" />
-                        Print/PDF
+                        Save PDF
                       </button>
                     </div>
                   </div>
