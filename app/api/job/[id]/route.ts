@@ -52,6 +52,26 @@ export async function GET(
     overall_risk_score: data.overall_risk_score,
     overall_risk_level: data.overall_risk_level,
     corpus_version: data.corpus_version,
-    ...(data.status === "failed" && { error_message: data.error_message }),
+    ...(data.status === "failed" && (() => {
+      // error_message may be plain text OR structured JSON (from LeaseValidationError)
+      const raw = data.error_message as string | null;
+      if (raw?.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(raw) as {
+            code?: string;
+            message?: string;
+            detected_as?: string;
+          };
+          return {
+            error_message: parsed.message ?? raw,
+            error_code: parsed.code ?? "analysis_failed",
+            detected_as: parsed.detected_as ?? null,
+          };
+        } catch {
+          // fall through to plain text
+        }
+      }
+      return { error_message: raw, error_code: "analysis_failed", detected_as: null };
+    })()),
   });
 }
