@@ -160,10 +160,14 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           LeaseGuard
         </span>
         <nav style={{ display: "flex", gap: "28px" }}>
-          {["How it works", "Ontario RTA", "About"].map((label) => (
+          {[
+            { label: "How it works", href: "/how-it-works" },
+            { label: "Ontario RTA", href: "/ontario-rta" },
+            { label: "About", href: "/about" },
+          ].map(({ label, href }) => (
             <a
               key={label}
-              href="#"
+              href={href}
               style={{
                 fontSize: "13px",
                 color: "#6b6560",
