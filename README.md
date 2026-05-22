@@ -19,6 +19,17 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 ---
 
+## Demo
+
+> **[▶ Watch the full walkthrough (.webm, 7.9 MB)](.github/assets/demo.webm)**
+>
+> Shows: landing page → lease upload → processing animation → risk report → all 8 analysis panels.
+>
+> *To convert to MP4 for local playback:*
+> `ffmpeg -i .github/assets/demo.webm -c:v libx264 -crf 22 -movflags +faststart demo.mp4`
+
+---
+
 ## What it does
 
 LeaseGuard reads Ontario residential lease PDFs and produces a clause-by-clause risk report backed by retrieved statute and tribunal text. **The LLM never asserts legal facts from training data alone** — every finding is grounded in real law retrieved from a 2,372-chunk pgvector corpus of the Residential Tenancies Act, O.Reg 516/06, O.Reg 517/06, and the Ontario Standard Form of Lease.
