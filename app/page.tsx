@@ -26,7 +26,7 @@ const PROCESSING_STEPS = [
   {
     id: "research",
     label: "Researching law",
-    detail: "Querying 1,574 RTA statute chunks via RAG…",
+    detail: "Querying 2,372 RTA statute chunks via RAG…",
   },
   {
     id: "report",
@@ -55,6 +55,14 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showNav, setShowNav] = useState(true);
+
+  useEffect(() => {
+    function checkWidth() { setShowNav(window.innerWidth >= 640); }
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function validateFile(f: File | null | undefined): string | null {
@@ -141,7 +149,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 48px",
+          padding: showNav ? "0 48px" : "0 20px",
           height: "56px",
           borderBottom: "1px solid #e8e4dc",
           background: "#f6f3ee",
@@ -159,33 +167,35 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         >
           LeaseGuard
         </span>
-        <nav style={{ display: "flex", gap: "28px" }}>
-          {[
-            { label: "How it works", href: "/how-it-works" },
-            { label: "Ontario RTA", href: "/ontario-rta" },
-            { label: "About", href: "/about" },
-          ].map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              style={{
-                fontSize: "13px",
-                color: "#6b6560",
-                textDecoration: "none",
-                fontWeight: 400,
-                letterSpacing: "0.01em",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "#181614")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "#6b6560")
-              }
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
+        {showNav && (
+          <nav style={{ display: "flex", gap: "28px" }}>
+            {[
+              { label: "How it works", href: "/how-it-works" },
+              { label: "Ontario RTA", href: "/ontario-rta" },
+              { label: "About", href: "/about" },
+            ].map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                style={{
+                  fontSize: "13px",
+                  color: "#6b6560",
+                  textDecoration: "none",
+                  fontWeight: 400,
+                  letterSpacing: "0.01em",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "#181614")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "#6b6560")
+                }
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* Hero */}
@@ -196,7 +206,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "64px 24px 80px",
+          padding: "40px 24px 56px",
         }}
       >
         {/* Jurisdiction tag */}
@@ -271,7 +281,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
               border: `1.5px dashed ${borderColor}`,
               borderRadius: "10px",
               background: bgColor,
-              padding: "52px 40px",
+              padding: "36px 32px",
               textAlign: "center",
               cursor: file ? "default" : "pointer",
               transition: "all 0.2s",
@@ -567,20 +577,22 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         {/* Stats bar */}
         <div
           style={{
-            marginTop: "72px",
+            marginTop: "48px",
             display: "flex",
-            gap: "48px",
-            padding: "24px 48px",
+            gap: "40px",
+            padding: "20px 40px",
             background: "#fff",
             border: "1px solid #e8e4dc",
             borderRadius: "10px",
             flexWrap: "wrap",
             justifyContent: "center",
+            width: "100%",
+            maxWidth: "560px",
           }}
         >
           {[
             { n: "< 90s", d: "Median analysis time" },
-            { n: "1,574", d: "RTA sections indexed" },
+            { n: "2,372", d: "RTA sections indexed" },
             { n: "100%", d: "Cited to statute" },
             { n: "Free", d: "No account required" },
           ].map(({ n, d }) => (
@@ -626,7 +638,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         LeaseGuard provides educational information only and does not constitute
         legal advice. For matters requiring professional legal judgment, consult
         a licensed paralegal or lawyer. Analysis is grounded in the Ontario
-        Residential Tenancies Act, 2006. Corpus version RTA-2024-Q4.
+        Residential Tenancies Act, 2006.
       </footer>
     </div>
   );
