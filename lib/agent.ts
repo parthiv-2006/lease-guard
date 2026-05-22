@@ -300,6 +300,118 @@ class ToolCallLogger {
   }
 }
 
+// ─── Validation ──────────────────────────────────────────────────────────────
+
+/**
+ * Typed validation error — carries a machine-readable `code` and optional
+ * `detectedAs` hint so the frontend can render targeted error UI.
+ */
+export class LeaseValidationError extends Error {
+  constructor(
+    public readonly code: "not_a_lease" | "wrong_jurisdiction",
+    message: string,
+    public readonly detectedAs?: string
+  ) {
+    super(message);
+    this.name = "LeaseValidationError";
+  }
+}
+
+/**
+ * Heuristic check: is this document a residential lease?
+ *
+ * Two-stage approach:
+ * 1. Hard-reject known non-lease document types (resume, invoice, etc.)
+ * 2. Require a minimum number of lease-specific keyword signals
+ *
+ * Designed to be fast (regex on raw text only) and conservative — it
+ * only rejects when confidence is high, so valid leases are never blocked.
+ */
+function validateDocumentType(rawText: string): void {
+  // ── Stage 1: hard-reject known non-lease types ──────────────────────────
+
+  // Resume / CV detection — requires 2+ matching signals to avoid false positives
+  const resumeSignals = [
+    /\bcurriculum\s+vitae\b/i,
+    /\r?sume\b/i,
+    /\bwork\s+experience\b/i,
+    /\bemployment\s+history\b/i,
+    /\bprofessional\s+experience\b/i,
+    /\b(bachelor|master|phd|m\.sc|b\.sc|b\.eng|honours)\b/i,
+    /\bgpa\b/i,
+    /\breferences\s+available\b/i,
+    /\blinkedin\.com\/in\//i,
+    /\bskills\s*&?\s*achievements\b/i,
+    /\bcanvassing\s+(volunteer|coordinator)\b/i,
+  ];
+  const resumeHits = resumeSignals.filter((p) => p.test(rawText)).length;
+  if (resumeHits >= 2) {
+    throw new LeaseValidationError(
+      "not_a_lease",
+      "This appears to be a resume or CV, not a residential lease. Please upload an Ontario residential lease agreement.",
+      "resume"
+    );
+  }
+
+  // Invoice / bill detection
+  const invoiceSignals = [
+    /\binvoice\s*(number|#|no\.?)\b/i,
+    /\bbill\s+to\b/i,
+    /\btotal\s+(due|amount|payable)\b/i,
+    /\bpayment\s+due\s+date\b/i,
+    /\bpurchase\s+order\b/i,
+  ];
+  if (invoiceSignals.filter((p) => p.test(rawText)).length >= 2) {
+    throw new LeaseValidationError(
+      "not_a_lease",
+      "This appears to be an invoice or bill, not a residential lease. Please upload an Ontario residential lease agreement.",
+      "invoice"
+    );
+  }
+
+  // Non-residential contract types
+  const otherContractSignals = [
+    /\bemployment\s+agreement\b/i,
+    /\bservice\s+agreement\b/i,
+    /\bconsulting\s+agreement\b/i,
+    /\bnon.?disclosure\s+agreement\b/i,
+    /\bconfidentiality\s+agreement\b/i,
+    /\bshareholder\s+agreement\b/i,
+    /\bpurchase\s+and\s+sale\s+agreement\b/i,
+  ];
+  if (otherContractSignals.some((p) => p.test(rawText))) {
+    throw new LeaseValidationError(
+      "not_a_lease",
+      "This appears to be a non-residential contract. LeaseGuard only analyzes Ontario residential tenancy agreements.",
+      "other_contract"
+    );
+  }
+
+  // ── Stage 2: require minimum lease keyword signals ─────────────────────
+  const leaseSignals = [
+    /\b(landlord|lessor)\b/i,
+    /\b(tenant|lessee|renter)\b/i,
+    /\b(rental\s+unit|leased\s+premises|the\s+premises|rental\s+premises)\b/i,
+    /\b(monthly\s+rent|base\s+rent|rent\s+payment|rent\s+due|rent\s+of)\b/i,
+    /\b(tenancy\s+agreement|lease\s+agreement|rental\s+agreement|residential\s+lease)\b/i,
+    /\b(security\s+deposit|damage\s+deposit|last\s+month.?s\s+rent)\b/i,
+    /\b(landlord\s+and\s+tenant\s+board|\bLTB\b)\b/,
+    /\b(residential\s+tenancies\s+act|\bRTA\b)\b/,
+    /\b(term\s+of\s+(the\s+)?(tenancy|lease)|tenancy\s+term)\b/i,
+    /\b(notice\s+to\s+(vacate|terminate)|eviction\s+notice)\b/i,
+    /\b(occupancy|right\s+to\s+occupy|right\s+of\s+entry)\b/i,
+  ];
+  const leaseHits = leaseSignals.filter((p) => p.test(rawText)).length;
+
+  if (leaseHits < 2) {
+    throw new LeaseValidationError(
+      "not_a_lease",
+      "This document does not appear to be a residential lease. LeaseGuard only analyzes Ontario residential tenancy agreements. Please upload a lease or rental agreement.",
+      "unknown"
+    );
+  }
+}
+
 // ─── Address extraction ───────────────────────────────────────────────────────
 
 /**
@@ -451,6 +563,9 @@ export async function runLeaseAnalysis(
     fs.unlinkSync(tempFilePath);
     tempFilePath = null;
 
+    // ── 3b. Validate document type (fast heuristics — runs before any MCP calls) ──
+    validateDocumentType(rawText);
+
     // ── 4. Detect jurisdiction ─────────────────────────────────────────────
     const jurisdictionResult = await logger.call<{
       jurisdiction: string;
@@ -464,7 +579,32 @@ export async function runLeaseAnalysis(
 
     const { jurisdiction, jurisdiction_code: jurisdictionCode } = jurisdictionResult;
 
-    // ── 4b. Extract property address (best-effort, never throws) ──────────
+    // ── 4b. Enforce Ontario-only jurisdiction ──────────────────────────────
+    if (jurisdictionCode !== "CA-ON") {
+      if (jurisdictionCode.startsWith("CA-")) {
+        // Identified as a Canadian province other than Ontario
+        throw new LeaseValidationError(
+          "wrong_jurisdiction",
+          `This appears to be a ${jurisdiction} lease. LeaseGuard currently only supports Ontario residential leases under the Residential Tenancies Act, 2006.`,
+          jurisdictionCode
+        );
+      } else if (jurisdictionCode === "UNKNOWN") {
+        // No jurisdiction signals at all — could be a non-Canadian doc or very sparse text
+        throw new LeaseValidationError(
+          "wrong_jurisdiction",
+          "LeaseGuard could not confirm this is an Ontario lease. Please upload an Ontario residential tenancy agreement.",
+          "UNKNOWN"
+        );
+      } else if (jurisdictionCode === "INTL") {
+        throw new LeaseValidationError(
+          "wrong_jurisdiction",
+          "This appears to be a lease from outside Canada. LeaseGuard only analyzes Ontario residential leases.",
+          "INTL"
+        );
+      }
+    }
+
+    // ── 4c. Extract property address (best-effort, never throws) ──────────
     const addressInfo = extractLeaseAddress(rawText);
 
     // ── 5. Update DB: mark processing, store metadata ──────────────────────
@@ -834,10 +974,28 @@ export async function runLeaseAnalysis(
         process.env.SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
+
+      // For validation errors, store structured JSON so the frontend can
+      // render targeted error UI (not_a_lease vs wrong_jurisdiction).
+      // For all other errors, store plain text.
+      const storedError =
+        err instanceof LeaseValidationError
+          ? JSON.stringify({
+              code: err.code,
+              message: err.message,
+              detected_as: err.detectedAs ?? null,
+            })
+          : errMsg.slice(0, 1000);
+
       await failSupabase
         .from("leases")
-        .update({ status: "failed", error_message: errMsg.slice(0, 1000) })
+        .update({ status: "failed", error_message: storedError })
         .eq("id", leaseId);
+
+      // Clean up stored file for validation rejections — no point keeping a resume
+      if (err instanceof LeaseValidationError && storagePath) {
+        await failSupabase.storage.from("leases").remove([storagePath]);
+      }
     } catch {
       // Swallow DB error — we're already in the error path
     }
