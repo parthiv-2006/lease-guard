@@ -21,12 +21,13 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 ## Demo
 
-> **[▶ Watch the full walkthrough (.webm, 7.9 MB)](.github/assets/demo.webm)**
->
+<video src=".github/assets/demo.mp4" controls width="100%">
+  <a href=".github/assets/demo.mp4">▶ Watch the full walkthrough (MP4, 3.1 MB)</a>
+</video>
+
 > Shows: landing page → lease upload → processing animation → risk report → all 8 analysis panels.
 >
-> *To convert to MP4 for local playback:*
-> `ffmpeg -i .github/assets/demo.webm -c:v libx264 -crf 22 -movflags +faststart demo.mp4`
+> **Can't play inline?** [Download demo.mp4](.github/assets/demo.mp4) or [download demo.webm](.github/assets/demo.webm) (7.9 MB)
 
 ---
 
