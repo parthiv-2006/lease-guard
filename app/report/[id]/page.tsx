@@ -235,11 +235,17 @@ function ReportSidebar({
   onNavigate,
   report,
   onShare,
+  isMobile,
+  sidebarOpen,
+  onClose,
 }: {
   activePanel: PanelId;
   onNavigate: (panel: PanelId) => void;
   report: Report;
   onShare: () => void;
+  isMobile?: boolean;
+  sidebarOpen?: boolean;
+  onClose?: () => void;
 }) {
   const { lease, overall } = report;
 
@@ -252,11 +258,15 @@ function ReportSidebar({
         display: "flex",
         flexDirection: "column",
         height: "100vh",
-        position: "sticky",
+        position: isMobile ? "fixed" : "sticky",
         top: 0,
+        left: isMobile ? (sidebarOpen ? 0 : -272) : undefined,
         overflow: "auto",
         borderRight: "1px solid #252220",
         flexShrink: 0,
+        zIndex: isMobile ? 100 : undefined,
+        transition: isMobile ? "left 0.25s ease" : undefined,
+        boxShadow: isMobile && sidebarOpen ? "4px 0 24px rgba(0,0,0,0.4)" : undefined,
       }}
     >
       {/* Brand */}
@@ -310,8 +320,10 @@ function ReportSidebar({
           small
         />
         <div style={{ marginTop: "8px", fontSize: "11px", color: "#4a4744" }}>
-          {lease.page_count > 0 && `${lease.page_count}pp · `}
-          {lease.jurisdiction} · {lease.extraction_method}
+          {lease.page_count > 0 && (
+            `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `
+          )}
+          {lease.extraction_method === "ocr" ? "Scanned PDF" : "Digital PDF"}
         </div>
       </div>
 
@@ -341,7 +353,7 @@ function ReportSidebar({
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => { onNavigate(item.id); if (isMobile) onClose?.(); }}
               style={{
                 width: "100%",
                 display: "flex",
@@ -485,7 +497,20 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   const [splitScreen, setSplitScreen] = useState(false);
   const [activeClauseId, setActiveClauseId] = useState<string | null>(null);
   const [pdfWidthPct, setPdfWidthPct] = useState(48);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleResize() {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const onClauseActivate = (id: string) => setActiveClauseId(id);
 
@@ -535,11 +560,27 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         background: "#f6f3ee",
       }}
     >
+      {/* Mobile backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 99,
+          }}
+        />
+      )}
+
       <ReportSidebar
         activePanel={activePanel}
         onNavigate={setActivePanel}
         report={report}
         onShare={() => setShowShare(true)}
+        isMobile={isMobile}
+        sidebarOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* Right column */}
@@ -569,6 +610,29 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             zIndex: 10,
           }}
         >
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen((s) => !s)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                background: "none",
+                border: "1px solid #e8e4dc",
+                borderRadius: "5px",
+                cursor: "pointer",
+                padding: "5px 10px",
+                fontSize: "12px",
+                color: "#181614",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h12M2 8h12M2 12h12" stroke="#181614" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Menu
+            </button>
+          )}
           <button
             onClick={() => router.push("/")}
             style={{
@@ -798,6 +862,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                 padding: "36px 40px 60px",
                 maxWidth: "860px",
                 width: "100%",
+                margin: "0 auto",
               }}
             >
               {panels[activePanel]}
@@ -990,6 +1055,11 @@ export default function ReportPage() {
 
 // ── Field-name helpers ────────────────────────────────────────────────────────
 
+/** "rent payment" → "Rent Payment" */
+function toTitleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function mapMissingSeverity(s: string): "critical" | "important" | "minor" {
   if (s === "critical") return "critical";
   if (s === "high" || s === "important") return "important";
@@ -1035,7 +1105,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     id: (n.clause_id as string) ?? `neg-${i}`,
     clause_id: (n.clause_id as string) ?? "",
     clause_label: n.clause_type
-      ? (n.clause_type as string).replace(/_/g, " ")
+      ? toTitleCase((n.clause_type as string).replace(/_/g, " "))
       : `Clause ${i + 1}`,
     priority: (n.priority as Report["negotiation_points"][0]["priority"]) ?? "medium",
     negotiable: (n.negotiable as boolean) ?? true,
@@ -1051,9 +1121,10 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
   const rawMissing = (data.missing_protections as Array<Record<string, unknown>>) ?? [];
   const missing_protections: Report["missing_protections"] = rawMissing.map((m, i) => ({
     id: `missing-${i}`,
-    protection_name:
+    protection_name: toTitleCase(
       ((m.clause_type as string) ?? (m.protection_name as string) ?? "missing protection")
-        .replace(/_/g, " "),
+        .replace(/_/g, " ")
+    ),
     rta_section: (m.statute_section as string) ?? (m.rta_section as string) ?? "",
     severity: mapMissingSeverity((m.severity as string) ?? "low"),
     explanation: (m.description as string) ?? (m.explanation as string) ?? "",

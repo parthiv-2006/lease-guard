@@ -20,6 +20,15 @@ import {
 } from "./shared";
 import type { Report, Clause, NegotiationPoint, RiskLevel } from "./types";
 
+// ── Utility helpers ───────────────────────────────────────────────────────────
+
+/** Convert snake_case tool name → readable Title Case label, e.g. "parse_document" → "Parse Document" */
+function toToolLabel(name: string): string {
+  return name
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ── Clause detail card ────────────────────────────────────────────────────────
 
 interface ClauseCardProps {
@@ -999,8 +1008,8 @@ export function MissingPanel({ report }: { report: Report }) {
                       {m.rta_section}
                     </code>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#6b6560" }}>
-                    {m.explanation.substring(0, 90)}…
+                  <div style={{ fontSize: "12px", color: "#6b6560", lineHeight: 1.5 }}>
+                    {m.explanation}
                   </div>
                 </div>
                 <span
@@ -1413,9 +1422,11 @@ export function SourcesPanel({
                 >
                   <Icon name="external" size={13} color="#1d4ed8" /> ontario.ca
                 </a>
-                <span style={{ fontSize: "11px", color: "#9a9590" }}>
-                  Relevance: {(s.relevance_score * 100).toFixed(0)}%
-                </span>
+                {s.relevance_score > 0 && (
+                  <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                    Relevance: {(s.relevance_score * 100).toFixed(0)}%
+                  </span>
+                )}
                 <span style={{ fontSize: "11px", color: "#9a9590" }}>
                   {s.corpus_version}
                 </span>
@@ -1593,7 +1604,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                       textAlign: "left",
                     }}
                   >
-                    {step.tool_name}
+                    {toToolLabel(step.tool_name)}
                   </code>
                   <span style={{ fontSize: "11px", color: "#9a9590" }}>
                     {step.duration_ms >= 1000

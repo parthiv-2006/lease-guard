@@ -129,9 +129,17 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               <span>Analysis time: {overall.analysis_time_s}s</span>
             )}
             {lease.extraction_method && (
-              <span>Extraction: {lease.extraction_method}</span>
+              <span>
+                {lease.extraction_method === "ocr"
+                  ? "Scanned PDF (OCR)"
+                  : lease.extraction_method === "text"
+                  ? "Digital PDF"
+                  : lease.extraction_method}
+              </span>
             )}
-            {lease.page_count > 0 && <span>{lease.page_count} pages</span>}
+            {lease.page_count > 0 && (
+              <span>{lease.page_count} {lease.page_count === 1 ? "page" : "pages"}</span>
+            )}
           </div>
         </div>
       </div>

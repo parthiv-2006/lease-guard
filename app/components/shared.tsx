@@ -64,7 +64,7 @@ export const CLAUSE_TYPE_LABELS: Record<string, string> = {
   parking_storage: "Parking",
   guest_policy: "Guest Policy",
   standard_boilerplate: "Boilerplate",
-  unknown: "Unknown",
+  unknown: "General",
 };
 
 // ── SVG Arc Gauge ─────────────────────────────────────────────────────────────
