@@ -125,3 +125,29 @@ When an issue in `docs/HANDOFF.md` `## Known Issues` is fixed, move it here with
 - Modified `scripts/e2e-verify.mjs` to switch to the "List" view of the Agent Trace panel (by clicking `#trace-view-list` button) so that `benchmark_clause` is fully visible.
 - Verified that all 15 E2E assertions pass clean, and that the typescript compiler runs clean with no warnings. Commits: `8b106b8`, `7b3c587`.
 
+---
+
+## [RESOLVED 2026-05-21] #12 — PDF Signed URL Expires After 1 Hour
+
+**Was:** Clicking "View PDF" on a report older than 1 hour showed Supabase 400/403; PDF panel went blank.
+**Root cause:** `app/api/report/[id]/route.ts` generated `signedUrl` with `expiresIn: 3600`. URL was baked into `full_report_json` at analysis time with no refresh path.
+**Fix applied:** Added `/api/pdf-url/[id]` endpoint that generates a fresh signed URL on demand. `RealPDFViewer` in `pdf-viewer.tsx` now catches load errors and automatically fetches a fresh URL from this endpoint before showing an error state (`hasRetriedRef` prevents infinite retry). Commit: `75bde34`.
+
+---
+
+## [RESOLVED 2026-05-22] PDF Viewer Annotation Highlights Silent Failure (TextMarkedContent Index Mismatch)
+
+**Was:** All medium/high/critical clause annotations missing from real PDF view — only the raw PDF was shown, no colour highlights on any clause.
+**Root cause:** Migration from deprecated `pdfjsLib.renderTextLayer` to the new `TextLayer` class (pdfjs 4.x) introduced an index mismatch. `textContent.items` contains both `TextItem` objects (have `.str` — pdfjs creates a DOM `<span>` for each) and `TextMarkedContent` objects (have `.type` — pdfjs creates **no span**). The previous code mapped all items including `TextMarkedContent` to the `items[]` array, so `items[i]` and `spans[i]` were out of sync. Every `spans[itemIdx]` lookup either returned `undefined` or highlighted the wrong span, silently failing all annotations.
+**Fix applied:** Filtered `textContent.items` to only `TextItem` objects (those where `typeof it.str === "string"`) before building the index map, ensuring `spans[i]` always corresponds to `items[i]`. Also added progressive prefix fallback (40 → 25 → 15 chars) in both the persistent annotation pass and the active-clause flash pass, to tolerate hyphenation and whitespace differences between pdfjs and PyMuPDF extraction. Commit: `63fcd82`.
+
+---
+
+## [RESOLVED 2026-05-22] Export PDF and Negotiation Copilot Print Produced Screenshots
+
+**Was:** "Export PDF" in the report sidebar and "Print/PDF" in the negotiation copilot addendum tab both called `window.print()`, which opened the browser print dialog and produced a rasterized screenshot of the full page — not a proper PDF document.
+**Fix applied:** Added `lib/pdf-export.ts` using jsPDF's text API (no html2canvas):
+- `exportReportPDF(report)` — multi-page structured PDF: cover page with risk score, executive summary, high/critical clauses with statutory violations, all-clauses summary table, missing protections, contradictions, legal disclaimer, page footers.
+- `exportCopilotPDF(params)` — two modes: email (letter layout with subject block + body) and addendum (legal amendment document with numbered clauses in bordered boxes, signature blocks, lawyer-disclaimer footer).
+Both produce selectable, searchable text PDFs. Wired `exportReportPDF` to sidebar Export PDF button and `exportCopilotPDF` to both the addendum Save PDF button and a new Save PDF button on the email tab. Commit: `e65be13`.
+
