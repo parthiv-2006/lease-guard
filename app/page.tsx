@@ -427,7 +427,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     color: "#6b6560",
                   }}
                 >
-                  File verified · Ontario lease detected
+                  PDF verified · jurisdiction will be confirmed during analysis
                 </p>
                 <div
                   style={{
