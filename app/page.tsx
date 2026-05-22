@@ -642,6 +642,8 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
   const [elapsed, setElapsed] = useState(0);
   const [failed, setFailed] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string>("analysis_failed");
+  const [detectedAs, setDetectedAs] = useState<string | null>(null);
   const startRef = useRef(Date.now());
 
   // Elapsed timer
@@ -674,6 +676,8 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
 
         if (job.status === "failed") {
           setFailed(true);
+          setErrorCode(job.error_code ?? "analysis_failed");
+          setDetectedAs(job.detected_as ?? null);
           setErrorMsg(
             job.error_message ?? "Analysis failed. Please try again."
           );
@@ -705,6 +709,226 @@ function ProcessingPage({ leaseId, filename }: ProcessingPageProps) {
   const remaining = Math.max(0, totalExpected - elapsed);
 
   if (failed) {
+    // ── not_a_lease ─────────────────────────────────────────────────────────
+    if (errorCode === "not_a_lease") {
+      const detectedLabels: Record<string, string> = {
+        resume: "a resume or CV",
+        invoice: "an invoice or bill",
+        other_contract: "a non-residential contract",
+        unknown: "a non-lease document",
+      };
+      const detectedLabel = detectedLabels[detectedAs ?? ""] ?? "a non-lease document";
+
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "#f6f3ee",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'DM Sans', sans-serif",
+            padding: "24px",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "480px",
+              width: "100%",
+              background: "#fff",
+              border: "1px solid #e8e4dc",
+              borderRadius: "12px",
+              padding: "36px 32px",
+              textAlign: "center",
+            }}
+          >
+            {/* Document-with-X icon */}
+            <div style={{ marginBottom: "20px" }}>
+              <svg width="52" height="60" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="40" height="50" rx="3" fill="#fef2f2" stroke="#fecaca" strokeWidth="1.5"/>
+                <path d="M29 1l12 11H30a1 1 0 01-1-1V1z" fill="#fee2e2" stroke="#fecaca" strokeWidth="1.5"/>
+                <circle cx="39" cy="47" r="11" fill="#b91c1c"/>
+                <path d="M35 47l4-4m0 4l-4-4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <rect x="8" y="22" width="16" height="2" rx="1" fill="#fca5a5"/>
+                <rect x="8" y="28" width="24" height="2" rx="1" fill="#fca5a5"/>
+                <rect x="8" y="34" width="20" height="2" rx="1" fill="#fca5a5"/>
+              </svg>
+            </div>
+
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#181614",
+                fontFamily: "'Cormorant Garamond', serif",
+                marginBottom: "8px",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              This doesn&apos;t look like a lease
+            </div>
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#6b6560",
+                marginBottom: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              We detected {detectedLabel}, not an Ontario residential lease.
+              LeaseGuard only analyzes residential tenancy agreements — such as
+              the Ontario Standard Form of Lease or a custom rental agreement.
+            </div>
+
+            {/* What to upload */}
+            <div
+              style={{
+                background: "#f6f3ee",
+                borderRadius: "8px",
+                padding: "14px 16px",
+                textAlign: "left",
+                marginBottom: "24px",
+              }}
+            >
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "10px" }}>
+                What to upload
+              </div>
+              {[
+                "Ontario Standard Form of Lease",
+                "Custom residential rental agreements",
+                "Month-to-month or fixed-term tenancies",
+                "Ontario lease renewals or addendums",
+              ].map((item) => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8l3.5 3.5L13 4.5" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ fontSize: "12px", color: "#6b6560" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => router.push("/")}
+              style={{
+                width: "100%",
+                padding: "11px 24px",
+                borderRadius: "7px",
+                border: "none",
+                background: "#181614",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+                letterSpacing: "0.02em",
+              }}
+            >
+              Upload a lease instead
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── wrong_jurisdiction ──────────────────────────────────────────────────
+    if (errorCode === "wrong_jurisdiction") {
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "#f6f3ee",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'DM Sans', sans-serif",
+            padding: "24px",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "480px",
+              width: "100%",
+              background: "#fff",
+              border: "1px solid #e8e4dc",
+              borderRadius: "12px",
+              padding: "36px 32px",
+              textAlign: "center",
+            }}
+          >
+            {/* Location pin icon */}
+            <div style={{ marginBottom: "20px" }}>
+              <svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="22" r="20" fill="#fef9ec" stroke="#fde68a" strokeWidth="1.5"/>
+                <path d="M24 12c-5.5 0-10 4.5-10 10 0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z" fill="#fde68a" stroke="#d97706" strokeWidth="1.5"/>
+                <circle cx="24" cy="22" r="3.5" fill="#d97706"/>
+              </svg>
+            </div>
+
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#181614",
+                fontFamily: "'Cormorant Garamond', serif",
+                marginBottom: "8px",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Ontario leases only
+            </div>
+            <div
+              style={{
+                fontSize: "13px",
+                color: "#6b6560",
+                marginBottom: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              {errorMsg}
+            </div>
+
+            <div
+              style={{
+                background: "#fefce8",
+                border: "1px solid #fde68a",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                fontSize: "12px",
+                color: "#92400e",
+                marginBottom: "24px",
+                textAlign: "left",
+                lineHeight: 1.6,
+              }}
+            >
+              LeaseGuard uses the Ontario Residential Tenancies Act, 2006 and
+              LTB case law. Analysis for other provinces is not yet supported.
+            </div>
+
+            <button
+              onClick={() => router.push("/")}
+              style={{
+                width: "100%",
+                padding: "11px 24px",
+                borderRadius: "7px",
+                border: "none",
+                background: "#181614",
+                color: "#fff",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+                letterSpacing: "0.02em",
+              }}
+            >
+              Try another document
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── generic analysis_failed ─────────────────────────────────────────────
     return (
       <div
         style={{
