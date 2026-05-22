@@ -105,7 +105,7 @@ export default function AboutPage() {
           maxWidth: "760px",
           width: "100%",
           margin: "0 auto",
-          padding: "72px 24px 96px",
+          padding: "48px 24px 80px",
         }}
       >
         {/* Hero */}
