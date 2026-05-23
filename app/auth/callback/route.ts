@@ -30,9 +30,12 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    return NextResponse.redirect(
+      `${origin}/sign-in?error=${encodeURIComponent(error.message || "Authentication failed. Please try again.")}`
+    );
   }
 
   return NextResponse.redirect(
-    `${origin}/sign-in?error=${encodeURIComponent("Authentication failed. Please try again.")}`
+    `${origin}/sign-in?error=${encodeURIComponent("No code present in callback URL.")}`
   );
 }
