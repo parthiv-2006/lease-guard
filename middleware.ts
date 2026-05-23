@@ -25,10 +25,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session — must call getUser() (not getSession()) per Supabase SSR docs
+  // Use getSession() in middleware to avoid an outbound HTTPS call to Supabase.
+  // Edge Runtime on Windows dev can't verify Supabase's TLS cert; getSession()
+  // reads the JWT from cookies without a network round-trip, which is sufficient
+  // for routing decisions. The dashboard page does a server-side getUser() check
+  // for actual auth enforcement.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   // Guard /dashboard — redirect unauthenticated users to sign-in
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
