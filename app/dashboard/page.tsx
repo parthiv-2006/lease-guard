@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SignOutButton } from "../components/auth-button";
+import { DeleteLeaseButton } from "../components/delete-lease-button";
 
 interface LeaseRow {
   id: string;
@@ -391,6 +392,9 @@ export default async function DashboardPage() {
                   >
                     View report →
                   </Link>
+
+                  {/* PIPEDA erasure */}
+                  <DeleteLeaseButton leaseId={lease.id} />
                 </div>
               );
             })}
@@ -407,10 +411,18 @@ export default async function DashboardPage() {
           color: "#b0aaa4",
           textAlign: "center",
           flexShrink: 0,
+          display: "flex",
+          gap: "16px",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
         }}
       >
-        LeaseGuard provides educational information only and does not constitute
-        legal advice.
+        <span>LeaseGuard provides educational information only — not legal advice.</span>
+        <span style={{ color: "#ddd8cf" }}>·</span>
+        <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+          Privacy Policy
+        </Link>
       </footer>
     </div>
   );
