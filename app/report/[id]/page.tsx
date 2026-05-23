@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Icon, RiskBadge } from "../../components/shared";
+import { AuthButton } from "../../components/auth-button";
 import { OverviewPanel } from "../../components/overview-panel";
 import {
   RedFlagsPanel,
@@ -742,6 +743,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             </svg>
             {splitScreen ? "Close PDF" : "View PDF"}
           </button>
+
+          <AuthButton />
         </div>
 
         {/* Content area — split or normal */}
