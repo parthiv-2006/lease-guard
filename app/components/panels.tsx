@@ -41,6 +41,7 @@ interface ClauseCardProps {
 
 function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivate }: ClauseCardProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
+  const [showCompliant, setShowCompliant] = useState(false);
   const col = riskColor(clause.risk_level);
   const bg = riskBg(clause.risk_level);
   const border = riskBorder(clause.risk_level);
@@ -150,6 +151,24 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 Standard
               </span>
             )}
+            {clause.grounding_confidence !== undefined &&
+              clause.grounding_confidence < 0.7 && (
+                <span
+                  title={`Grounding confidence: ${Math.round(clause.grounding_confidence * 100)}% — ${clause.grounding_confidence < 0.4 ? "no statute retrieved for this clause" : "only partial statute coverage"}`}
+                  style={{
+                    fontSize: "10px",
+                    padding: "1px 7px",
+                    background: clause.grounding_confidence < 0.4 ? "#fffbeb" : "#f9fafb",
+                    border: `1px solid ${clause.grounding_confidence < 0.4 ? "#fde68a" : "#d1d5db"}`,
+                    borderRadius: "3px",
+                    color: clause.grounding_confidence < 0.4 ? "#92400e" : "#6b7280",
+                    fontWeight: 500,
+                    cursor: "default",
+                  }}
+                >
+                  {clause.grounding_confidence < 0.4 ? "⚠ No statute retrieved" : "Limited sources"}
+                </span>
+              )}
           </div>
         </div>
         <div style={{ flexShrink: 0 }}>
@@ -309,6 +328,59 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Compliant language — only shown when a mandatory RTA provision is violated */}
+          {clause.suggested_compliant_language && (
+            <div style={{ marginBottom: "18px" }}>
+              <button
+                onClick={() => setShowCompliant((v) => !v)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  fontSize: "10px",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "#6b6560",
+                  fontWeight: 500,
+                  marginBottom: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    transform: showCompliant ? "rotate(90deg)" : "none",
+                    transition: "transform 0.15s",
+                    fontSize: "9px",
+                  }}
+                >
+                  ▶
+                </span>
+                What would a compliant version look like?
+              </button>
+              {showCompliant && (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    lineHeight: 1.75,
+                    color: "#374151",
+                    background: "#f0fdf4",
+                    padding: "12px 14px",
+                    borderRadius: "6px",
+                    borderLeft: "2px solid #86efac",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {clause.suggested_compliant_language}
+                </div>
+              )}
             </div>
           )}
 

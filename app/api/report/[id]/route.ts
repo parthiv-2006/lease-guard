@@ -45,7 +45,8 @@ export async function GET(
       .select(
         "id, clause_number, heading, raw_text, primary_type, risk_score, risk_level, " +
         "is_potentially_unenforceable, is_unusual, is_standard, " +
-        "plain_english_explanation, risk_reasoning, statutory_violations, has_negotiation_point"
+        "plain_english_explanation, risk_reasoning, statutory_violations, has_negotiation_point, " +
+        "analysis_confidence"
       )
       .eq("lease_id", id)
       .order("clause_number"),

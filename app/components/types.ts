@@ -24,6 +24,10 @@ export interface Clause {
   risk_reasoning: string;
   statutory_violations: StatutoryViolation[];
   has_negotiation_point: boolean;
+  /** Grounding confidence from score_risk (0–1). Mapped from analysis_confidence DB column. */
+  grounding_confidence?: number;
+  /** Model compliant clause text. Only present when a mandatory RTA provision is violated. */
+  suggested_compliant_language?: string;
 }
 
 export interface Contradiction {

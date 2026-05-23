@@ -1082,6 +1082,43 @@ function toTitleCase(s: string): string {
   return s.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Map RTA section number → compliant language template.
+ *  Used as a fallback when the DB column is null (pre-migration data).
+ *  Keyed by the most specific section substring to avoid false matches. */
+const SECTION_TO_COMPLIANT: Record<string, string> = {
+  "s.26": "The Landlord may enter the rental unit only in accordance with sections 26 and 27 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 24 hours' written notice specifying the reason for entry and the time of entry (between 8:00 a.m. and 8:00 p.m.). Entry without notice is permitted only in the case of an emergency as defined in s.26(3) of the Act.",
+  "s.27": "The Landlord may enter the rental unit only in accordance with sections 26 and 27 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 24 hours' written notice specifying the reason for entry and the time of entry (between 8:00 a.m. and 8:00 p.m.). Entry without notice is permitted only in the case of an emergency as defined in s.26(3) of the Act.",
+  "s.105": "The Tenant shall provide a last month's rent deposit equal to one month's rent, as permitted by section 105 of the Residential Tenancies Act, 2006. No additional security deposit, damage deposit, or non-refundable deposit of any kind may be collected.",
+  "s.106": "The Tenant shall pay a last month's rent deposit equal to one month's rent, applied to the final period of the tenancy, in accordance with section 106 of the Residential Tenancies Act, 2006. This deposit is refundable and shall be returned with accrued interest if not applied to the last rent period.",
+  "s.14": "Note: Any provision restricting pets is void under section 14 of the Residential Tenancies Act, 2006, and no fine, fee, or penalty may be imposed for keeping a pet, nor may a tenancy be terminated solely on the basis of having a pet.",
+  "s.20": "The Landlord shall maintain the rental unit and residential complex in a good state of repair and fit for habitation, and shall comply with all applicable health, safety, housing, and maintenance standards, as required by section 20 of the Residential Tenancies Act, 2006. The Tenant is responsible for ordinary cleanliness of the rental unit only.",
+  "s.120": "The Landlord may increase the rent only once per 12-month period and only in accordance with the annual rent increase guideline established by the Province of Ontario under section 120 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 90 days' written notice using the prescribed Form N1 before any increase takes effect.",
+  "s.116": "The Landlord may increase the rent only once per 12-month period and only in accordance with the annual rent increase guideline established by the Province of Ontario under section 116 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 90 days' written notice using the prescribed Form N1 before any increase takes effect.",
+  "s.108": "Rent shall be paid on the first day of each month. Post-dated cheques and pre-authorized payment are not required. The Tenant may pay by any mutually agreed lawful method. Pre-authorized debit or cheques may be provided voluntarily but cannot be demanded as a condition of the tenancy, in accordance with section 108 of the Residential Tenancies Act, 2006.",
+  "s.59": "Rent is due on the first day of each month. If rent is not paid when due, the Landlord's remedy is to serve a Notice to End a Tenancy Early for Non-payment of Rent (Form N4) in accordance with section 59 of the Residential Tenancies Act, 2006. No additional charges, daily fees, interest, or penalties for late payment may be imposed.",
+  "s.134": "Rent is due on the first day of each month. If rent is not paid when due, the Landlord's remedy is to serve a Notice to End a Tenancy Early for Non-payment of Rent (Form N4) in accordance with section 59 of the Residential Tenancies Act, 2006. No additional charges, daily fees, interest, or penalties for late payment may be imposed.",
+  "s.19": "A tenancy may only be terminated in accordance with the Residential Tenancies Act, 2006. The Landlord shall not change the locks, seize belongings, or otherwise interfere with the Tenant's access to the rental unit. Eviction may only be carried out by a Sheriff acting on a valid order of the Landlord and Tenant Board, as required by section 19 of the Act.",
+  "s.44": "Either party may terminate this tenancy only in accordance with the Residential Tenancies Act, 2006. Termination notices must be in writing on a prescribed LTB form. The Landlord shall provide at least 60 days' written notice for most terminations. Verbal notice and notice periods shorter than the statutory minimum are void and of no effect.",
+  "s.3": "This agreement is governed by the Residential Tenancies Act, 2006. No provision of this agreement limits the rights or remedies of either party under that Act. Any term that purports to contract out of or limit the Act's protections is void, pursuant to section 3(1) of the Residential Tenancies Act, 2006.",
+};
+
+/** Derive compliant language from statutory violations when DB column is absent.
+ *  Tries each violation's section number in specificity order (longer section first). */
+function deriveCompliantLanguage(
+  violations: Array<{ statute_section?: string; violation_description?: string }>
+): string | undefined {
+  for (const v of violations) {
+    if (!v.statute_section) continue;
+    const section = v.statute_section.toLowerCase();
+    // Try longest (most specific) key match first
+    const key = Object.keys(SECTION_TO_COMPLIANT)
+      .sort((a, b) => b.length - a.length)
+      .find((k) => section.includes(k.toLowerCase()));
+    if (key) return SECTION_TO_COMPLIANT[key];
+  }
+  return undefined;
+}
+
 function mapMissingSeverity(s: string): "critical" | "important" | "minor" {
   if (s === "critical") return "critical";
   if (s === "high" || s === "important") return "important";
@@ -1119,6 +1156,12 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     statutory_violations:
       (c.statutory_violations as Report["clauses"][0]["statutory_violations"]) ?? [],
     has_negotiation_point: (c.has_negotiation_point as boolean) ?? false,
+    grounding_confidence: (c.analysis_confidence as number) ?? undefined,
+    suggested_compliant_language:
+      (c.suggested_compliant_language as string) ||
+      deriveCompliantLanguage(
+        (c.statutory_violations as Array<{ statute_section?: string; violation_description?: string }>) ?? []
+      ),
   }));
 
   // ── Negotiation points — add synthetic id + clause_label ─────────────────
