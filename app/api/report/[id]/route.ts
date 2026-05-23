@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const DISCLAIMER =
   "This analysis is not legal advice. Consult a licensed paralegal or lawyer before making decisions about your lease. Community Legal Clinics in Ontario offer free legal help for tenants.";
@@ -156,4 +157,82 @@ export async function POST(
     consent_notice:
       "Anyone with this link can view your report for 90 days. The report contains excerpts from your lease.",
   });
+}
+
+// ── DELETE /api/report/[id] ───────────────────────────────────────────────────
+// PIPEDA right of erasure. Authenticated users only; must own the lease.
+// Cascades: tool_call_logs → clauses → reports → storage → leases.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json(
+      { error: "invalid_id", message: "Invalid report ID format." },
+      { status: 400 }
+    );
+  }
+
+  // Require authentication
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "unauthenticated", message: "Sign in to delete your analyses." },
+      { status: 401 }
+    );
+  }
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Verify ownership
+  const { data: lease, error: leaseErr } = await supabase
+    .from("leases")
+    .select("id, user_id, file_path")
+    .eq("id", id)
+    .single();
+
+  if (leaseErr || !lease) {
+    return NextResponse.json(
+      { error: "not_found", message: "Analysis not found." },
+      { status: 404 }
+    );
+  }
+
+  if (lease.user_id !== user.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "You do not own this analysis." },
+      { status: 403 }
+    );
+  }
+
+  // Cascade delete — order matters (FK constraints)
+  await supabase.from("tool_call_logs").delete().eq("lease_id", id);
+  await supabase.from("clauses").delete().eq("lease_id", id);
+  await supabase.from("reports").delete().eq("lease_id", id);
+
+  // Delete PDF from Storage
+  if (typeof lease.file_path === "string" && lease.file_path.length > 0) {
+    await supabase.storage.from("leases").remove([lease.file_path]);
+  }
+
+  // Delete lease row last
+  const { error: deleteErr } = await supabase
+    .from("leases")
+    .delete()
+    .eq("id", id);
+
+  if (deleteErr) {
+    return NextResponse.json(
+      { error: "delete_failed", message: "Could not delete analysis. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  return new NextResponse(null, { status: 204 });
 }
