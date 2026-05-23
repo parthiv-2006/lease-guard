@@ -37,6 +37,11 @@ function formatDate(iso: string): string {
   });
 }
 
+const dashboardStyles = `
+  .dash-new-btn:hover { background: #2a2825 !important; }
+  .dash-view-btn:hover { background: #f6f3ee !important; }
+`;
+
 export default async function DashboardPage() {
   const authClient = await createSupabaseServerClient();
   const {
@@ -72,6 +77,7 @@ export default async function DashboardPage() {
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
+      <style>{dashboardStyles}</style>
       {/* Header */}
       <header
         style={{
@@ -173,6 +179,7 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/"
+            className="dash-new-btn"
             style={{
               padding: "9px 20px",
               borderRadius: "7px",
@@ -184,14 +191,6 @@ export default async function DashboardPage() {
               letterSpacing: "0.01em",
               flexShrink: 0,
             }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background =
-                "#2a2825")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLAnchorElement).style.background =
-                "#181614")
-            }
           >
             + New analysis
           </Link>
@@ -377,6 +376,7 @@ export default async function DashboardPage() {
                   {/* View report link */}
                   <Link
                     href={`/report/${lease.id}`}
+                    className="dash-view-btn"
                     style={{
                       flexShrink: 0,
                       padding: "6px 14px",
@@ -388,14 +388,6 @@ export default async function DashboardPage() {
                       textDecoration: "none",
                       fontWeight: 500,
                     }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.background =
-                        "#f6f3ee")
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.background =
-                        "#fff")
-                    }
                   >
                     View report →
                   </Link>
