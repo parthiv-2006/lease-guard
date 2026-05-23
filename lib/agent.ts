@@ -78,6 +78,7 @@ interface RiskScore {
     violation_description: string;
   }>;
   confidence: number;
+  suggested_compliant_language?: string;
 }
 
 interface NegotiationPoint {
@@ -771,6 +772,7 @@ export async function runLeaseAnalysis(
           risk_reasoning: riskScore.risk_reasoning,
           statutory_violations: riskScore.statutory_violations,
           analysis_confidence: riskScore.confidence,
+          suggested_compliant_language: riskScore.suggested_compliant_language ?? null,
           has_negotiation_point:
             riskScore.risk_score >= NEGOTIATION_RISK_THRESHOLD,
           cross_references: clause.cross_references,
