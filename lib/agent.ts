@@ -16,6 +16,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { McpClient } from "./mcp-client";
 import { MCP_SERVER_PATH } from "./anthropic";
+import { emitAnalysisEvent } from "./analysis-events";
 import os from "os";
 import path from "path";
 import fs from "fs";
@@ -539,6 +540,8 @@ export async function runLeaseAnalysis(
     mcp = await McpClient.create(MCP_SERVER_PATH);
     const logger = new ToolCallLogger(supabase, leaseId);
 
+    emitAnalysisEvent(leaseId, { type: "log", message: "Parsing PDF...", severity: "info" });
+
     // ── 3. Parse document ──────────────────────────────────────────────────
     const parseResult = await logger.call<{
       raw_text: string;
@@ -552,6 +555,13 @@ export async function runLeaseAnalysis(
 
     const { raw_text: rawText, page_count: pageCount, extraction_method: extractionMethod } =
       parseResult;
+
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: `✓ Extracted ${pageCount} pages via ${extractionMethod === "ocr" ? "OCR" : "text layer"}`,
+      severity: "success",
+      step: 1,
+    });
 
     if (!rawText || rawText.trim().length < 50) {
       throw new Error(
@@ -578,6 +588,13 @@ export async function runLeaseAnalysis(
     });
 
     const { jurisdiction, jurisdiction_code: jurisdictionCode } = jurisdictionResult;
+
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: `✓ Jurisdiction confirmed: ${jurisdiction}`,
+      severity: "success",
+      step: 2,
+    });
 
     // ── 4b. Enforce Ontario-only jurisdiction ──────────────────────────────
     if (jurisdictionCode !== "CA-ON") {
@@ -641,6 +658,18 @@ export async function runLeaseAnalysis(
       );
     }
 
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: `✓ Found ${clauses.length} clauses — beginning analysis`,
+      severity: "success",
+      step: 3,
+    });
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: `Analyzing clauses against 2,372 RTA statute chunks...`,
+      severity: "info",
+    });
+
     // ── 7. Parallel clause analysis (batches of CLAUSE_BATCH_SIZE) ─────────
     const analyzedClauses: AnalyzedClause[] = [];
 
@@ -702,7 +731,25 @@ export async function runLeaseAnalysis(
           jurisdiction_code: jurisdictionCode,
         });
 
-        // 7d. Persist clause row
+        // 7d. Emit clause result
+        {
+          const sev =
+            riskScore.risk_level === "critical" ? "critical"
+            : riskScore.risk_level === "high" ? "warning"
+            : "info";
+          const statuteNote = retrievedStatutes.length > 0
+            ? ` — ${retrievedStatutes.length} statute ref${retrievedStatutes.length !== 1 ? "s" : ""}`
+            : "";
+          const violationNote = riskScore.is_potentially_unenforceable
+            ? " ⚠ potentially unenforceable" : "";
+          emitAnalysisEvent(leaseId, {
+            type: "log",
+            message: `${clauseType.replace(/_/g, " ")}: ${riskScore.risk_level} (${riskScore.risk_score.toFixed(1)})${statuteNote}${violationNote}`,
+            severity: sev,
+          });
+        }
+
+        // 7e. Persist clause row
         const dbClauseId = uuidv4();
         await supabase.from("clauses").insert({
           id: dbClauseId,
@@ -748,6 +795,13 @@ export async function runLeaseAnalysis(
       }
     });
 
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: `✓ ${analyzedClauses.length} clause${analyzedClauses.length !== 1 ? "s" : ""} analyzed`,
+      severity: "success",
+      step: 4,
+    });
+
     // ── 8. Contradiction detection ─────────────────────────────────────────
     // Index analyzed clauses by type (first occurrence wins for contradictions)
     const byType = new Map<string, AnalyzedClause>();
@@ -756,6 +810,17 @@ export async function runLeaseAnalysis(
     }
 
     const contradictionResults: ContradictionResult[] = [];
+
+    {
+      const pairCount = CONTRADICTION_TYPE_PAIRS.filter(([a, b]) => byType.has(a) && byType.has(b)).length;
+      if (pairCount > 0) {
+        emitAnalysisEvent(leaseId, {
+          type: "log",
+          message: `Checking ${pairCount} clause pair${pairCount !== 1 ? "s" : ""} for contradictions...`,
+          severity: "info",
+        });
+      }
+    }
 
     await Promise.allSettled(
       CONTRADICTION_TYPE_PAIRS.filter(
@@ -797,6 +862,11 @@ export async function runLeaseAnalysis(
           contradictionResults.push(enriched);
 
           if (result.has_contradiction) {
+            emitAnalysisEvent(leaseId, {
+              type: "log",
+              message: `! Contradiction: ${typeA.replace(/_/g, " ")} ↔ ${typeB.replace(/_/g, " ")}`,
+              severity: "warning",
+            });
             await supabase.from("contradictions").insert({
               lease_id: leaseId,
               clause_a_id: acA.db_clause_id,
@@ -833,13 +903,27 @@ export async function runLeaseAnalysis(
     const missingProtections: unknown[] = missingRaw.missing_protections ?? [];
     const implicitProtections: unknown[] = missingRaw.implicit_protections ?? [];
 
+    if (missingProtections.length > 0) {
+      emitAnalysisEvent(leaseId, {
+        type: "log",
+        message: `! ${missingProtections.length} missing protection${missingProtections.length !== 1 ? "s" : ""} identified`,
+        severity: "warning",
+      });
+    }
+
     // ── 10. Generate negotiation points (parallel) ─────────────────────────
     const highRiskClauses = analyzedClauses
       .filter((c) => c.risk_score_result.risk_score >= NEGOTIATION_RISK_THRESHOLD)
-      .sort(
-        (a, b) => b.risk_score_result.risk_score - a.risk_score_result.risk_score
-      )
+      .sort((a, b) => b.risk_score_result.risk_score - a.risk_score_result.risk_score)
       .slice(0, MAX_NEGOTIATION_POINTS);
+
+    if (highRiskClauses.length > 0) {
+      emitAnalysisEvent(leaseId, {
+        type: "log",
+        message: `Generating negotiation guidance for ${highRiskClauses.length} high-risk clause${highRiskClauses.length !== 1 ? "s" : ""}...`,
+        severity: "info",
+      });
+    }
 
     await Promise.allSettled(
       highRiskClauses.map(async (ac) => {
@@ -900,6 +984,13 @@ export async function runLeaseAnalysis(
           /* Benchmark failures never block the pipeline */
         });
     }
+
+    emitAnalysisEvent(leaseId, {
+      type: "log",
+      message: "Assembling final risk report...",
+      severity: "info",
+      step: 4,
+    });
 
     // ── 12. Generate final report ──────────────────────────────────────────
     const reportPayload = await logger.call<{
@@ -963,10 +1054,35 @@ export async function runLeaseAnalysis(
         analysis_completed_at: new Date().toISOString(),
       })
       .eq("id", leaseId);
+
+    const completeSev =
+      reportPayload.overall_risk_level === "critical" ? "critical"
+      : reportPayload.overall_risk_level === "high" ? "warning"
+      : "success";
+    emitAnalysisEvent(leaseId, {
+      type: "complete",
+      message: `✓ Analysis complete — risk score: ${reportPayload.overall_risk_score.toFixed(1)}/10 (${reportPayload.overall_risk_level.toUpperCase()})`,
+      severity: completeSev,
+    });
   } catch (err) {
     // ── Error path: record failure, then re-throw ──────────────────────────
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error(`[agent] Pipeline failed for lease ${leaseId}:`, errMsg);
+
+    // Emit error event so the SSE stream closes cleanly.
+    if (err instanceof LeaseValidationError) {
+      emitAnalysisEvent(leaseId, {
+        type: "error",
+        message: JSON.stringify({ code: err.code, message: err.message, detected_as: err.detectedAs ?? null }),
+        severity: "critical",
+      });
+    } else {
+      emitAnalysisEvent(leaseId, {
+        type: "error",
+        message: errMsg.slice(0, 500),
+        severity: "critical",
+      });
+    }
 
     try {
       // Use a fresh client — the one above may be in a bad state
