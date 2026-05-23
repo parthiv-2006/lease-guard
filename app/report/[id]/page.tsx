@@ -907,6 +907,33 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         negotiationPoints={report.negotiation_points}
         propertyAddress={report.lease.address || "the rental unit"}
       />
+
+      {/* Slim privacy footer */}
+      <footer
+        style={{
+          padding: "10px 24px",
+          borderTop: "1px solid #e8e4dc",
+          fontSize: "11px",
+          color: "#b0aaa4",
+          textAlign: "center",
+          flexShrink: 0,
+          display: "flex",
+          gap: "12px",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+          background: "#f6f3ee",
+        }}
+      >
+        <span>Educational information only — not legal advice.</span>
+        <span style={{ color: "#ddd8cf" }}>·</span>
+        <Link
+          href="/privacy"
+          style={{ color: "#b0aaa4", textDecoration: "underline" }}
+        >
+          Privacy Policy
+        </Link>
+      </footer>
     </div>
   );
 }
