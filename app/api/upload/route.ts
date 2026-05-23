@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { runLeaseAnalysis } from "@/lib/agent";
 import { v4 as uuidv4 } from "uuid";
@@ -112,11 +113,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Associate with authenticated user (null for guest uploads) ────────────
+  const authClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
   // ── Create lease row ───────────────────────────────────────────────────────
   const { error: dbError } = await supabase.from("leases").insert({
     id: leaseId,
     status: "pending",
     file_path: storagePath,
+    user_id: user?.id ?? null,
   });
 
   if (dbError) {
