@@ -650,6 +650,27 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
 
 // ── Processing Page ───────────────────────────────────────────────────────────
 
+interface LogLine {
+  id: number;
+  message: string;
+  severity?: "info" | "success" | "warning" | "critical";
+  timestamp: number;
+}
+
+function severityColor(s?: string): string {
+  if (s === "critical") return "#f87171";
+  if (s === "warning") return "#fbbf24";
+  if (s === "success") return "#4ade80";
+  return "#8c8680";
+}
+
+function formatLogTime(ts: number): string {
+  const d = new Date(ts);
+  return [d.getHours(), d.getMinutes(), d.getSeconds()]
+    .map((n) => String(n).padStart(2, "0"))
+    .join(":");
+}
+
 interface ProcessingPageProps {
   leaseId: string;
   filename: string;
@@ -665,7 +686,11 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string>("analysis_failed");
   const [detectedAs, setDetectedAs] = useState<string | null>(null);
+  const [logLines, setLogLines] = useState<LogLine[]>([]);
+  const [usePollingFallback, setUsePollingFallback] = useState(false);
   const startRef = useRef(Date.now());
+  const logContainerRef = useRef<HTMLDivElement>(null);
+  const lineIdRef = useRef(0);
 
   // Elapsed timer
   useEffect(() => {
@@ -675,56 +700,144 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
     return () => clearInterval(iv);
   }, []);
 
-  // Poll job status every 2s
+  // Auto-scroll log container when new lines arrive
   useEffect(() => {
+    const el = logContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [logLines]);
+
+  // SSE stream — primary progress mechanism
+  useEffect(() => {
+    if (usePollingFallback) return;
+
+    const es = new EventSource(`/api/stream/${leaseId}`);
+
+    es.onmessage = (e: MessageEvent) => {
+      let event: { type: string; message: string; step?: number; severity?: string; timestamp: number };
+      try {
+        event = JSON.parse(e.data as string);
+      } catch {
+        return;
+      }
+
+      if (event.type === "log") {
+        setLogLines((prev) => [
+          ...prev,
+          {
+            id: ++lineIdRef.current,
+            message: event.message,
+            severity: event.severity as LogLine["severity"],
+            timestamp: event.timestamp,
+          },
+        ]);
+        if (event.step !== undefined) {
+          setCurrentStep(event.step);
+          setCompletedSteps(Array.from({ length: event.step }, (_, i) => i));
+        }
+      }
+
+      if (event.type === "complete") {
+        setLogLines((prev) => [
+          ...prev,
+          {
+            id: ++lineIdRef.current,
+            message: event.message,
+            severity: "success",
+            timestamp: event.timestamp,
+          },
+        ]);
+        setCompletedSteps([0, 1, 2, 3, 4]);
+        setCurrentStep(5);
+        es.close();
+        setTimeout(() => router.push(`/report/${leaseId}`), 1000);
+      }
+
+      if (event.type === "error") {
+        es.close();
+        // error message may be plain text or JSON-encoded LeaseValidationError
+        let parsedCode = "analysis_failed";
+        let parsedMsg = event.message;
+        let parsedDetectedAs: string | null = null;
+        if (event.message.startsWith("{")) {
+          try {
+            const p = JSON.parse(event.message) as {
+              code?: string;
+              message?: string;
+              detected_as?: string | null;
+            };
+            parsedCode = p.code ?? "analysis_failed";
+            parsedMsg = p.message ?? event.message;
+            parsedDetectedAs = p.detected_as ?? null;
+          } catch { /* use raw message */ }
+        }
+        setFailed(true);
+        setErrorCode(parsedCode);
+        setErrorMsg(parsedMsg);
+        setDetectedAs(parsedDetectedAs);
+      }
+    };
+
+    es.onerror = () => {
+      es.close();
+      setUsePollingFallback(true);
+    };
+
+    // Fallback: if no events after 12s, switch to polling.
+    // Use lineIdRef (not logLines state) to avoid stale closure.
+    const fallbackTimer = setTimeout(() => {
+      if (lineIdRef.current === 0) {
+        es.close();
+        setUsePollingFallback(true);
+      }
+    }, 12_000);
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      es.close();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaseId, router, usePollingFallback]);
+
+  // Polling fallback (used only if SSE fails or times out)
+  useEffect(() => {
+    if (!usePollingFallback) return;
     let cancelled = false;
 
     async function poll() {
       if (cancelled) return;
       try {
         const res = await fetch(`/api/job/${leaseId}`);
-        const job = await res.json();
-
+        const job = await res.json() as {
+          status: string;
+          progress_pct?: number;
+          error_code?: string;
+          error_message?: string;
+          detected_as?: string | null;
+        };
         if (cancelled) return;
-
         if (job.status === "complete") {
-          // Mark all steps done
           setCompletedSteps([0, 1, 2, 3, 4]);
           setCurrentStep(5);
           setTimeout(() => router.push(`/report/${leaseId}`), 600);
           return;
         }
-
         if (job.status === "failed") {
           setFailed(true);
           setErrorCode(job.error_code ?? "analysis_failed");
           setDetectedAs(job.detected_as ?? null);
-          setErrorMsg(
-            job.error_message ?? "Analysis failed. Please try again."
-          );
+          setErrorMsg(job.error_message ?? "Analysis failed. Please try again.");
           return;
         }
-
-        // Map progress_pct → step
         const step = pctToStep(job.progress_pct ?? 0);
         setCurrentStep(step);
-        setCompletedSteps(
-          Array.from({ length: step }, (_, i) => i)
-        );
-      } catch {
-        // Network hiccup — keep polling
-      }
-
-      if (!cancelled) {
-        setTimeout(poll, 2000);
-      }
+        setCompletedSteps(Array.from({ length: step }, (_, i) => i));
+      } catch { /* Network hiccup — keep polling */ }
+      if (!cancelled) setTimeout(poll, 2000);
     }
 
     poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [leaseId, router]);
+    return () => { cancelled = true; };
+  }, [leaseId, router, usePollingFallback]);
 
   const totalExpected = 90;
   const remaining = Math.max(0, totalExpected - elapsed);
@@ -1323,11 +1436,110 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
             })}
           </div>
 
+          {/* Streaming agent log */}
+          <div
+            style={{
+              marginTop: "24px",
+              background: "#131110",
+              border: "1px solid #2a2623",
+              borderRadius: "8px",
+              overflow: "hidden",
+            }}
+          >
+            {/* Log header */}
+            <div
+              style={{
+                padding: "9px 14px",
+                borderBottom: "1px solid #2a2623",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: currentStep >= PROCESSING_STEPS.length ? "#4ade80" : "#15803d",
+                  flexShrink: 0,
+                  animation: currentStep < PROCESSING_STEPS.length ? "pulse-dot 1.4s ease-in-out infinite" : "none",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: "#4a4744",
+                  letterSpacing: "0.07em",
+                  textTransform: "uppercase",
+                  fontWeight: 500,
+                  fontFamily: "monospace",
+                }}
+              >
+                Agent Log
+              </span>
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: "10px",
+                  color: "#3a3532",
+                  fontFamily: "monospace",
+                }}
+              >
+                {logLines.length} events
+              </span>
+            </div>
+
+            {/* Log lines */}
+            <div
+              ref={logContainerRef}
+              style={{
+                padding: "10px 14px",
+                height: "180px",
+                overflowY: "auto",
+                fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', monospace",
+                fontSize: "11.5px",
+                lineHeight: "1.75",
+                scrollBehavior: "smooth",
+              }}
+            >
+              {logLines.length === 0 ? (
+                <span style={{ color: "#3a3532", fontStyle: "italic" }}>
+                  Connecting to analysis pipeline...
+                </span>
+              ) : (
+                logLines.map((line) => (
+                  <div
+                    key={line.id}
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      animation: "log-fadein 0.25s ease",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#3a3532",
+                        flexShrink: 0,
+                        userSelect: "none",
+                      }}
+                    >
+                      {formatLogTime(line.timestamp)}
+                    </span>
+                    <span style={{ color: severityColor(line.severity) }}>
+                      {line.message}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Time display */}
           <div
             style={{
-              marginTop: "8px",
-              padding: "14px 18px",
+              marginTop: "12px",
+              padding: "12px 16px",
               background: "#fff",
               border: "1px solid #e8e4dc",
               borderRadius: "8px",
@@ -1353,6 +1565,13 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
               </span>
             )}
           </div>
+
+          <style>{`
+            @keyframes log-fadein {
+              from { opacity: 0; transform: translateY(4px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </div>
       </main>
     </div>
