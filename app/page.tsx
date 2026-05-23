@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AuthButton } from "./components/auth-button";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
 
@@ -167,35 +168,38 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         >
           LeaseGuard
         </span>
-        {showNav && (
-          <nav style={{ display: "flex", gap: "28px" }}>
-            {[
-              { label: "How it works", href: "/how-it-works" },
-              { label: "Ontario RTA", href: "/ontario-rta" },
-              { label: "About", href: "/about" },
-            ].map(({ label, href }) => (
-              <a
-                key={label}
-                href={href}
-                style={{
-                  fontSize: "13px",
-                  color: "#6b6560",
-                  textDecoration: "none",
-                  fontWeight: 400,
-                  letterSpacing: "0.01em",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.color = "#181614")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "#6b6560")
-                }
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          {showNav && (
+            <nav style={{ display: "flex", gap: "28px" }}>
+              {[
+                { label: "How it works", href: "/how-it-works" },
+                { label: "Ontario RTA", href: "/ontario-rta" },
+                { label: "About", href: "/about" },
+              ].map(({ label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  style={{
+                    fontSize: "13px",
+                    color: "#6b6560",
+                    textDecoration: "none",
+                    fontWeight: 400,
+                    letterSpacing: "0.01em",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "#181614")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "#6b6560")
+                  }
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+          )}
+          <AuthButton />
+        </div>
       </header>
 
       {/* Hero */}

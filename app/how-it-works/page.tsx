@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AuthButton } from "../components/auth-button";
 
 export const metadata: Metadata = {
   title: "How It Works — LeaseGuard",
@@ -104,27 +105,30 @@ export default function HowItWorksPage() {
         >
           LeaseGuard
         </Link>
-        <nav style={{ display: "flex", gap: "28px" }}>
-          {[
-            { label: "How it works", href: "/how-it-works" },
-            { label: "Ontario RTA", href: "/ontario-rta" },
-            { label: "About", href: "/about" },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              style={{
-                fontSize: "13px",
-                color: href === "/how-it-works" ? "#181614" : "#6b6560",
-                textDecoration: "none",
-                fontWeight: href === "/how-it-works" ? 500 : 400,
-                letterSpacing: "0.01em",
-              }}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <nav style={{ display: "flex", gap: "28px" }}>
+            {[
+              { label: "How it works", href: "/how-it-works" },
+              { label: "Ontario RTA", href: "/ontario-rta" },
+              { label: "About", href: "/about" },
+            ].map(({ label, href }) => (
+              <Link
+                key={label}
+                href={href}
+                style={{
+                  fontSize: "13px",
+                  color: href === "/how-it-works" ? "#181614" : "#6b6560",
+                  textDecoration: "none",
+                  fontWeight: href === "/how-it-works" ? 500 : 400,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+          <AuthButton />
+        </div>
       </header>
 
       <main

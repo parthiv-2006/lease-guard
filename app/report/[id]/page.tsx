@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Icon, RiskBadge } from "../../components/shared";
 import { OverviewPanel } from "../../components/overview-panel";
@@ -633,6 +634,24 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
               Menu
             </button>
           )}
+          <Link
+            href="/dashboard"
+            style={{
+              fontSize: "12px",
+              color: "#9a9590",
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "#181614")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "#9a9590")
+            }
+          >
+            Dashboard
+          </Link>
+          <span style={{ fontSize: "12px", color: "#ddd8cf" }}>·</span>
           <button
             onClick={() => router.push("/")}
             style={{
