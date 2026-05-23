@@ -355,6 +355,16 @@ function SignInForm() {
                 >
                   {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
                 </button>
+
+                {mode === "signup" && (
+                  <p style={{ fontSize: "11px", color: "#9a9590", textAlign: "center", margin: "12px 0 0", lineHeight: 1.55 }}>
+                    By creating an account you agree to our{" "}
+                    <Link href="/privacy" style={{ color: "#6b6560", textUnderlineOffset: "2px" }}>
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+                )}
               </form>
 
               {/* Toggle signin/signup */}
@@ -421,6 +431,27 @@ function SignInForm() {
           </div>
         </div>
       </main>
+
+      <footer
+        style={{
+          padding: "16px 48px",
+          borderTop: "1px solid #e8e4dc",
+          fontSize: "11px",
+          color: "#b0aaa4",
+          textAlign: "center",
+          flexShrink: 0,
+          display: "flex",
+          gap: "16px",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <span>Educational information only — not legal advice.</span>
+        <span style={{ color: "#ddd8cf" }}>·</span>
+        <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+          Privacy Policy
+        </Link>
+      </footer>
     </div>
   );
 }
