@@ -56,6 +56,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
   const [showNav, setShowNav] = useState(true);
 
   useEffect(() => {
@@ -440,13 +441,65 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 </div>
                 <p
                   style={{
-                    margin: "0 0 20px",
+                    margin: "0 0 16px",
                     fontSize: "13px",
                     color: "#6b6560",
                   }}
                 >
                   PDF verified · jurisdiction will be confirmed during analysis
                 </p>
+
+                {/* PIPEDA consent */}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    margin: "0 0 20px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={consentGiven}
+                    onChange={(e) => setConsentGiven(e.target.checked)}
+                    style={{
+                      marginTop: "2px",
+                      flexShrink: 0,
+                      cursor: "pointer",
+                      accentColor: "#181614",
+                      width: "14px",
+                      height: "14px",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#5c5751",
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    I understand this PDF may contain personal information
+                    (names, addresses, financial details). By uploading, I
+                    consent to it being analysed and temporarily stored per
+                    the{" "}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "#181614",
+                        textUnderlineOffset: "2px",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Privacy Policy
+                    </a>
+                    . Reports are automatically deleted after 90 days.
+                  </span>
+                </label>
+
                 <div
                   style={{
                     display: "flex",
@@ -458,6 +511,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     onClick={() => {
                       setFile(null);
                       setError(null);
+                      setConsentGiven(false);
                     }}
                     disabled={uploading}
                     style={{
@@ -476,25 +530,26 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                   </button>
                   <button
                     onClick={handleAnalyse}
-                    disabled={uploading}
+                    disabled={uploading || !consentGiven}
                     style={{
                       padding: "10px 28px",
                       borderRadius: "6px",
-                      cursor: uploading ? "wait" : "pointer",
+                      cursor: uploading ? "wait" : !consentGiven ? "not-allowed" : "pointer",
                       fontSize: "13px",
                       fontWeight: 500,
-                      background: uploading ? "#4a4744" : "#181614",
-                      border: "1px solid #181614",
+                      background: uploading ? "#4a4744" : !consentGiven ? "#9a9590" : "#181614",
+                      border: `1px solid ${!consentGiven && !uploading ? "#9a9590" : "#181614"}`,
                       color: "#fff",
                       letterSpacing: "0.02em",
                       transition: "background 0.15s",
+                      opacity: !consentGiven && !uploading ? 0.7 : 1,
                     }}
                     onMouseEnter={(e) => {
-                      if (!uploading)
+                      if (!uploading && consentGiven)
                         e.currentTarget.style.background = "#2d2926";
                     }}
                     onMouseLeave={(e) => {
-                      if (!uploading)
+                      if (!uploading && consentGiven)
                         e.currentTarget.style.background = "#181614";
                     }}
                   >
@@ -637,12 +692,27 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           textAlign: "center",
           lineHeight: 1.5,
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+          alignItems: "center",
         }}
       >
-        LeaseGuard provides educational information only and does not constitute
-        legal advice. For matters requiring professional legal judgment, consult
-        a licensed paralegal or lawyer. Analysis is grounded in the Ontario
-        Residential Tenancies Act, 2006.
+        <span>
+          LeaseGuard provides educational information only and does not
+          constitute legal advice. For matters requiring professional legal
+          judgment, consult a licensed paralegal or lawyer.
+        </span>
+        <span>
+          <a
+            href="/privacy"
+            style={{ color: "#b0aaa4", textUnderlineOffset: "2px" }}
+          >
+            Privacy Policy
+          </a>
+          {" · "}
+          Analysis grounded in the Ontario Residential Tenancies Act, 2006.
+        </span>
       </footer>
     </div>
   );
