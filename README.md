@@ -21,13 +21,9 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 ## Demo
 
-<video src=".github/assets/demo.mp4" controls width="100%">
-  <a href=".github/assets/demo.mp4">▶ Watch the full walkthrough (MP4, 3.1 MB)</a>
-</video>
+<video src="https://github.com/user-attachments/assets/73850f23-5196-46fa-ba72-37ecb8874c7a" controls width="100%"></video>
 
 > Shows: landing page → lease upload → processing animation → risk report → all 8 analysis panels.
->
-> **Can't play inline?** [Download demo.mp4](.github/assets/demo.mp4) or [download demo.webm](.github/assets/demo.webm) (7.9 MB)
 
 ---
 
