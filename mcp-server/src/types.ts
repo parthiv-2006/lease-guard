@@ -64,6 +64,8 @@ export interface RiskScore {
     quoted_text: string;          // exact snippet from retrieved statute that supports this finding (3.1)
   }>;
   confidence: number;
+  /** Template of what the clause would look like if rewritten to be compliant with Ontario RTA. */
+  suggested_compliant_language?: string;
 }
 
 export interface NegotiationPoint {

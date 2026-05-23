@@ -889,6 +889,65 @@ function detectCriticalTextViolations(clauseText: string): Array<{
   return found;
 }
 
+// ── Compliant language templates ──────────────────────────────────────────────
+// Keyed by violation_type. Each template is a model clause that would comply
+// with the Ontario RTA provision violated. Placeholders like [AMOUNT] are
+// intentional — the template is a starting point, not a finalised clause.
+const COMPLIANT_LANGUAGE_TEMPLATES: Record<string, string> = {
+  entry_without_notice:
+    "The Landlord may enter the rental unit only in accordance with sections 26 and 27 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 24 hours' written notice specifying the reason for entry and the time of entry (between 8:00 a.m. and 8:00 p.m.). Entry without notice is permitted only in the case of an emergency as defined in s.26(3) of the Act.",
+
+  non_refundable_deposit:
+    "The Tenant shall pay a last month's rent deposit equal to one month's rent, applied to the final period of the tenancy, in accordance with section 106 of the Residential Tenancies Act, 2006. This deposit is refundable and shall be returned with accrued interest if not applied to the last rent period. No other deposit or non-refundable fee may be collected.",
+
+  excess_deposit:
+    "The Tenant shall provide a last month's rent deposit equal to one month's rent, as permitted by section 105 of the Residential Tenancies Act, 2006. No additional security deposit, damage deposit, pet deposit, key deposit, or other deposit of any kind may be collected beyond this one permitted amount.",
+
+  maintenance_offloaded:
+    "The Landlord shall maintain the rental unit and residential complex in a good state of repair and fit for habitation, and shall comply with all applicable health, safety, housing, and maintenance standards, as required by section 20 of the Residential Tenancies Act, 2006. The Tenant is responsible for ordinary cleanliness of the rental unit only.",
+
+  rent_increase_without_guideline:
+    "The Landlord may increase the rent only once per 12-month period and only in accordance with the annual rent increase guideline established by the Province of Ontario under section 120 of the Residential Tenancies Act, 2006. The Landlord shall provide at least 90 days' written notice using the prescribed Form N1 before any increase takes effect.",
+
+  waiver_of_rights:
+    "Nothing in this agreement limits or modifies the rights, benefits, or protections of the Tenant under the Residential Tenancies Act, 2006. Any provision of this agreement that purports to waive or diminish those rights is void to that extent, pursuant to section 3(1) of the Act.",
+
+  post_dated_cheques:
+    "Rent shall be paid on the first day of each month. Post-dated cheques and pre-authorized payment are not required. The Tenant may pay by any mutually agreed lawful method. Pre-authorized debit or cheques may be provided voluntarily but cannot be demanded as a condition of the tenancy, in accordance with section 108 of the Residential Tenancies Act, 2006.",
+
+  pet_fines:
+    "Note: Any provision restricting pets is void under section 14 of the Residential Tenancies Act, 2006, and no fine, fee, or penalty may be imposed for keeping a pet, nor may a tenancy be terminated solely on the basis of having a pet.",
+
+  rta_waiver:
+    "This agreement is governed by the Residential Tenancies Act, 2006. No provision of this agreement limits the rights or remedies of either party under that Act. Any term that purports to contract out of or limit the Act's protections is void, pursuant to section 3(1) of the Residential Tenancies Act, 2006.",
+
+  daily_late_fee:
+    "Rent is due on the [1st] day of each month. If rent is not paid when due, the Landlord's remedy is to serve a Notice to End a Tenancy Early for Non-payment of Rent (Form N4) in accordance with section 59 of the Residential Tenancies Act, 2006. No additional charges, daily fees, interest, or penalties for late payment may be imposed.",
+
+  mandatory_arbitration:
+    "Any dispute arising from this tenancy shall be resolved through the Landlord and Tenant Board in accordance with the Residential Tenancies Act, 2006. Neither party waives their right to apply to the Board. Mandatory arbitration or any clause requiring the parties to forgo LTB proceedings is void under the Act.",
+
+  self_help_eviction:
+    "A tenancy may only be terminated in accordance with the Residential Tenancies Act, 2006. The Landlord shall not change the locks, seize belongings, or otherwise interfere with the Tenant's access to the rental unit. Eviction may only be carried out by a Sheriff acting on a valid order of the Landlord and Tenant Board, as required by section 19 of the Act.",
+
+  unlawful_termination:
+    "Either party may terminate this tenancy only in accordance with the Residential Tenancies Act, 2006. Termination notices must be in writing on a prescribed LTB form. The Landlord shall provide at least 60 days' written notice for most terminations. Verbal notice and notice periods shorter than the statutory minimum are void and of no effect.",
+};
+
+// Returns a compliant language template for the first mandatory-provision
+// violation found in the clause. Returns undefined if no such violation exists.
+function suggestCompliantLanguage(
+  violations: Array<{ violation_type: string }>
+): string | undefined {
+  for (const v of violations) {
+    if (MANDATORY_PROVISION_VIOLATION_TYPES.has(v.violation_type)) {
+      const template = COMPLIANT_LANGUAGE_TEMPLATES[v.violation_type];
+      if (template) return template;
+    }
+  }
+  return undefined;
+}
+
 // ── Base scoring ──────────────────────────────────────────────────────────────
 function scoreClause(
   clauseText: string,
@@ -1135,6 +1194,11 @@ export async function execute(input: unknown): Promise<unknown> {
   // Suppress unused variable warning for clause_id (kept in schema for logging)
   void clause_id;
 
+  // ── Suggested compliant language ───────────────────────────────────────────
+  // Only generated when a mandatory RTA provision is violated — clauses that
+  // are merely unusual or high-risk but not void do not get a template.
+  const suggested_compliant_language = suggestCompliantLanguage(violations);
+
   const result: RiskScore = {
     risk_score: finalScore,
     risk_level,
@@ -1145,6 +1209,7 @@ export async function execute(input: unknown): Promise<unknown> {
     risk_reasoning,
     statutory_violations: violations,
     confidence: Math.round(confidence * 100) / 100,
+    ...(suggested_compliant_language ? { suggested_compliant_language } : {}),
   };
 
   return result;
