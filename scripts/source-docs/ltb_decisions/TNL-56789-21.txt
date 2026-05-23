@@ -1,0 +1,37 @@
+#meta: date=2021-07-06, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/doc/2021onltb56789/2021onltb56789.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNL-56789-21 ON
+
+BETWEEN:
+
+[PERSON] (Landlord)
+and
+[PERSON] (Tenant)
+
+PROCEEDING DETAILS
+
+Hearing date: June 22, 2021
+Order issued: July 6, 2021
+
+BACKGROUND
+
+The Landlord applied to terminate the tenancy under section 48 of the Residential Tenancies Act, 2006 for own use. An N12 notice was served giving more than 60 days' notice. The Landlord is retiring and intends to move back to Canada from the United States to occupy the unit personally. The Landlord provided his daughter's statutory declaration confirming her father's intention, as well as evidence of his US lease terminating.
+
+The Tenant does not dispute the genuineness of the Landlord's intention but argues the Landlord has not offered the required compensation under section 48.1.
+
+ANALYSIS
+
+Section 48.1 of the Residential Tenancies Act, 2006 requires a landlord who serves an N12 for own use to pay the tenant compensation equal to one month's rent before or on the termination date set out in the notice. This is a mandatory requirement — failure to pay the compensation renders the notice invalid regardless of whether the underlying reason is genuine.
+
+The Landlord did not pay the one-month compensation of $2,100 before or on the termination date. The Landlord argued this was an oversight and offered to pay it at the hearing. However, the Act is clear that the compensation must be paid before or on the termination date.
+
+Because the Landlord failed to comply with the mandatory compensation requirement under section 48.1, the N12 notice is void and the application cannot succeed.
+
+ORDER
+
+1. The Landlord's application is dismissed.
+2. The tenancy shall continue.
+3. The Board notes that if the Landlord chooses to serve a new N12 notice, the mandatory one-month compensation under section 48.1 must be paid on or before the termination date specified in that notice.

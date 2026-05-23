@@ -1,0 +1,41 @@
+#meta: date=2023-08-10, clause_types=rent_increase, url=https://www.canlii.org/en/on/onltb/doc/2023onltb99012/2023onltb99012.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-99012-23 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: July 27, 2023
+Order issued: August 10, 2023
+
+BACKGROUND
+
+The Tenant applied after the Landlord attempted to increase rent pursuant to a lease clause stating: "The Landlord may increase the rent annually by up to 5% with 60 days' notice to the Tenant." The 2023 rent increase guideline was 2.5%. The Landlord served a notice (Form N1) on March 15, 2023 for a June 1 increase of 5% from $2,000 to $2,100.
+
+ANALYSIS
+
+Two issues arise from this application.
+
+First, the lease clause permitting increases of "up to 5%" is unenforceable to the extent it exceeds the provincial guideline. Section 3(1) of the Residential Tenancies Act, 2006 provides the Act applies despite any agreement to the contrary. The guideline under section 120 caps annual rent increases (absent AGI authorization) regardless of what any lease clause says. A clause purporting to authorize increases above the guideline is void under section 3.
+
+Second, the Form N1 was served March 15 for a June 1 increase. The period from March 15 to June 1 is 78 days — less than the 90 days required by section 116(1). The notice is therefore void on its face.
+
+For both reasons — the void lease clause and the insufficient notice — the 5% rent increase cannot take effect. The lawful rent remains $2,000 per month. The guideline increase of 2.5% ($50/month) could lawfully be applied by proper N1 notice with 90 days' advance notice.
+
+The Tenant is entitled to a rebate of any excess rent paid.
+
+ORDER
+
+1. The application is granted.
+2. The lease clause permitting rent increases of "up to 5%" with 60 days' notice is void to the extent it exceeds the annual guideline and provides less than 90 days' notice, contrary to sections 3, 116, and 120 of the Residential Tenancies Act, 2006.
+3. The purported rent increase effective June 1, 2023 is void.
+4. The Landlord shall repay to the Tenant any rent paid above $2,000 per month.
+5. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.

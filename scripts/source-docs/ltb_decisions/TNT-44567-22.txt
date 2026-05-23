@@ -1,0 +1,38 @@
+#meta: date=2022-04-05, clause_types=quiet_enjoyment, url=https://www.canlii.org/en/on/onltb/doc/2022onltb44567/2022onltb44567.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-44567-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: March 22, 2022
+Order issued: April 5, 2022
+
+BACKGROUND
+
+The Tenant applied under sections 29(1)(b) and 23 of the Residential Tenancies Act, 2006 alleging the Landlord harassed her and substantially interfered with her reasonable enjoyment in order to pressure her to vacate. The Tenant alleges the Landlord sent 47 text messages over a three-month period demanding she vacate, contacted her employer, attended at her workplace twice, and served three separate N12 notices (each subsequently withdrawn) within six months.
+
+ANALYSIS
+
+Section 22 of the Residential Tenancies Act, 2006 prohibits substantial interference with a tenant's reasonable enjoyment. Section 23 prohibits a landlord from harassing, obstructing, coercing, threatening, or interfering with a tenant.
+
+The Landlord's conduct here constitutes textbook harassment under section 23. Forty-seven text messages demanding vacating, employer contact, workplace attendance, and serially withdrawn N12 notices are not good-faith exercises of the Landlord's legal rights. They are a coordinated campaign to intimidate the Tenant into giving up a tenancy she is legally entitled to maintain.
+
+Serving multiple bad-faith N12 notices, each withdrawn to avoid a hearing, is an abuse of process that this Board has consistently found constitutes harassment. The Tenant is not required to repeatedly defend against bad-faith termination notices. Each such notice and withdrawal caused the Tenant genuine distress and inconvenience.
+
+Given the serious and sustained nature of the harassment, I find an abatement of $2,500 is appropriate, together with $48 for filing costs.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $2,500.00 for harassment and substantial interference with reasonable enjoyment contrary to sections 22 and 23 of the Residential Tenancies Act, 2006.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.
+4. The Landlord shall not contact the Tenant except through lawful written notices required under the Residential Tenancies Act, 2006.

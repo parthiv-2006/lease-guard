@@ -1,0 +1,40 @@
+#meta: date=2022-09-28, clause_types=quiet_enjoyment, url=https://www.canlii.org/en/on/onltb/doc/2022onltb22345/2022onltb22345.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-22345-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: September 14, 2022
+Order issued: September 28, 2022
+
+BACKGROUND
+
+The Tenant applied under section 29(1)(b) alleging that the Landlord substantially interfered with the Tenant's reasonable enjoyment of the unit. The Landlord attended the property on 11 occasions between March and July 2022, each time without giving proper written notice under section 26. The Landlord claimed these were "wellness checks" and "informal inspections."
+
+The tenancy agreement included a clause stating the Landlord may enter "for any reasonable purpose" with "reasonable notice." The Tenant argues the Landlord's repeated entries without proper statutory notice violated section 22.
+
+ANALYSIS
+
+Section 22 of the Residential Tenancies Act, 2006 provides that a landlord shall not at any time during a tenant's occupancy of a rental unit substantially interfere with the reasonable enjoyment of the rental unit or the residential complex by the Tenant or by a member of the Tenant's household.
+
+The lease clause permitting entry with "reasonable notice" for "any reasonable purpose" does not displace the mandatory requirements of section 26(1), which requires at least 24 hours' written notice specifying the reason and time of entry. Eleven entries over five months without proper notice cumulatively constitute substantial interference with the Tenant's reasonable enjoyment of the premises.
+
+Each unauthorized entry independently engages section 22. Cumulatively, 11 entries without notice over five months constitute a pattern of conduct that significantly impaired the Tenant's ability to have peaceful possession and enjoyment of the unit. The Tenant's evidence of distress and the impact on her daily life is credible and uncontested.
+
+I award an abatement of $150 per unlawful entry, totalling $1,650, and $48 for filing costs.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $1,650.00 as an abatement of rent for substantial interference with reasonable enjoyment of the rental unit.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.
+4. The Landlord shall not enter the rental unit except in full compliance with sections 26 and 27 of the Residential Tenancies Act, 2006.

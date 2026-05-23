@@ -1,0 +1,46 @@
+#meta: date=2022-04-18, clause_types=entry_rights, url=https://www.canlii.org/en/on/onltb/doc/2022onltb12345/2022onltb12345.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TST-12345-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: April 5, 2022
+Order issued: April 18, 2022
+
+BACKGROUND
+
+The Tenant applied under section 29(1)(b) of the Residential Tenancies Act, 2006 (RTA) alleging that the Landlord entered the rental unit without giving proper notice and without the Tenant's consent.
+
+The rental unit is a one-bedroom apartment located at [ADDRESS], Toronto, Ontario. The Tenant has resided there since March 2019. The monthly rent is $1,650.
+
+The Tenant testified that on February 14, 2022 and again on February 28, 2022, the Landlord used a master key to enter the unit at approximately 11:00 a.m. on both occasions. The Tenant was not present during either entry. No written notice was provided in advance of either entry. The Landlord left a note on the counter after the first entry stating "checked furnace." No explanation was provided for the second entry.
+
+The Landlord testified that both entries were for routine maintenance inspections and that verbal notice had been given via a text message sent the night before. The Landlord did not produce any text messages or written notice at the hearing.
+
+ANALYSIS
+
+Section 26(1) of the RTA provides that a landlord may enter a rental unit only in accordance with written notice given at least 24 hours before the time of entry. The notice must set out the reason for entry and the time of entry. Entry must be between 8 a.m. and 8 p.m., unless the tenant consents to a different time.
+
+The Landlord's evidence of a text message does not satisfy the written notice requirement under section 26(1). Written notice must be a formal document delivered to the tenant specifying the reason for entry and the exact time. A text message sent the evening before, even if received, does not constitute the advance written notice mandated by the Act.
+
+The Landlord entered the unit twice without lawful authority. These entries constitute an illegal interference with the Tenant's right to privacy and quiet enjoyment under section 22 of the RTA. The Tenant was denied the ability to prepare for the entries or consent to alternative times.
+
+I am satisfied that the Landlord entered the rental unit on two occasions without giving proper notice under section 26(1) of the RTA.
+
+The Tenant is entitled to a remedy. Considering the nature of the breach, I find an abatement of rent of $150 per entry, totalling $300, to be appropriate.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $300.00 as an abatement of rent for illegal entries on February 14 and February 28, 2022.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.
+4. The total amount the Landlord shall pay is $348.00.

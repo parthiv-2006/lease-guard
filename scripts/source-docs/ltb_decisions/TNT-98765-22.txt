@@ -1,0 +1,35 @@
+#meta: date=2022-12-01, clause_types=security_deposit, url=https://www.canlii.org/en/on/onltb/doc/2022onltb98765/2022onltb98765.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-98765-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: November 17, 2022
+Order issued: December 1, 2022
+
+BACKGROUND
+
+The Tenant applied under section 135 alleging the Landlord wrongfully retained the last month's rent deposit after the tenancy ended. The tenancy ended on September 30, 2022 when the Tenant vacated. The monthly rent was $1,800. The Tenant had paid a last month's rent deposit of $1,800 at the beginning of the tenancy. The Landlord refused to apply it to the last month, claiming the unit was left in poor condition and the deposit should be retained to cover damage.
+
+ANALYSIS
+
+Section 106(10) of the Residential Tenancies Act, 2006 is clear: a landlord shall apply a rent deposit collected under section 106 to the rent for the last rental period before the tenancy terminates. The deposit is not a security deposit and cannot be retained to cover alleged damage.
+
+The Landlord's remedy for damage caused by the Tenant beyond normal wear and tear is to make a claim under section 89 of the RTA within one year of the tenant vacating. The Act does not permit a landlord to simply retain the last month's rent deposit in lieu of pursuing such a claim.
+
+I find that the Landlord's retention of the $1,800 last month's rent deposit was unlawful. The Landlord shall apply the deposit to the Tenant's final month of rent and repay any amount already collected for that month. Since the Tenant paid rent for September 2022, the deposit was not properly applied, and the Landlord must return it.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $1,800.00, being the last month's rent deposit that was not applied to the final rental period as required by section 106(10) of the Residential Tenancies Act, 2006.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.

@@ -1,0 +1,38 @@
+#meta: date=2023-07-12, clause_types=quiet_enjoyment, url=https://www.canlii.org/en/on/onltb/doc/2023onltb33456/2023onltb33456.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-33456-23 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: June 28, 2023
+Order issued: July 12, 2023
+
+BACKGROUND
+
+The Tenant applied under section 29(1)(b) of the Residential Tenancies Act, 2006. The Landlord began major renovation of the upper unit of the duplex in January 2023. Construction occurred Monday through Saturday from 7:00 a.m. to 7:00 p.m. The Tenant, who works night shifts, was unable to sleep during the day. Dust from the construction infiltrated the lower unit through shared ductwork.
+
+The Tenant does not allege unlawful entry — only substantial interference with reasonable enjoyment arising from the construction activities.
+
+ANALYSIS
+
+Section 22 of the Residential Tenancies Act, 2006 prohibits a landlord from substantially interfering with a tenant's reasonable enjoyment of a rental unit. A landlord who undertakes work in an adjacent unit has a positive obligation to take reasonable steps to minimize the impact on existing tenants.
+
+Construction noise and dust infiltration over a six-month period, affecting a shift worker's sleep, constitutes substantial interference with reasonable enjoyment under section 22. While a landlord has the right to renovate their property, that right must be exercised with regard to the rights of existing tenants. The Landlord here took no steps to soundproof the work area, schedule the noisiest work during the Tenant's off-hours, or seal the ductwork to prevent dust migration.
+
+I find the Landlord substantially interfered with the Tenant's reasonable enjoyment from January through June 2023 (6 months). I award an abatement of 20% of rent for this period. At $1,600/month: $320/month × 6 = $1,920.00.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $1,920.00 as an abatement of rent for substantial interference with reasonable enjoyment.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.
+4. If renovation work continues, the Landlord shall take reasonable steps to mitigate impact on the Tenant's unit including dust containment and scheduling the noisiest work outside the hours of 8 a.m. to 3 p.m.

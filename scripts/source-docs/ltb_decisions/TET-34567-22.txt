@@ -1,0 +1,40 @@
+#meta: date=2022-08-30, clause_types=maintenance_repairs, url=https://www.canlii.org/en/on/onltb/doc/2022onltb34567/2022onltb34567.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TET-34567-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: August 15, 2022
+Order issued: August 30, 2022
+
+BACKGROUND
+
+The Tenant applied under section 29(1)(a) of the Residential Tenancies Act, 2006 alleging that the Landlord failed to maintain the rental unit and the residential complex in a good state of repair, fit for habitation. Specifically, the Tenant alleges the furnace in the unit stopped functioning on January 6, 2022, and the Landlord failed to repair it for 22 days despite multiple requests. During this period, the outdoor temperature ranged from -8°C to -18°C. The Tenant and her two children were without adequate heat.
+
+ANALYSIS
+
+Section 20(1) of the Residential Tenancies Act, 2006 provides that a landlord is responsible for providing and maintaining a residential complex, including the rental units in it, in a good state of repair and fit for habitation and for complying with health, safety, housing and maintenance standards. This obligation is non-delegable. It cannot be transferred to tenants through a lease clause or otherwise.
+
+The rental unit's furnace is a critical component of maintaining the unit in a good state of repair and fit for habitation, particularly during a Canadian winter. The Tenant gave notice of the furnace failure on January 6, 2022. The Landlord's obligation to repair arose immediately upon receipt of that notice.
+
+The Landlord testified that HVAC contractors were unavailable due to high demand in winter. While this may be true, it does not reduce the Landlord's obligation. The Landlord's failure to provide alternative heating (electric heaters, hotel accommodation, or rent abatement) while awaiting repairs compounded the breach. A 22-day period without heat in winter constitutes a serious breach of section 20.
+
+I find the Tenant is entitled to an abatement of rent of 30% for the 22-day period. At a monthly rent of $1,600 ($53.33/day), 22 days at 30% abatement equals $352.00. I also find the Tenant is entitled to recover the cost of three portable electric heaters purchased ($240.00).
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay to the Tenant $352.00 as an abatement of rent for the 22-day period without heat.
+3. The Landlord shall pay to the Tenant $240.00 for the cost of portable heaters purchased.
+4. The Landlord shall pay to the Tenant $48.00 for the cost of filing the application.
+5. The total amount the Landlord shall pay is $640.00.
+6. The Landlord shall maintain the residential complex in a good state of repair as required by section 20(1) of the Residential Tenancies Act, 2006.

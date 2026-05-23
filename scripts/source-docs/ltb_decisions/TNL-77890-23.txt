@@ -1,0 +1,39 @@
+#meta: date=2023-01-25, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/doc/2023onltb77890/2023onltb77890.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNL-77890-23 ON
+
+BETWEEN:
+
+[PERSON] (Landlord)
+and
+[PERSON] (Tenant)
+
+PROCEEDING DETAILS
+
+Hearing date: January 11, 2023
+Order issued: January 25, 2023
+
+BACKGROUND
+
+The Landlord applied for non-payment of rent under section 69 of the RTA. An N4 notice was served on December 1, 2022, giving a termination date of December 16, 2022. The monthly rent is $1,900.
+
+The Tenant alleges the N4 notice was invalid because it was slipped under the door rather than served in accordance with the Rules. The Tenant further argues the termination date on the notice was 15 days after service, less than the required 14 days.
+
+ANALYSIS
+
+Section 59(1) of the Residential Tenancies Act, 2006 requires a notice of termination for non-payment of rent to give the tenant at least 14 days' notice. The N4 notice was served December 1 with a termination date of December 16 — this is exactly 15 days' notice, which meets the minimum statutory requirement.
+
+Regarding service: Rule 3 of the Board's Rules of Practice permits service by leaving a document in the mailbox or mail slot. Slipping the notice under the door is not an authorized method. However, the Tenant acknowledged receiving the notice on December 1. Section 191 of the RTA provides that a notice is deemed properly served if actually received.
+
+Given actual receipt of the notice is established, the service method deficiency is not fatal to the application. The N4 notice is valid.
+
+The Tenant did not pay the rent owing before the hearing. The Landlord's application is granted.
+
+ORDER
+
+1. The application is granted.
+2. Unless the Tenant pays the amount owing before the order becomes enforceable, the tenancy shall be terminated.
+3. The Tenant shall pay $1,900.00 in rent arrears and $186.00 in Board filing costs, totalling $2,086.00, on or before February 4, 2023.

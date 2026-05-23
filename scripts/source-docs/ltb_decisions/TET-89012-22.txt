@@ -1,0 +1,36 @@
+#meta: date=2022-03-08, clause_types=maintenance_repairs, url=https://www.canlii.org/en/on/onltb/doc/2022onltb89012/2022onltb89012.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TET-89012-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: February 22, 2022
+Order issued: March 8, 2022
+
+BACKGROUND
+
+The Tenant applied for an abatement of rent due to a cockroach infestation in the rental unit and the common areas of the building. The Tenant first reported the infestation in July 2021. The Landlord arranged one exterminator visit in August 2021 which was ineffective. The infestation continued through the date of the hearing.
+
+ANALYSIS
+
+Section 20(1) of the Residential Tenancies Act, 2006 requires the Landlord to maintain the residential complex in a good state of repair and fit for habitation and in compliance with health, safety, and maintenance standards. Pest infestation, particularly cockroaches, is a recognized health and maintenance standard violation under Ontario Regulation 516/06, which requires residential premises to be kept free of insects and vermin.
+
+The Landlord bears the responsibility for pest control in the residential complex. This is not a matter tenants can be required to address through their own efforts or expense. While the Landlord undertook one treatment, a single ineffective treatment over a seven-month period does not constitute adequate discharge of the maintenance obligation.
+
+I find the Tenant is entitled to an abatement for the period from July 2021 to the date of this order (approximately 8 months). Given the impact on habitability, I find 20% abatement is appropriate. At $1,500/month: $300/month × 8 months = $2,400.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall hire a licensed pest control company to conduct a minimum of three treatments of the unit and all adjacent units within 45 days.
+3. The Landlord shall pay to the Tenant $2,400.00 as an abatement of rent.
+4. The Landlord shall pay to the Tenant $48.00 for the cost of filing the application.

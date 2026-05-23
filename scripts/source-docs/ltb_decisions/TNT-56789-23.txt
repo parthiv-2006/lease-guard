@@ -1,0 +1,37 @@
+#meta: date=2023-03-15, clause_types=security_deposit, url=https://www.canlii.org/en/on/onltb/doc/2023onltb56789/2023onltb56789.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-56789-23 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: March 1, 2023
+Order issued: March 15, 2023
+
+BACKGROUND
+
+The Tenant applied for return of an illegal charge. The tenancy agreement required the Tenant to pay a $400 non-refundable "professional cleaning fee" before taking possession of the unit. The Landlord stated this fee was standard practice to ensure the unit was cleaned professionally upon move-out regardless of its condition.
+
+ANALYSIS
+
+Section 134(1) of the Residential Tenancies Act, 2006 prohibits a landlord from directly or indirectly requiring a tenant to pay any amount in addition to rent as a condition of the tenancy, other than amounts expressly permitted under sections 105 and 106. A non-refundable professional cleaning fee is not authorized anywhere in the Act.
+
+Further, section 105(1) limits deposits to a last-month's-rent deposit which is refundable. A non-refundable fee of any kind collected as a condition of granting the tenancy violates the Act. The characterization as a "cleaning fee" does not change its nature as an illegal charge under section 134.
+
+The fact that this fee is characterized as non-refundable makes it even clearer that it cannot be authorized. All deposits under the RTA must be refunded to the tenant unless applied to rent owed. A cleaning fee that is non-refundable regardless of the unit's condition at move-out is exactly the type of charge the Act prohibits.
+
+The Landlord shall repay the $400 cleaning fee in full.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $400.00, being the non-refundable cleaning fee collected in violation of section 134(1) of the Residential Tenancies Act, 2006.
+3. The Landlord shall pay the Tenant $48.00 for the cost of filing the application.

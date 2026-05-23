@@ -1,0 +1,37 @@
+#meta: date=2023-02-14, clause_types=entry_rights, url=https://www.canlii.org/en/on/onltb/doc/2023onltb33333/2023onltb33333.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TST-33333-23 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: February 1, 2023
+Order issued: February 14, 2023
+
+BACKGROUND
+
+The Tenant applied alleging unlawful entry. The Landlord entered the rental unit on January 8, 2023 to conduct a "move-in inspection." The Tenant was present and objected. The Landlord produced the lease which contained a clause stating: "The Landlord may enter the unit at any time and without notice to conduct inspections, make repairs, or show the unit to prospective tenants."
+
+ANALYSIS
+
+This is a straightforward case. The lease clause purporting to authorize entry at any time without notice is void under section 3(1) of the Residential Tenancies Act, 2006. The Act applies despite any agreement to the contrary. Parties cannot contract out of the mandatory notice provisions of section 26.
+
+Section 26(1) is unambiguous: a landlord may enter a rental unit only in accordance with written notice given at least 24 hours before the time of entry. The notice must state the reason for entry and the time of entry. The Landlord did not provide any notice before the January 8 entry.
+
+The Board finds that the Landlord entered the rental unit on January 8, 2023 without lawful authority by failing to comply with section 26(1) of the RTA. The void lease clause provides no defence.
+
+However, considering this was a single entry and the Landlord ceased when the Tenant objected, a modest abatement is appropriate. I order an abatement of $125.
+
+ORDER
+
+1. The application is granted.
+2. The Landlord shall pay the Tenant $125.00 as an abatement of rent.
+3. The Landlord is directed to comply with sections 26 and 27 of the Residential Tenancies Act, 2006 for all future entries.

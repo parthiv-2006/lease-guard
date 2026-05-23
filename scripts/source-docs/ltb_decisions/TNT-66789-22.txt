@@ -1,0 +1,39 @@
+#meta: date=2022-06-20, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/doc/2022onltb66789/2022onltb66789.html
+
+ONTARIO
+LANDLORD AND TENANT BOARD
+
+TNT-66789-22 ON
+
+BETWEEN:
+
+[PERSON] (Tenant)
+and
+[PERSON] (Landlord)
+
+PROCEEDING DETAILS
+
+Hearing date: June 6, 2022
+Order issued: June 20, 2022
+
+BACKGROUND
+
+The Tenant applied under sections 29(1)(a) and (b) of the RTA alleging harassment and interference with reasonable enjoyment. The Tenant also alleges the Landlord attempted to use a lease clause permitting the Landlord to terminate on 30 days' notice to end the tenancy without cause.
+
+The lease contained a clause stating: "The Landlord may terminate this agreement with 30 days' written notice for any reason."
+
+ANALYSIS
+
+The clause permitting termination on 30 days' notice for any reason is void. Section 37(1) of the Residential Tenancies Act, 2006 provides that a tenancy may be terminated only in accordance with the Act. The Act specifies the permissible grounds for termination and the required notice periods. For most landlord-initiated terminations (own use, sale, demolition), the minimum notice period is 60 days, and specific prescribed forms must be used. No provision of the Act permits termination without cause on 30 days' notice.
+
+Regarding the harassment allegations: The Tenant testified that after she refused to vacate in response to the void notice, the Landlord began attending at the property unannounced on multiple occasions, reducing the Tenant's parking access, and sending repeated texts demanding she "find alternate housing." Section 23 of the RTA prohibits a landlord from harassing, obstructing, coercing, threatening, or interfering with a tenant.
+
+I find the Landlord's conduct after serving the void notice constituted harassment under section 23. The Landlord shall pay the Tenant an abatement of $600 for the harassment and $48 for filing costs.
+
+ORDER
+
+1. The application is granted.
+2. The lease clause permitting termination on 30 days' notice for any reason is void under section 37(1) of the Residential Tenancies Act, 2006.
+3. The Landlord shall pay to the Tenant $600.00 as an abatement of rent for harassment.
+4. The Landlord shall pay to the Tenant $48.00 for the cost of filing the application.
+5. The Landlord shall cease all harassment and comply with section 23 of the RTA.
