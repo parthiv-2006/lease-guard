@@ -433,6 +433,10 @@ export default function PrivacyPage() {
         <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
           Privacy Policy
         </Link>
+        <span style={{ color: "#ddd8cf" }}>·</span>
+        <Link href="/terms" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+          Terms of Service
+        </Link>
       </footer>
     </div>
   );

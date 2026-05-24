@@ -359,6 +359,10 @@ function SignInForm() {
                 {mode === "signup" && (
                   <p style={{ fontSize: "11px", color: "#9a9590", textAlign: "center", margin: "12px 0 0", lineHeight: 1.55 }}>
                     By creating an account you agree to our{" "}
+                    <Link href="/terms" style={{ color: "#6b6560", textUnderlineOffset: "2px" }}>
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
                     <Link href="/privacy" style={{ color: "#6b6560", textUnderlineOffset: "2px" }}>
                       Privacy Policy
                     </Link>
