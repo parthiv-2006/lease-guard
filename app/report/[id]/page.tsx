@@ -320,11 +320,14 @@ function ReportSidebar({
         {/* Risk score block */}
         <div
           style={{
-            padding: "12px 14px",
-            background: "#1a1816",
-            borderRadius: "8px",
-            marginBottom: "12px",
-            border: "1px solid #2a2623",
+            borderLeft: `3px solid ${
+              overall.risk_level === "critical" ? "#f87171"
+              : overall.risk_level === "high" ? "#fb923c"
+              : overall.risk_level === "medium" ? "#fbbf24"
+              : "#4ade80"
+            }`,
+            paddingLeft: "12px",
+            marginBottom: "14px",
           }}
         >
           <div
@@ -332,18 +335,18 @@ function ReportSidebar({
               fontSize: "10px",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "#4a4744",
+              color: "#6b6560",
               fontWeight: 500,
-              marginBottom: "6px",
+              marginBottom: "5px",
             }}
           >
             Overall Risk
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "7px" }}>
             <span
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: "36px",
+                fontSize: "32px",
                 fontWeight: 600,
                 lineHeight: 1,
                 color: overall.risk_level === "critical" ? "#f87171"
@@ -356,14 +359,15 @@ function ReportSidebar({
             </span>
             <span
               style={{
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.06em",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.07em",
                 textTransform: "uppercase",
                 color: overall.risk_level === "critical" ? "#f87171"
                   : overall.risk_level === "high" ? "#fb923c"
                   : overall.risk_level === "medium" ? "#fbbf24"
                   : "#4ade80",
+                opacity: 0.8,
               }}
             >
               {overall.risk_level}
@@ -372,9 +376,9 @@ function ReportSidebar({
           <div
             style={{
               marginTop: "8px",
-              height: "3px",
+              height: "2px",
               background: "#252220",
-              borderRadius: "2px",
+              borderRadius: "1px",
               overflow: "hidden",
             }}
           >
@@ -382,7 +386,7 @@ function ReportSidebar({
               style={{
                 height: "100%",
                 width: `${(overall.risk_score / 10) * 100}%`,
-                borderRadius: "2px",
+                borderRadius: "1px",
                 background: overall.risk_level === "critical" ? "#f87171"
                   : overall.risk_level === "high" ? "#fb923c"
                   : overall.risk_level === "medium" ? "#fbbf24"
