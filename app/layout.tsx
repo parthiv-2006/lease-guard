@@ -1,10 +1,35 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") ?? "https://leaseguard.ca";
+
+const OG_TITLE = "LeaseGuard — Read what you sign";
+const OG_DESCRIPTION =
+  "AI-powered Ontario lease analysis. Every risk grounded in real law — not AI guesswork.";
+
 export const metadata: Metadata = {
-  title: "LeaseGuard — Read what you sign",
-  description:
-    "AI-powered Ontario lease analysis. Every risk grounded in real law.",
+  title: {
+    default: OG_TITLE,
+    template: "%s | LeaseGuard",
+  },
+  description: OG_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    siteName: "LeaseGuard",
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+  },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({
