@@ -1,0 +1,29 @@
+#meta: date=2022-09-05, clause_types=rent_payment, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-20003-22
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant sought repayment of amounts collected under a lease clause requiring payment of two months' rent as a "security deposit" in addition to the last month's rent deposit.
+
+ANALYSIS
+The tenancy agreement required: "The Tenant shall pay, prior to occupancy, first month's rent, last month's rent, and a security deposit equal to one month's rent, refundable at the end of the tenancy subject to deductions for damage."
+
+Section 105(1) of the Act is clear: a landlord shall not require or receive a rent deposit greater than the lesser of one month's rent or the rent for one rental period. Section 105 permits only one type of deposit — a last month's rent deposit. It does not permit a separate "security deposit."
+
+The collection of a security deposit in addition to a last month's rent deposit results in the Landlord holding two months' rent as deposits. This directly contravenes the plain language of section 105.
+
+The Landlord argued the security deposit served a legitimate purpose of protecting against tenant damage. The Board rejects this. The Act prescribes the remedies available to a landlord for tenant-caused damage. A landlord who wishes to recover for damage caused by a tenant must apply to the Board. The Act does not authorize a pre-collected security deposit as a substitute for the Board process.
+
+PRINCIPLE
+A security deposit, damage deposit, or any deposit collected in addition to the permitted last month's rent deposit is void under section 105 of the Residential Tenancies Act, 2006. A landlord may hold only one deposit — the last month's rent deposit — and only up to one month's rent.
+
+ORDER
+The Landlord is ordered to repay the full security deposit collected from the Tenant, with interest at the guideline rate.

@@ -1,0 +1,29 @@
+#meta: date=2023-11-15, clause_types=entry_rights, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-50003-23
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied after the Landlord conducted monthly "routine inspection" visits, each time providing 24-hour written notice but asserting an unlimited right under a lease clause to inspect the unit for cleanliness and general condition on a regular schedule.
+
+ANALYSIS
+The tenancy agreement stated: "The Landlord shall have the right to conduct routine inspections of the rental unit once per month on a date and time specified by the Landlord, to ensure the unit is being maintained in a clean and orderly condition. The Tenant shall be present during inspections."
+
+The 24-hour notice given by the Landlord satisfies the procedural requirement of section 27(1). The issue is whether the purpose — routine cleanliness inspection — is a permitted reason for entry.
+
+Section 26(1) of the Act specifies the exhaustive list of reasons for which a landlord may enter a rental unit: emergencies, after 24-hour notice for repairs or to show the unit, and with the tenant's consent. A routine inspection to assess cleanliness and general condition does not fall within any of these categories.
+
+The Act does not authorize a landlord to enter a rental unit periodically to monitor a tenant's housekeeping. The exhaustive list in section 26 cannot be supplemented by lease terms that create additional grounds for entry. Any such clause is inconsistent with section 26 and void under section 3.
+
+PRINCIPLE
+A lease clause granting the landlord a right to conduct routine, periodic, or cleanliness inspections of the rental unit is void under sections 3 and 26 of the Residential Tenancies Act, 2006. The permitted purposes for entry are an exhaustive statutory list; a tenancy agreement cannot create new grounds for entry beyond those listed.
+
+ORDER
+The Board finds the Landlord entered the unit for unauthorized purposes on multiple occasions. The Tenant is awarded $1,000 for substantial interference with reasonable enjoyment.

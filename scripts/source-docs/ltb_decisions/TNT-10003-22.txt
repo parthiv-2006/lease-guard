@@ -1,0 +1,33 @@
+#meta: date=2022-11-08, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-10003-22
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant sought repayment of three months' rent retained by the Landlord after the Tenant provided notice of early termination under a fixed-term lease. The Landlord relied on a "penalty deposit" clause to retain the funds.
+
+ANALYSIS
+The tenancy agreement included: "The Tenant shall provide a penalty deposit of three months' rent, to be forfeited by the Tenant in the event of early termination of this agreement."
+
+The Board makes the following findings:
+
+1. The clause creates a deposit of three months' rent. Section 105 of the Act permits only a last month's rent deposit of no more than one month's rent. Three months' rent deposit is void on its face.
+
+2. Even if the deposit were of lawful amount, a forfeiture clause constitutes both an excess deposit (section 105) and a prohibited charge (section 134). A landlord cannot structure a penalty as a deposit to circumvent the prohibition on early termination fees.
+
+3. Section 3 of the Act provides that any tenancy agreement term inconsistent with the Act is void. The penalty deposit clause is inconsistent with multiple provisions of the Act simultaneously.
+
+The Board rejects the Landlord's characterization of the forfeiture as "agreed damages." Ontario residential tenancy law does not recognize agreed damages clauses that override the statutory framework for determining remedies.
+
+PRINCIPLE
+A "penalty deposit" or any amount held as security for a tenant's continued occupancy for a fixed term is void under the Residential Tenancies Act, 2006. A landlord may not use deposit mechanics to achieve what is in substance an early termination penalty.
+
+ORDER
+The Landlord is ordered to return all funds retained as a penalty deposit, less the lawful last month's rent deposit which may be properly applied to the final period.

@@ -1,0 +1,29 @@
+#meta: date=2022-11-28, clause_types=rent_payment, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-20005-22
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied after the Landlord demanded post-dated cheques covering the entire twelve-month lease term and refused to accept any other form of payment, threatening to terminate the tenancy if the Tenant did not comply.
+
+ANALYSIS
+The tenancy agreement contained the clause: "The Tenant shall provide twelve (12) post-dated cheques at the commencement of the tenancy covering all rental payments for the full lease term. Failure to provide post-dated cheques shall be deemed a material breach of this agreement."
+
+Section 108 of the Act is explicit: a landlord shall not require a tenant to provide post-dated cheques or other negotiable instruments. Section 108 creates a right in the tenant — the landlord cannot mandate a particular form of payment.
+
+The Board notes that a landlord may accept post-dated cheques if a tenant voluntarily offers them. What the Act prohibits is requiring them. The clause before the Board does precisely what the Act prohibits: it mandates post-dated cheques and characterizes non-compliance as a material breach justifying termination.
+
+The characterization of non-compliance as a "material breach" is doubly void. Under section 3 of the Act, a tenancy agreement term that is inconsistent with the Act is void. The entire clause, including the threatened consequence, is of no legal effect.
+
+PRINCIPLE
+A clause requiring a tenant to provide post-dated cheques, pre-authorized payment authorizations, or any specific form of payment as a mandatory condition of tenancy is void under section 108 of the Residential Tenancies Act, 2006. A tenant may choose their preferred lawful payment method.
+
+ORDER
+The Board declares the post-dated cheque requirement void and of no effect. The Landlord is ordered to accept any lawful form of rent payment from the Tenant.

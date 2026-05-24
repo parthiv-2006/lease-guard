@@ -1,0 +1,29 @@
+#meta: date=2023-01-24, clause_types=pets, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-40001-23
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied after the Landlord served a notice of termination based solely on the Tenant keeping a cat, relying on a "no pets" clause in the tenancy agreement. The Tenant sought a declaration that the no-pets clause was void.
+
+ANALYSIS
+The tenancy agreement stated: "No pets of any kind are permitted in the rental unit or on the premises. Any violation of this clause shall constitute grounds for immediate termination of the tenancy."
+
+Section 14 of the Act is unambiguous: a provision in a tenancy agreement prohibiting the presence of animals in or about the residential complex is void. Section 14 applies to all residential tenancies governed by the Act. There is no exception for condominiums, co-operatives, or any other housing type within the Act's scope.
+
+The Landlord argued that the no-pets clause was a reasonable building rule and that the cat was causing disturbance to other residents. The Board notes that these are separate issues. Section 14 voids no-pet clauses categorically. If the pet is causing demonstrable harm — damage to the unit, substantial interference with other tenants' reasonable enjoyment — the landlord has remedies under other provisions of the Act. However, the mere presence of a pet cannot be grounds for termination.
+
+The notice of termination served on the basis of the no-pets clause alone is therefore void and of no effect.
+
+PRINCIPLE
+A no-pets clause in a residential tenancy agreement is void under section 14 of the Residential Tenancies Act, 2006. A landlord cannot terminate a tenancy solely because a tenant keeps a pet. The landlord's remedy for pet-related harm is limited to applications based on actual damage or interference, not the mere presence of an animal.
+
+ORDER
+The notice of termination is void. The Board declares the no-pets clause of no effect.

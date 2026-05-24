@@ -1,0 +1,29 @@
+#meta: date=2022-07-11, clause_types=entry_rights, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-50002-22
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied after the Landlord installed a lockbox containing a key to the rental unit on the front door and granted access to property management staff, cleaners, and inspectors without the Tenant's knowledge or individualized consent, relying on a lease clause authorizing such access.
+
+ANALYSIS
+The tenancy agreement stated: "The Landlord may install a lockbox at the rental unit and may provide access codes or keys to authorized agents, contractors, and employees of the Landlord for the purpose of managing the property. The Tenant consents to such access as part of this agreement."
+
+The Board finds this clause void. Section 22 of the Act prohibits a landlord from substantially interfering with a tenant's reasonable enjoyment of the rental unit. Section 23 prohibits harassment of tenants. The ability to enter a tenant's home without the tenant's knowledge — through a lockbox accessible to undisclosed third parties — is a fundamental intrusion on the tenant's privacy and security.
+
+More specifically, the Act's entry regime under section 26-27 requires the landlord to identify the person entering and the reason. A blanket authorization for "authorized agents" through a lockbox does not satisfy the Act's entry requirements. Each entry must comply with the notice and purpose requirements of sections 26-27 individually.
+
+The tenant cannot be deemed to have consented to all future entries by unnamed parties at undisclosed times simply by signing the lease.
+
+PRINCIPLE
+A clause permitting a landlord to install a lockbox and grant undisclosed third parties recurring access to the rental unit without individualized notice is inconsistent with sections 22, 26, and 27 of the Residential Tenancies Act, 2006. Each entry must comply with the Act's notice requirements; blanket advance consent does not satisfy the statutory scheme.
+
+ORDER
+The Landlord is ordered to remove the lockbox. The Tenant is awarded $750 for the intrusion on reasonable enjoyment.

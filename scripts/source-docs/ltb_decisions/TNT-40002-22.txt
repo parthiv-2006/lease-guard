@@ -1,0 +1,31 @@
+#meta: date=2022-10-03, clause_types=pets, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-40002-22
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied for repayment of a "pet deposit" of $500 and a monthly "pet fee" of $50 collected by the Landlord as a condition of allowing the Tenant to keep a dog.
+
+ANALYSIS
+The tenancy agreement contained: "The Tenant shall pay a refundable pet deposit of $500.00 and a monthly pet fee of $50.00 as a condition of permission to keep one (1) dog in the rental unit."
+
+The Board makes two findings.
+
+First, the pet deposit is void under section 105 of the Act. Section 105 permits only a last month's rent deposit up to one month's rent. A pet deposit is not a last month's rent deposit and is not authorized by the Act. Calling it "refundable" does not bring it within any permitted category.
+
+Second, the monthly pet fee is a prohibited additional charge under section 134(1). It is not rent as defined by the Act — or if it is intended to be rent, it would constitute a rent increase that must comply with the rent increase provisions in Part VII of the Act. A landlord cannot impose a separate monthly fee for keeping a pet; the right to keep pets is protected by section 14 and cannot be made conditional on payment of a fee beyond lawful rent.
+
+Taken together, these clauses attempt to monetize the section 14 right to keep pets, which is void.
+
+PRINCIPLE
+A pet deposit and a monthly pet fee are both unlawful: the deposit violates section 105 and the monthly fee violates section 134(1) of the Residential Tenancies Act, 2006. A landlord cannot charge additional fees as a condition of permitting pets when section 14 already prohibits no-pet clauses.
+
+ORDER
+The Landlord is ordered to repay the $500 pet deposit and all monthly pet fees collected, with interest.

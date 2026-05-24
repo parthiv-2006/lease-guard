@@ -1,0 +1,29 @@
+#meta: date=2023-06-22, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/
+
+ONTARIO LANDLORD AND TENANT BOARD
+File Number: TNT-10002-23
+
+BETWEEN:
+Applicant Tenant
+and
+Respondent Landlord
+
+REASONS FOR ORDER
+
+BACKGROUND
+The Tenant applied under section 135 of the Residential Tenancies Act, 2006, for an order requiring the Landlord to return money collected as a "re-letting fee" when the Tenant vacated before the end of a one-year fixed term.
+
+ANALYSIS
+The tenancy agreement provided: "Upon early termination by the Tenant, the Tenant shall pay all costs associated with re-letting the unit, including advertising fees and a re-letting administrative fee of $1,500."
+
+The Board finds this clause void in its entirety under section 3 of the Act. The Act provides a closed list of permitted charges: rent, rent deposits, and key deposits within prescribed limits. A re-letting administrative fee is not among them.
+
+Section 134(1) states that "no landlord shall, directly or indirectly, with respect to any rental unit, charge or collect any amount of money, including a fee, fine or penalty, other than rent." A re-letting fee falls squarely within this prohibition.
+
+The Board notes the distinction between a re-letting fee (void) and actual proven losses for which a landlord may seek compensation by filing an application with the Board. The landlord is not without remedy — they may apply for compensation for unmitigated losses from the vacated unit. However, they may not collect a predetermined fee that operates as a financial penalty for early departure.
+
+PRINCIPLE
+Re-letting fees, administrative charges for early termination, and any predetermined financial penalties for a tenant vacating before the end of a fixed term are prohibited additional charges under section 134 of the Residential Tenancies Act, 2006. The landlord may only seek actual, proven, mitigated losses through the Board application process.
+
+ORDER
+The Board orders the Landlord to repay the $1,500 re-letting fee collected from the Tenant, plus interest.
