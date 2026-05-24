@@ -263,6 +263,7 @@ interface SectionHeaderProps {
   subtitle?: string;
   count?: number;
   action?: React.ReactNode;
+  accentColor?: string;
 }
 
 export function SectionHeader({
@@ -270,6 +271,7 @@ export function SectionHeader({
   subtitle,
   count,
   action,
+  accentColor,
 }: SectionHeaderProps) {
   return (
     <div style={{ marginBottom: "28px" }}>
@@ -282,8 +284,20 @@ export function SectionHeader({
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "baseline", gap: "10px" }}
+          style={{ display: "flex", alignItems: "center", gap: "10px" }}
         >
+          {accentColor && (
+            <span
+              style={{
+                width: 3,
+                height: 22,
+                borderRadius: "2px",
+                background: accentColor,
+                flexShrink: 0,
+                alignSelf: "center",
+              }}
+            />
+          )}
           <h2
             style={{
               margin: 0,
@@ -319,6 +333,7 @@ export function SectionHeader({
             color: "#6b6560",
             fontFamily: "'DM Sans', sans-serif",
             lineHeight: 1.5,
+            paddingLeft: accentColor ? "13px" : 0,
           }}
         >
           {subtitle}
@@ -326,9 +341,10 @@ export function SectionHeader({
       )}
       <div
         style={{
-          height: "1px",
-          background: "#e8e4dc",
+          height: accentColor ? "2px" : "1px",
+          background: accentColor ?? "#e8e4dc",
           marginTop: "16px",
+          opacity: accentColor ? 0.35 : 1,
         }}
       />
     </div>

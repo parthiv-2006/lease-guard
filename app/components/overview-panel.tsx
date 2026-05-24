@@ -49,6 +49,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             flexDirection: "column",
             alignItems: "center",
             gap: "12px",
+            boxShadow: "0 1px 3px rgba(24,22,20,0.07), 0 1px 2px rgba(24,22,20,0.04)",
           }}
         >
           <RiskArc score={overall.risk_score} size={140} />
@@ -89,6 +90,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             border: "1px solid #e8e4dc",
             borderRadius: "10px",
             padding: "28px",
+            boxShadow: "0 1px 3px rgba(24,22,20,0.07), 0 1px 2px rgba(24,22,20,0.04)",
           }}
         >
           <div
@@ -178,6 +180,71 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
           onClick={() => onNavigate("contradictions")}
         />
       </div>
+
+      {/* Clean lease celebration — only shown for low-risk leases */}
+      {overall.risk_score < 3 && overall.red_flag_count === 0 && (
+        <div
+          style={{
+            padding: "20px 24px",
+            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+            border: "1px solid #86efac",
+            borderRadius: "10px",
+            marginBottom: "28px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "16px",
+            boxShadow: "0 1px 3px rgba(21,128,61,0.08)",
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "#dcfce7",
+              border: "1.5px solid #86efac",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2l5 2.5v4C13 11.5 10.5 14 8 15 5.5 14 3 11.5 3 8.5v-4L8 2z"
+                stroke="#15803d" strokeWidth="1.5" fill="#bbf7d0" />
+              <path d="M5.5 8.5l1.8 1.8 3.2-3.6"
+                stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "17px",
+                fontFamily: "'Cormorant Garamond', serif",
+                fontWeight: 600,
+                color: "#14532d",
+                marginBottom: "4px",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              This lease looks clean
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "13px",
+                color: "#166534",
+                lineHeight: 1.55,
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              No major red flags found. Your lease appears largely compliant with Ontario's
+              Residential Tenancies Act. Still worth reviewing the full clause breakdown below —
+              you have all the details.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Clause breakdown */}
       <div

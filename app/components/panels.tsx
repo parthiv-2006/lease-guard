@@ -37,9 +37,11 @@ interface ClauseCardProps {
   negotiation?: NegotiationPoint;
   defaultOpen?: boolean;
   onClauseActivate?: (clauseId: string) => void;
+  /** Tint the collapsed header with a subtle risk-level background */
+  accentHeader?: boolean;
 }
 
-function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivate }: ClauseCardProps) {
+function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivate, accentHeader }: ClauseCardProps) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [showCompliant, setShowCompliant] = useState(false);
   const col = riskColor(clause.risk_level);
@@ -76,11 +78,12 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
           alignItems: "center",
           gap: "12px",
           padding: "14px 18px",
-          background: open ? "#faf9f6" : "#fff",
+          background: open ? "#faf9f6" : accentHeader ? riskBg(clause.risk_level) : "#fff",
           border: "none",
           cursor: "pointer",
           textAlign: "left",
           borderBottom: open ? "1px solid #e8e4dc" : "none",
+          transition: "background 0.15s",
         }}
       >
         <span
@@ -455,6 +458,7 @@ export function RedFlagsPanel({
         title="Red Flags"
         count={redFlags.length}
         subtitle="Clauses with risk score ≥ 6.0. These require your attention before signing."
+        accentColor="#b91c1c"
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {redFlags.map((clause, i) => {
@@ -469,6 +473,7 @@ export function RedFlagsPanel({
               negotiation={neg}
               defaultOpen={i === 0}
               onClauseActivate={onClauseActivate}
+              accentHeader
             />
           );
         })}
@@ -515,6 +520,7 @@ export function ClauseExplorerPanel({
         title="Clause Explorer"
         count={filtered.length}
         subtitle="Every clause analysed. Click any clause to expand its full analysis."
+        accentColor="#181614"
       />
 
       {/* Filter + sort controls */}
@@ -921,6 +927,7 @@ export function NegotiationPanel({
         title="Negotiation Guide"
         count={report.negotiation_points.length}
         subtitle="Prioritised by impact. Walk-away clauses are flagged separately."
+        accentColor="#1d4ed8"
         action={
           <button
             onClick={onLaunchCopilot}
@@ -1035,6 +1042,7 @@ export function MissingPanel({ report }: { report: Report }) {
         title="Missing Protections"
         count={sorted.length}
         subtitle="Rights guaranteed by Ontario law that are absent from your lease. You have these rights regardless — but their absence means you may not know to enforce them."
+        accentColor="#b45309"
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {sorted.map((m) => (
@@ -1221,6 +1229,7 @@ export function ContradictionsPanel({
         title="Contradictions"
         count={report.contradictions.length}
         subtitle="Clauses within this lease that conflict with each other. Legal ambiguity in residential leases generally resolves in the tenant's favour, but disputes are costly."
+        accentColor="#7c3aed"
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {report.contradictions.map((x) => (
@@ -1419,6 +1428,7 @@ export function SourcesPanel({
         title="Sources"
         count={report.sources.length}
         subtitle={`All statute sections retrieved during analysis. Corpus version ${report.overall.corpus_version}${report.overall.corpus_date ? ` · Updated ${report.overall.corpus_date}` : ""}`}
+        accentColor="#0369a1"
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {report.sources.map((s) => (
@@ -1808,6 +1818,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
         subtitle={`${report.agent_trace.length} tool calls · ${(totalMs / 1000).toFixed(1)}s total · ${
           allSucceeded ? "All calls succeeded" : "Some calls failed"
         }`}
+        accentColor="#374151"
       />
 
       {/* Grounding explanation */}
