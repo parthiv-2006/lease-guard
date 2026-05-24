@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "View and manage your Ontario lease analyses.",
+  robots: { index: false, follow: false },
+};
 import { SignOutButton } from "../components/auth-button";
 import { DeleteLeaseButton } from "../components/delete-lease-button";
 
