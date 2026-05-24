@@ -278,6 +278,114 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           seconds.
         </p>
 
+        {/* Example findings preview */}
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "560px",
+            marginBottom: "36px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#b0aaa4",
+              fontWeight: 500,
+              marginBottom: "4px",
+              textAlign: "left",
+              paddingLeft: "2px",
+            }}
+          >
+            Example findings
+          </div>
+          {[
+            {
+              level: "critical" as const,
+              color: "#b91c1c",
+              bg: "#fef2f2",
+              border: "#fecaca",
+              dot: "#b91c1c",
+              text: "Late fee of $100/day — unenforceable under RTA s.134",
+              tag: "Rent Payment",
+            },
+            {
+              level: "high" as const,
+              color: "#c2410c",
+              bg: "#fff7ed",
+              border: "#fed7aa",
+              dot: "#c2410c",
+              text: "24-hour notice requirement waived — void under RTA s.27(1)",
+              tag: "Entry Rights",
+            },
+            {
+              level: "low" as const,
+              color: "#15803d",
+              bg: "#f0fdf4",
+              border: "#bbf7d0",
+              dot: "#15803d",
+              text: "Rent increase procedure follows RTA s.116 — compliant",
+              tag: "Rent Increase",
+            },
+          ].map(({ color, bg, border, dot, text, tag }) => (
+            <div
+              key={text}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "9px 13px",
+                background: "#fff",
+                border: "1px solid #e8e4dc",
+                borderRadius: "7px",
+                boxShadow: "0 1px 3px rgba(24,22,20,0.05)",
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: dot,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: "12px",
+                  color: "#181614",
+                  fontFamily: "'DM Sans', sans-serif",
+                  lineHeight: 1.4,
+                  textAlign: "left",
+                }}
+              >
+                {text}
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  padding: "2px 7px",
+                  background: bg,
+                  border: `1px solid ${border}`,
+                  borderRadius: "3px",
+                  color: color,
+                  fontWeight: 500,
+                  letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                {tag}
+              </span>
+            </div>
+          ))}
+        </div>
+
         {/* Upload zone */}
         <div style={{ width: "100%", maxWidth: "560px" }}>
           <div
