@@ -349,7 +349,7 @@ that visualises parallel tool calls, RAG latency phases, and overall pipeline th
 |---|--------|-------|--------|
 | 1.1 | Seed full RTA with all subsections | `scripts/build_corpus.py` | ✅ 2372 chunks — granular subsections + s.12 all 5 sub-clauses (commits 691c3b9, 7dce980) |
 | 1.2 | Seed Ontario Regulations (516/06, 517/06, Form T) | `scripts/build_regulations.py` | ✅ O.Reg.516/06 + O.Reg.517/06 + Standard Form seeded (commit 2a0357a) |
-| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | 🔜 Blocked — CanLII API key pending (registered 2026-05-18) |
+| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | ✅ 46 decisions seeded via `seed_decisions_manual.py` (2026-05-23 commit 53b9308 + 2026-05-24 commits 9d0f664, 01d7a29). 8 categories: entry_rights ×8, security_deposit ×7, maintenance_repairs ×4, early_termination ×7, rent_increase ×4, quiet_enjoyment ×4, rent_payment ×5, dispute_resolution ×3, pets ×4. CanLII API path still pending for scale-up. |
 | 2.1 | Multi-query retrieval (3 queries per clause) | `mcp-server/src/tools/lookup-statute.ts` | ✅ 3 queries/clause (raw/risk-angle/statute-targeted), RRF k=60 (commit f9e5343) |
 | 2.2 | Add hybrid BM25 + vector search | `supabase/migrations/005_hybrid_search.sql` | ✅ SQL migration written + applied 2026-05-20; hybridSearch() with PGRST202 fallback (commit 92ce515) |
 | 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.py` | ✅ 7/7 (100%) under hybrid search (all scores ≥ 0.72). Threshold 0.55 hybrid / 0.60 vector confirmed. Re-validate after corpus changes. |
@@ -358,10 +358,11 @@ that visualises parallel tool calls, RAG latency phases, and overall pipeline th
 | 3.3 | Add few-shot examples (esp. compliant entry clause) | `mcp-server/src/tools/score-risk.ts` | ✅ `applyCompliantPatterns()` with 6 known-good rules (commit 4c9a812) |
 | 3.4 | Separate unenforceable flag from risk score | `mcp-server/src/tools/score-risk.ts` | ✅ `MANDATORY_PROVISION_VIOLATION_TYPES` allowlist (commit 4c9a812) |
 | 4.1 | Replace regex contradiction detection with LLM | `mcp-server/src/tools/detect-contradiction.ts` | ✅ Anthropic SDK, tool_choice JSON, confidence gate 0.65, regex fallback (commit 79acfc5). Needs real ANTHROPIC_API_KEY for LLM path. |
-| 5.1 | Create labelled clause test suite | `scripts/test-leases/labels.json` | ✅ 15 cases (8 unenforceable, 7 compliant) across entry rights, deposit, rent increase, maintenance, dispute resolution, late fees (commit 9246847) |
-| 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.mjs` | ✅ 15/15 PASS — Precision 100%, Recall 100%, FP rate 0%; exits 0 (commit 9246847) |
+| 5.1 | Create labelled clause test suite | `scripts/test-leases/labels.json` | ✅ 30 cases (16 unenforceable, 14 compliant FP guards) — expanded from 15 cases 2026-05-24 (commit 9d0f664). Adds: early_termination_fee, surveillance_in_unit, post_dated_cheques, guest_surcharge, assignment_fee, self_help_eviction, pet_fine, rent_abatement_waiver, and 7 new compliant guards. |
+| 5.2 | Build accuracy evaluation script | `scripts/eval-accuracy.mjs` | ✅ 30/30 PASS — Precision 100%, Recall 100%, FP rate 0%; exits 0 (commit 9d0f664). Before engine fixes: 26/30 (86.7%), Recall 75% FAIL. |
 | 6.2 | Wire "Flag as incorrect" reason dropdown | `app/components/shared.tsx` | ✅ Reason dropdown added and wired to /api/feedback (commit 2056910) |
-| 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | 🔜 |
+| 7.1 | Add grounding confidence badge per clause | `app/components/panels.tsx` | ✅ Grey "Limited sources" badge (0.4–0.7), amber "No statute retrieved" badge (<0.4). Mapped from existing `analysis_confidence` DB column via `normaliseApiResponse()`. Zero migration needed. (2026-05-23, commit 381aa5b) |
+| 10.1 | Suggested compliant language per flagged clause | `mcp-server/src/tools/score-risk.ts`, `app/components/panels.tsx` | ✅ 13 violation-type templates in `score-risk.ts`. Expandable "What would a compliant version look like?" section in ClauseCard. Frontend derives from `statutory_violations` section numbers — works on all existing data. DB column `suggested_compliant_language` (migration 008) caches for new analyses. (2026-05-23, commits 26acc00, 381aa5b) |
 | 7.2 | Show full_text + similarity in Sources panel | `mcp-server/src/tools/generate-report.ts` | ✅ `full_text` passed through `sourcesMap` and `normaliseApiResponse()` (commit 6321858) |
 | 8.1 | Live Execution Trace Timeline (Gantt chart) | `app/components/trace-timeline.{tsx,utils.ts}` | ✅ Swim-lane Gantt, RAG highlighting, ruler, 34 unit tests, 100/100 passing (commit be08a41) |
 
@@ -378,9 +379,11 @@ These are documented failures from smoke testing. Fix them before any other work
 
 ---
 
-*Last updated: 2026-05-20*
-*Current corpus version: 2026-05-20 (2372 chunks — RTA subsections + regs + standard form)*
-*validate_retrieval.py: 7/7 (100%) under hybrid search as of 9246847*
-*eval-accuracy.mjs: 15/15 (100%) — Precision 100%, Recall 100%, FP 0% as of 9246847*
+*Last updated: 2026-05-24*
+*Current corpus version: 2026-05-20 (2372 statute chunks — RTA subsections + regs + standard form)*
+*tribunal_decisions: 46 rows (26 original + 20 new across rent_payment, dispute_resolution, pets, entry_rights ×3, security_deposit ×2 — commit 01d7a29)*
+*validate_retrieval.py: 7/7 (100%) confirmed after corpus expansion (2026-05-24)*
+*eval-accuracy.mjs: 30/30 (100%) — Precision 100%, Recall 100%, FP 0% as of 9d0f664*
+*score-risk.ts: 17 MANDATORY_PROVISION_VIOLATION_TYPES (added early_termination_fee, surveillance_in_unit, guest_surcharge, assignment_fee — commit 9d0f664)*
 *Test suite: 100/100 passing (7 suites, includes 34 Gantt computation unit tests) as of be08a41*
 *Smoke tested on: faultyLease.pdf, compliantLease.pdf (2.2 Low, 0 false positives as of 4c9a812)*

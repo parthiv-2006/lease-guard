@@ -151,3 +151,18 @@ When an issue in `docs/HANDOFF.md` `## Known Issues` is fixed, move it here with
 - `exportCopilotPDF(params)` — two modes: email (letter layout with subject block + body) and addendum (legal amendment document with numbered clauses in bordered boxes, signature blocks, lawyer-disclaimer footer).
 Both produce selectable, searchable text PDFs. Wired `exportReportPDF` to sidebar Export PDF button and `exportCopilotPDF` to both the addendum Save PDF button and a new Save PDF button on the email tab. Commit: `e65be13`.
 
+
+---
+
+## [RESOLVED 2026-05-23] #13 — OCR Apostrophe Encoding — "Landlord□s Right of Entry"
+
+**Was:** Known Issue listed as open — believed `scripts/parse_pdf.py` was missing apostrophe normalization, causing `□` (U+25A1) to appear in clause titles.
+**Root cause investigation:** Reading `scripts/parse_pdf.py` lines 396-402 revealed the fix was already in place:
+```python
+raw_text = (raw_text
+  .replace("‘", "'").replace("’", "'")   # curly apostrophes
+  .replace("“", '"').replace("”", '"')   # curly double quotes
+  .replace("□", "'").replace("�", "'")   # replacement squares/chars
+)
+```
+**Resolution:** Issue already resolved in a prior session. Known Issue #13 closed 2026-05-23 with no new commit needed.
