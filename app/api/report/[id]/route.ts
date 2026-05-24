@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 const DISCLAIMER =
   "This analysis is not legal advice. Consult a licensed paralegal or lawyer before making decisions about your lease. Community Legal Clinics in Ontario offer free legal help for tenants.";
@@ -9,6 +18,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-get", maxRequests: 60 });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
   const { id } = await params;
   const { searchParams } = new URL(req.url);
   const shareToken = searchParams.get("token");
@@ -112,6 +127,12 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-post", maxRequests: 20 });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
   const { id } = await params;
 
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
@@ -166,6 +187,12 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-delete", maxRequests: 20 });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
   const { id } = await params;
 
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {

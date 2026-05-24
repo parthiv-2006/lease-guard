@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Polling route — allow generous limit (120/hour) to not break status polling
+  const rl = checkRateLimit(getClientIp(_req), {
+    storeKey: "job",
+    maxRequests: 120,
+  });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
   const { id } = await params;
 
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
