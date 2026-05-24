@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "description": "Labelled clause test suite for LeaseGuard accuracy evaluation. 15 Ontario residential lease clauses with known ground-truth outputs. Covers 8 unenforceable clauses and 7 compliant clauses across all major clause types.",
+  "version": "2.0",
+  "description": "Labelled clause test suite for LeaseGuard accuracy evaluation. 30 Ontario residential lease clauses with known ground-truth outputs. Covers 16 unenforceable clauses and 14 compliant clauses across all major clause types. V2 adds early termination fees, surveillance, guest surcharges, assignment fees, rent abatement waivers, and additional false-positive guard cases.",
   "jurisdiction": "CA-ON",
   "ground_truth_basis": "Ontario Residential Tenancies Act, 2006 (RTA), as currently in force",
   "test_cases": [
@@ -422,6 +422,373 @@
           "last_verified": "2026-05-20"
         }
       ]
+    },
+    {
+      "id": "tc16",
+      "description": "Lease-break penalty fee — void under RTA s.37/s.134",
+      "clause_text": "If the Tenant vacates or terminates the tenancy before the end of the fixed term, the Tenant shall pay a lease-break fee equal to three months' rent as liquidated damages.",
+      "clause_type": "early_termination",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s37",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "37",
+          "section_title": "How tenancy terminated",
+          "text": "37(1) A tenancy may be terminated only in accordance with this Act. A tenancy agreement cannot impose a financial penalty, lease-break fee, or liquidated damages clause for early termination — the Act provides the exclusive mechanism for ending a tenancy. Any such fee is void under section 3 of the Act.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK43",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s134-b",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "134",
+          "section_title": "Additional charges prohibited",
+          "text": "134(1) No landlord shall, directly or indirectly, with respect to any rental unit charge or collect any amount of money, including a fee, fine, or penalty, other than rent. A lease-break fee or early termination penalty is an additional charge prohibited by this section.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK134",
+          "relevance_score": 0.87,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc17",
+      "description": "Surveillance cameras inside rental unit — privacy violation",
+      "clause_text": "The Landlord reserves the right to install and maintain security cameras inside the rental unit and common areas to monitor the premises at any time for security purposes.",
+      "clause_type": "standard_boilerplate",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s28",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "28",
+          "section_title": "Privacy",
+          "text": "28 A tenant is entitled to exclusive possession of the rental unit and to reasonable enjoyment of the unit. The installation of monitoring or surveillance devices inside a rental unit by the landlord violates the tenant's right to privacy and is prohibited. The tenant has a right to privacy in the rental unit that the landlord cannot unilaterally override.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK33",
+          "relevance_score": 0.90,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc18",
+      "description": "Required post-dated cheques — prohibited under RTA s.108",
+      "clause_text": "The Tenant must provide 12 post-dated cheques upon signing this agreement to cover the full year's rent payments.",
+      "clause_type": "rent_payment",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s108",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "108",
+          "section_title": "Post-dated cheques, etc.",
+          "text": "108(1) A landlord shall not require a tenant to provide post-dated cheques or other negotiable instruments, or to permit automatic debiting of a bank account, as a condition of entering into a tenancy agreement or as a condition of continuing to rent the rental unit. Any tenancy agreement term requiring post-dated cheques is void.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK107",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc19",
+      "description": "Per-night guest surcharge — prohibited additional charge under s.134",
+      "clause_text": "Guests may not stay more than 3 consecutive nights. Any guest who stays beyond this limit will be charged an additional $50 per night, billed directly to the tenant.",
+      "clause_type": "guest_policy",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s134-g",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "134",
+          "section_title": "Additional charges prohibited",
+          "text": "134(1) No landlord shall, directly or indirectly, with respect to any rental unit, charge or collect any amount of money, including a fee, fine, penalty, or service charge, other than the rent charged for the rental unit. A surcharge per guest or per night for guest stays is an additional charge prohibited by this section.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK134",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc20",
+      "description": "Assignment/sublet administrative fee — prohibited under RTA s.97",
+      "clause_text": "The Tenant shall pay an administrative fee of $750 to the Landlord upon submitting any request to assign the tenancy or sublet the rental unit.",
+      "clause_type": "early_termination",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s97",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "97",
+          "section_title": "Assignment of tenancy",
+          "text": "97(1) A tenant may assign a rental unit to another person with the consent of the landlord. (3) A landlord shall not charge a fee for consenting to an assignment or subletting, or for processing a request to assign or sublet. Any such fee is prohibited and void. The landlord's sole remedy upon refusal is to allow the tenant to terminate the tenancy.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK94",
+          "relevance_score": 0.90,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc21",
+      "description": "Self-help eviction — change locks on non-payment",
+      "clause_text": "If the Tenant fails to pay rent within 5 days of the due date, the Landlord may change the locks on the rental unit and remove the Tenant's belongings from the premises without further notice.",
+      "clause_type": "rent_payment",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 8,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s19",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "19",
+          "section_title": "Distress abolished",
+          "text": "19 A landlord shall not seize a tenant's property for default in the payment of rent. A landlord shall not change the locking system on a door giving entry to a rental unit during the tenant's occupancy without providing replacement keys. Self-help eviction by lock change or removal of belongings is illegal.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK24",
+          "relevance_score": 0.92,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s59",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "59",
+          "section_title": "Non-payment of rent",
+          "text": "59(1) If a tenant has not paid rent lawfully owing under a tenancy agreement, the landlord may give the tenant a notice of termination of the tenancy effective not earlier than the 14th day after the notice is given if the rent is paid monthly. The N4 notice process is the landlord's exclusive remedy for non-payment of rent. Changing locks or removing belongings is not permitted.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK62",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc22",
+      "description": "Pet fine per occurrence — void no-pet + prohibited penalty under s.14/s.134",
+      "clause_text": "Pets are strictly prohibited in the rental unit. Any tenant found to have a pet on the premises will be fined $500 per occurrence.",
+      "clause_type": "pets",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 6,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s14",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "14",
+          "section_title": "No pets provisions void",
+          "text": "14 A provision in a tenancy agreement prohibiting the presence of animals in or about the residential complex is void. Because the no-pet provision is void, any financial penalty, fine, or eviction threat based on having a pet is also unenforceable.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK19",
+          "relevance_score": 0.93,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s134-pet",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "134",
+          "section_title": "Additional charges prohibited",
+          "text": "134(1) No landlord shall charge or collect any amount other than rent. A fine per occurrence for having a pet is an additional charge prohibited under this section, in addition to the no-pet provision being void under section 14.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK134",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc23",
+      "description": "Rent abatement waiver — void under RTA s.3/s.82",
+      "clause_text": "The Tenant hereby waives any right to a rent abatement, rent reduction, or refund of rent under any circumstances whatsoever.",
+      "clause_type": "dispute_resolution",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s3-b",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "3",
+          "section_title": "Act prevails",
+          "text": "3(1) This Act applies despite any agreement or waiver to the contrary. A provision in a tenancy agreement that waives a tenant's right to a rent abatement, rent reduction, or any other remedy under this Act is void. The tenant cannot contract out of rights granted by the Act.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK7",
+          "relevance_score": 0.93,
+          "last_verified": "2026-05-20"
+        },
+        {
+          "id": "stat-s82",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "82",
+          "section_title": "Tenant issues at hearing",
+          "text": "82(1) At a hearing of an application made by a landlord under section 69, a tenant may raise any issue that could be the subject of an application made by the tenant under this Act, including a claim for a rent abatement. Any waiver of this right is void under section 3 of the Act.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK82",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc24",
+      "description": "Compliant tenant wilful/negligent damage responsibility [FALSE POSITIVE GUARD]",
+      "clause_text": "The Tenant is responsible for the repair of damage caused by the wilful or negligent conduct of the Tenant, another occupant of the rental unit, or any person permitted in the residential complex by the Tenant.",
+      "clause_type": "maintenance_repairs",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s34",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "34",
+          "section_title": "Tenant's responsibility for damage",
+          "text": "34 The tenant is responsible for the repair of undue damage to the rental unit or residential complex caused by the wilful or negligent conduct of the tenant, another occupant of the rental unit or a person permitted in the residential complex by the tenant. This is the standard statement of tenant damage responsibility and is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK39",
+          "relevance_score": 0.90,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc25",
+      "description": "Compliant subletting with landlord consent clause [FALSE POSITIVE GUARD]",
+      "clause_text": "The Tenant may sublet the rental unit or assign the tenancy only with the prior written consent of the Landlord. The Landlord shall not arbitrarily or unreasonably withhold consent, in accordance with the Residential Tenancies Act.",
+      "clause_type": "early_termination",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s97-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "97",
+          "section_title": "Assignment of tenancy",
+          "text": "97(1) A tenant may assign a rental unit to another person with the consent of the landlord. A landlord shall not arbitrarily or unreasonably withhold consent to an assignment. A clause permitting subletting with landlord consent, where consent shall not be unreasonably withheld, is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK94",
+          "relevance_score": 0.87,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc26",
+      "description": "48-hour written notice entry — compliant (exceeds 24h minimum) [FALSE POSITIVE GUARD]",
+      "clause_text": "The Landlord will provide the Tenant with at least 48 hours written notice before entering the rental unit, specifying the reason and time of entry.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s27-48",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "27",
+          "section_title": "Entry with notice",
+          "text": "27(1) A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry. Any notice period of 24 hours or more that is in writing and specifies the reason and time of entry satisfies this requirement. 48 hours written notice is compliant.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK32",
+          "relevance_score": 0.87,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc27",
+      "description": "RTA-deferring landlord maintenance obligation [FALSE POSITIVE GUARD]",
+      "clause_text": "The Landlord shall maintain the rental unit and residential complex in a good state of repair and fit for habitation, as required by the Residential Tenancies Act, 2006.",
+      "clause_type": "maintenance_repairs",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s20-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "20",
+          "section_title": "Landlord's responsibility to repair",
+          "text": "20(1) A landlord is responsible for providing and maintaining a residential complex in a good state of repair and fit for habitation. A clause that restates this landlord obligation is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK25",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-20"
+        }
+      ]
+    },
+    {
+      "id": "tc28",
+      "description": "Standard fixed-term tenancy clause [FALSE POSITIVE GUARD]",
+      "clause_text": "This tenancy agreement commences on July 1, 2024 and is for a fixed term of one year, ending June 30, 2025, at which point it converts to a monthly tenancy unless either party provides notice to terminate.",
+      "clause_type": "standard_boilerplate",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": []
+    },
+    {
+      "id": "tc29",
+      "description": "Compliant utilities responsibility clause [FALSE POSITIVE GUARD]",
+      "clause_text": "The Tenant shall pay for hydro and natural gas utilities supplied to the rental unit directly to the utility providers. The Landlord is responsible for water, sewage, and municipal charges.",
+      "clause_type": "utilities",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": []
+    },
+    {
+      "id": "tc30",
+      "description": "Compliant parking clause with optional add-on [FALSE POSITIVE GUARD]",
+      "clause_text": "One parking space is included with the rental unit at no additional charge. Additional parking spaces may be made available at $100 per month upon separate written agreement.",
+      "clause_type": "parking_storage",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": []
     }
   ]
 }

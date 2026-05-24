@@ -138,6 +138,10 @@ const MANDATORY_PROVISION_VIOLATION_TYPES = new Set([
   "mandatory_arbitration",
   "self_help_eviction",    // RTA s.19 — only Sheriff + LTB order may enforce eviction
   "unlawful_termination",  // RTA s.44/48 — minimum 60 days written notice required
+  "early_termination_fee", // RTA s.37/s.134 — lease-break fees are prohibited additional charges
+  "surveillance_in_unit",  // RTA s.28 — landlord cannot install cameras inside rental unit
+  "guest_surcharge",       // RTA s.134 — per-guest or per-night charges are prohibited
+  "assignment_fee",        // RTA s.97(3) — no fee may be charged for processing assignment/sublet requests
 ]);
 
 // ── 3.1: Quoted text extraction ───────────────────────────────────────────────
@@ -692,6 +696,103 @@ function detectStatutoryViolations(
       });
       continue;
     }
+
+    // ── Early termination fee — RTA s.37 / s.134 ─────────────────────────────
+    // Lease-break fees, liquidated damages for early termination, and penalty
+    // clauses for vacating before end of fixed term are prohibited. The Act
+    // provides the exclusive mechanism for ending a tenancy (s.37); any
+    // financial penalty is also an additional charge void under s.134.
+    if (
+      (lowerClause.includes("lease-break") ||
+        lowerClause.includes("lease break") ||
+        lowerClause.includes("break fee") ||
+        lowerClause.includes("liquidated damage") ||
+        (lowerClause.includes("early termination") && /fee|penalt|charge|pay/.test(lowerClause)) ||
+        (lowerClause.includes("terminat") && /fee|penalt/.test(lowerClause) && /month.*rent|rent.*month/.test(lowerClause)) ||
+        (/(?:two|three|four|[2-4])\s+month.*rent/.test(lowerClause) &&
+          (lowerClause.includes("terminat") || lowerClause.includes("vacat") || lowerClause.includes("leave")))) &&
+      (statute.section_number === "37" || statute.section_number === "134")
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "early_termination_fee",
+        violation_description: `Clause imposes a financial penalty for early termination, which is prohibited by ${sectionRef} — a tenancy may only be ended in accordance with the RTA; lease-break fees and liquidated damages clauses are void`,
+        quoted_text: extractQuotedText(statute.text, ["terminate", "void", "fee", "penalty", "additional"]),
+      });
+      continue;
+    }
+
+    // ── Surveillance cameras in unit — RTA s.28 ──────────────────────────────
+    // Installing monitoring devices inside the rental unit violates the tenant's
+    // right to exclusive possession and privacy under RTA s.28. Common areas
+    // may be monitored; the rental unit itself may not be.
+    if (
+      (lowerClause.includes("camera") ||
+        lowerClause.includes("surveillance") ||
+        lowerClause.includes("cctv") ||
+        lowerClause.includes("monitor") ||
+        lowerClause.includes("recording device")) &&
+      (lowerClause.includes("unit") ||
+        lowerClause.includes("interior") ||
+        lowerClause.includes("inside") ||
+        lowerClause.includes("premises") ||
+        lowerClause.includes("bedroom") ||
+        lowerClause.includes("bathroom")) &&
+      statute.section_number === "28"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "surveillance_in_unit",
+        violation_description: `Clause authorizes installation of surveillance or monitoring devices inside the rental unit, violating ${sectionRef} — the tenant has an exclusive right to possession and privacy within their unit that the landlord cannot override`,
+        quoted_text: extractQuotedText(statute.text, ["privacy", "exclusive", "possession", "monitor", "unit"]),
+      });
+      continue;
+    }
+
+    // ── Guest surcharge / per-night fee — RTA s.134 ───────────────────────────
+    // Any charge beyond base rent is prohibited under s.134. This includes fees
+    // per guest, per-night surcharges for guest stays, and per-visitor charges.
+    if (
+      (lowerClause.includes("per night") ||
+        lowerClause.includes("per-night") ||
+        /\$\s*\d+.*per\s*(guest|visitor|person)/.test(lowerClause) ||
+        /per\s*(guest|visitor|person).*\$\s*\d+/.test(lowerClause) ||
+        (/\$\s*\d+/.test(lowerClause) && (lowerClause.includes("per night") || lowerClause.includes("per-night")) && (lowerClause.includes("guest") || lowerClause.includes("visitor")))) &&
+      statute.section_number === "134"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "guest_surcharge",
+        violation_description: `Clause imposes a per-guest or per-night surcharge, which is a prohibited additional charge under ${sectionRef} — the landlord may not collect any amount beyond base rent`,
+        quoted_text: extractQuotedText(statute.text, ["charge", "fee", "additional", "prohibited", "rent"]),
+      });
+      continue;
+    }
+
+    // ── Assignment / sublet processing fee — RTA s.97 ────────────────────────
+    // Section 97(3) explicitly prohibits landlords from charging any fee for
+    // processing or consenting to an assignment or sublet request. Even a nominal
+    // "administrative" or "processing" fee is void.
+    if (
+      (lowerClause.includes("assign") ||
+        lowerClause.includes("sublet") ||
+        lowerClause.includes("sublease") ||
+        lowerClause.includes("subletting")) &&
+      (lowerClause.includes("fee") ||
+        lowerClause.includes("charge") ||
+        lowerClause.includes("administrative") ||
+        lowerClause.includes("processing")) &&
+      /\$\s*\d+/.test(lowerClause) &&
+      statute.section_number === "97"
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "assignment_fee",
+        violation_description: `Clause charges a fee for processing an assignment or sublet request, which is prohibited by ${sectionRef} — a landlord may not charge any fee for consenting to or processing an assignment or subletting`,
+        quoted_text: extractQuotedText(statute.text, ["fee", "charge", "consent", "assignment", "sublet", "prohibited"]),
+      });
+      continue;
+    }
   }
 
   return violations;
@@ -763,17 +864,36 @@ function detectTextPatternScore(clauseText: string): number {
     bonus += 5;
   }
 
-  // Surcharge / fee per guest — RTA s.134
+  // Surcharge / fee per guest or per night for guests — RTA s.134
   if (
     /\$\s*\d+.*per\s*(guest|person|visitor)/.test(t) ||
-    /per\s*(guest|person|visitor).*\$\s*\d+/.test(t)
+    /per\s*(guest|person|visitor).*\$\s*\d+/.test(t) ||
+    (t.includes("per night") && (t.includes("guest") || t.includes("visitor")) && /\$\s*\d+/.test(t))
   ) {
-    bonus += 2;
+    bonus += 4;  // Bumped from 2 to 4 — explicit additional charge
   }
 
   // Mandatory cleaning fee regardless of condition — RTA s.134
   if (t.includes("cleaning fee") && t.includes("regardless")) {
     bonus += 3;
+  }
+
+  // Lease-break fee / early termination penalty — RTA s.37/s.134
+  if (
+    t.includes("lease-break") || t.includes("lease break") || t.includes("break fee") ||
+    t.includes("liquidated damage") ||
+    (t.includes("early termination") && /fee|penalt|charge/.test(t))
+  ) {
+    bonus += 5;
+  }
+
+  // Assignment / sublet processing fee — RTA s.97
+  if (
+    (t.includes("assign") || t.includes("sublet") || t.includes("sublease")) &&
+    (t.includes("fee") || t.includes("administrative") || t.includes("processing")) &&
+    /\$\s*\d+/.test(t)
+  ) {
+    bonus += 4;
   }
 
   return bonus;
@@ -886,6 +1006,94 @@ function detectCriticalTextViolations(clauseText: string): Array<{
     });
   }
 
+  // ── Early termination fee — RTA s.37 / s.134 ─────────────────────────────
+  // Lease-break fees, liquidated damages, and penalty fees for leaving before
+  // end of fixed term are void even without statute retrieval — the prohibition
+  // in s.37 (Act provides exclusive termination mechanism) and s.134 (no
+  // additional charges) is clear and well-established.
+  const earlyTerminationFee =
+    (t.includes("lease-break") || t.includes("lease break") || t.includes("break fee")) ||
+    (t.includes("liquidated damage") && (t.includes("terminat") || t.includes("vacat"))) ||
+    (t.includes("early termination") && /fee|penalt|charge/.test(t) &&
+      (t.includes("pay") || t.includes("shall") || t.includes("must"))) ||
+    (/(?:two|three|four|[2-4])\s+month/.test(t) &&
+      (t.includes("terminat") || t.includes("vacat") || t.includes("leave")) &&
+      (t.includes("fee") || t.includes("penalt") || t.includes("pay")));
+
+  if (earlyTerminationFee) {
+    found.push({
+      statute_section: "RTA s.37 / s.134",
+      violation_type: "early_termination_fee",
+      violation_description:
+        "Clause imposes a financial penalty or lease-break fee for early termination of the tenancy — void under RTA s.37 and s.134. The Act provides the exclusive mechanism for terminating a tenancy; a landlord may not collect a fee, penalty, or liquidated damages for early departure.",
+      quoted_text:
+        "A tenancy may be terminated only in accordance with this Act (RTA s.37(1)). No landlord shall charge or collect any amount other than rent, including a fee or penalty (RTA s.134(1)).",
+    });
+  }
+
+  // ── Surveillance cameras inside rental unit — RTA s.28 / PIPEDA ──────────
+  // Installing monitoring devices inside the rental unit is a clear violation
+  // of the tenant's right to exclusive possession and privacy even without
+  // statute retrieval — this is universally recognised as prohibited.
+  const surveillanceInUnit =
+    (t.includes("camera") || t.includes("surveillance") || t.includes("cctv") ||
+     t.includes("monitoring device") || t.includes("recording device")) &&
+    (t.includes("unit") || t.includes("interior") || t.includes("inside") ||
+     t.includes("premises") || t.includes("bedroom") || t.includes("bathroom") ||
+     t.includes("living"));
+
+  if (surveillanceInUnit) {
+    found.push({
+      statute_section: "RTA s.28",
+      violation_type: "surveillance_in_unit",
+      violation_description:
+        "Clause authorizes the landlord to install surveillance or monitoring devices inside the rental unit — a direct violation of the tenant's right to exclusive possession and privacy under RTA s.28 and PIPEDA. A landlord may monitor common areas only; the unit interior is exclusively the tenant's.",
+      quoted_text:
+        "A tenant is entitled to exclusive possession of the rental unit. The landlord has no right to install monitoring devices inside the unit without the tenant's ongoing informed consent (RTA s.28).",
+    });
+  }
+
+  // ── Guest surcharge / per-night fee — RTA s.134 ──────────────────────────
+  // Any dollar charge per guest or per night for guest stays is a prohibited
+  // additional charge that is clear on its face — no statute retrieval needed.
+  const guestSurcharge =
+    (/\$\s*\d+.*per\s*(guest|visitor|person|night)/.test(t) ||
+     /per\s*(guest|visitor|person|night).*\$\s*\d+/.test(t) ||
+     (t.includes("per night") && (t.includes("guest") || t.includes("visitor")) && /\$\s*\d+/.test(t))) &&
+    (t.includes("charge") || t.includes("fee") || t.includes("billed") ||
+     t.includes("pay") || t.includes("owe"));
+
+  if (guestSurcharge) {
+    found.push({
+      statute_section: "RTA s.134",
+      violation_type: "guest_surcharge",
+      violation_description:
+        "Clause imposes a per-guest or per-night surcharge — a prohibited additional charge under RTA s.134(1). A landlord may not collect any money beyond base rent, including fees for guests staying longer than a defined period.",
+      quoted_text:
+        "No landlord shall, directly or indirectly, charge or collect any amount of money other than the rent charged for the rental unit (RTA s.134(1)).",
+    });
+  }
+
+  // ── Assignment / sublet processing fee — RTA s.97(3) ─────────────────────
+  // Any fee for processing or consenting to assignment/sublet is explicitly
+  // void under s.97(3) — clear enough to flag without statute retrieval.
+  const assignmentFee =
+    (t.includes("assign") || t.includes("sublet") || t.includes("sublease")) &&
+    (t.includes("fee") || t.includes("charge") || t.includes("administrative") ||
+     t.includes("processing")) &&
+    /\$\s*\d+/.test(t);
+
+  if (assignmentFee) {
+    found.push({
+      statute_section: "RTA s.97",
+      violation_type: "assignment_fee",
+      violation_description:
+        "Clause imposes an administrative or processing fee for an assignment or sublet request — prohibited under RTA s.97(3). A landlord may not charge any fee for consenting to or processing an assignment; the only remedy for refusing is to allow the tenant to terminate.",
+      quoted_text:
+        "A landlord shall not charge a fee for consenting to an assignment or subletting, or for processing a request to assign or sublet (RTA s.97(3)).",
+    });
+  }
+
   return found;
 }
 
@@ -932,6 +1140,18 @@ const COMPLIANT_LANGUAGE_TEMPLATES: Record<string, string> = {
 
   unlawful_termination:
     "Either party may terminate this tenancy only in accordance with the Residential Tenancies Act, 2006. Termination notices must be in writing on a prescribed LTB form. The Landlord shall provide at least 60 days' written notice for most terminations. Verbal notice and notice periods shorter than the statutory minimum are void and of no effect.",
+
+  early_termination_fee:
+    "A tenancy may only be terminated in accordance with the Residential Tenancies Act, 2006. No lease-break fee, liquidated damages, or financial penalty may be charged for vacating before the end of a fixed term. If the Tenant wishes to end a fixed-term tenancy early, the parties may agree to a mutual termination in writing. The Landlord's remedies upon early departure are limited to those provided by the Act.",
+
+  surveillance_in_unit:
+    "The Landlord shall not install or maintain any camera, recording device, or monitoring equipment inside the rental unit. Security cameras may only be installed in common areas of the residential complex (hallways, entrances, parking areas) with appropriate notice to residents. The Tenant has an exclusive right to privacy within the rental unit, in accordance with the Residential Tenancies Act, 2006 and applicable privacy legislation.",
+
+  guest_surcharge:
+    "The Tenant may have guests visit the rental unit. No additional charges, fees, or surcharges may be imposed on the Tenant for the presence or duration of stay of any guest. The only remedy available to the Landlord with respect to guests who have become unauthorized occupants is through the Landlord and Tenant Board process, as permitted by the Residential Tenancies Act, 2006.",
+
+  assignment_fee:
+    "The Tenant may request to assign the tenancy or sublet the rental unit in accordance with the Residential Tenancies Act, 2006. The Landlord shall not charge any fee or administrative charge for processing or consenting to such a request. If the Landlord refuses consent without reasonable grounds, the Tenant may terminate the tenancy by giving 30 days' written notice, in accordance with section 97 of the Act.",
 };
 
 // Returns a compliant language template for the first mandatory-provision
