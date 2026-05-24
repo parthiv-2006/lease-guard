@@ -4,4 +4,15 @@ process.env.GEMINI_API_KEY = "test-gemini-key";
 process.env.SUPABASE_URL = "https://test.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.SUPABASE_ANON_KEY = "test-anon-key";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.MCP_SERVER_URL = "http://localhost:3001";
+
+jest.mock("next/headers", () => ({
+  cookies: jest.fn(async () => ({
+    getAll: jest.fn().mockReturnValue([]),
+    set: jest.fn(),
+    get: jest.fn(),
+  })),
+}));
+

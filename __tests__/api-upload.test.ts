@@ -5,6 +5,10 @@
 
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+      onAuthStateChange: jest.fn().mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } }),
+    },
     storage: {
       from: jest.fn(() => ({
         upload: jest.fn().mockResolvedValue({ error: null }),
