@@ -1,0 +1,182 @@
+#meta: date=2026-05-24, clause_types=quiet_enjoyment, url=https://www.canlii.org/en/on/onltb/doc/2021/2021canlii148914/2021canlii148914.html
+
+ONTARIO LANDLORD AND TENANT BOARD
+
+Residential   Tenancies   Act,   2006
+
+2021 CanLII 148914 (ON LTB) | Perreault v C/o Sentinel Management Inc. | CanLII
+This website uses cookies to various ends, as detailed in our[Privacy Policy](https://www.canlii.org/en/info/privacy.html). You may accept all these cookies or choose only those categories of cookies that are acceptable to you.
+Manage your cookiesAccept all cookies
+## Manage your cookies
+Cookies are saved on your device to ensure proper operation and security of the website, help statistical analysis of its usage, improve its functionality, or record navigational choices you make. Further details can be found in the[cookies section](https://www.canlii.org/en/info/privacy.html#cookies)of CanLII's Privacy Policy.
+A few cookies are strictly necessary to use CanLII and are always active. Cookies that are used to measure performance or improve functionality can be enabled using the buttons below.
+Reset all cookies
+Accept all cookies
+**Strictly necessary cookies
+**Always active**
+These cookies are necessary for the operation of the website and cannot be deactivated. They enable the basic operation of the site and prevent abusive access.
+**Performance cookies
+Témoins de performance
+These cookies collect anonymous data about users' visits to the site. This data is used to measure site performance and improve search functions.
+**Functionality cookies
+Témoins de fonctionnalité
+These cookies record your browsing preferences, for example by storing your browsing language or your myCanLII account login.
+**Targeting cookies
+**Not applicable**
+We do not use cookies to establish your profile or target you for advertising purposes.
+Accept selection
+[![CanLII Logo](https://www.canlii.org/images/canliiLogo.svg)](https://www.canlii.org/en/)
+[Home](https://www.canlii.org/en/)›[Ontario](https://www.canlii.org/en/on/)›[Landlord and Tenant Board](https://www.canlii.org/en/on/onltb/)›2021 CanLII 148914 (ON LTB)
+Page
+****
+0of0
+******
+Loading paragraph markers**
+## Perreault v C/o Sentinel Management Inc., 2021 CanLII 148914 (ON LTB)
+* [Document](#document)
+* [History(0)](#related)
+* [Cited documents(2)](#cited)
+* [Treatment**(1)](#citing)
+* [CanLII Connects(0)](#external)
+[**PDF](https://www.canlii.org/en/on/onltb/doc/2021/2021canlii148914/2021canlii148914.pdf)
+Date:
+2021-12-14
+File number:
+EAT-92159-20;EAT-92160-20;EAT-92176-20
+Citation:
+Perreault v C/o Sentinel Management Inc., 2021 CanLII 148914 (ON LTB), <[https://canlii.ca/t/jp43v](https://canlii.ca/t/jp43v)>, retrieved on 2024-07-04
+### Legislation
+[Maintenance Standards](https://www.canlii.org/en/on/laws/regu/o-reg-517-06/latest/o-reg-517-06.html), O Reg 517/06;[26(1)](https://www.canlii.org/en/on/laws/regu/o-reg-517-06/latest/o-reg-517-06.html#sec26subsec1_smooth)
+[](https://www.canlii.org/en/#search/origin1=/en/on/laws/regu/o-reg-517-06/latest/o-reg-517-06.html&nquery1=O%20Reg%20517/06&linkedNoteup=)
+### Decisions
+2009-11-16
+[Montgomery v. Van](https://www.canlii.org/en/on/onca/doc/2009/2009onca808/2009onca808.html), 2009 ONCA 808 (CanLII)
+[](https://www.canlii.org/en/#search/origin1=/en/on/onca/doc/2009/2009onca808/2009onca808.html&nquery1=2009%20ONCA%20808%20(CanLII)&linkedNoteup=)
+[Citations**(1)](#citing)[Discussions**](#discussing)[Unfavourable mentions**](#unfavourable)
+ExpandedCollapsed
+No summaries or commentary from the legal community available.[Add your own](http://canliiconnects.org/en/cases/2021canlii148914)
+![](images/image001.jpg)
+OrderunderSection30and31
+# ResidentialTenanciesAct,2006
+****
+**FileNumber:**EAT-92159-20,EAT-92160-20,EAT-92176-20
+**Inthematterof:**
+|
+12 MELVA AVENUE GLOUCESTERONK1T3W9
+|
+|
+**Between:**
+|
+VeroniquePerreault
+|
+Tenant
+|
+|
+**and**
+|
+|
+|
+C/oSentinelManagementInc.
+CindyJohnston,PropertyManagerSentinel
+Management Inc
+MartinAndRoxanneJohnston
+|
+Landlords
+|
+In the
+application EAT-92159-20, Veronique Perreault (the 'Tenant') applied for an
+order determining that Martin And Roxanne Johnston, Cindy Johnston, Property
+Manager Sentinel Management Inc and C/o Sentinel Management Inc. (the
+'Landlords') failed to meet the Landlords'maintenanceobligationsunderthe*ResidentialTenanciesAct,2006*(the'Act')orfailed to comply with health, safety,
+housing or maintenance standards.
+In the
+application EAT-92160-20, Veronique Perreault (the 'Tenant') applied for an
+order determining that Martin And Roxanne Johnston, Cindy Johnston, Property
+Manager Sentinel Management Inc and C/o Sentinel Management Inc. (the
+'Landlords') failed to meet the Landlords'maintenanceobligationsunderthe*ResidentialTenanciesAct,2006*(the'Act')orfailed to comply with
+health, safety, housing or maintenance standards.
+In the
+application EAT-92176-20, Veronique Perreault (the 'Tenant') applied for an order
+determiningthatMartinAndRoxanneJohnston,CindyJohnston,PropertyManagerSentinel Management Inc and C/o Sentinel
+Management Inc. (the 'Landlords') harassed, obstructed, coerced, threatened or
+interfered with them and substantially interfered with the reasonable enjoyment
+of the rental unit or residential complex by the Tenants or by a member of
+theirhousehold.
+ThethreeapplicationswereheardtogetherbyvideoconferenceonNovember24,2021
+at9:27AM.
+TheTenantVeroniquePerreault,andtheLandlords’agents,JeanetteCatonandMelissa Macdonald, and the Landlords’
+representative, Rolland Hedges, attended the hearing.
+# Determinations:
+****
+**
+1. The Tenant has brought
+three applications.Two are T6
+(maintenance) applications, one relating to the period in which a stove was
+being replaced, the other alleging that the Landlords’haveimproperlydelegatedtheirstatutorymaintenanceobligationstoher.The
+third is a T2 (Tenants Right) application relating to fireplaces in the rental
+unit.
+**
+2. Forthereasonsthatfollow,allthreeapplicationsaredismissed.
+EAT-92159-20
+3. AT6ApplicationconcernstheLandlord’sobligationsunder Section20oftheAct,which
+states as follows:
+20.(1)Alandlordisresponsibleforprovidingandmaintainingaresidential
+complex, including the rental units in it, in a good state of repair and fit
+for habitation and for complying with health, safety, housing and maintenance
+standards.
+(2)Subsection(1)appliesevenifthetenantwasawareofastateofnon-repairora contravention of
+a standard before entering into the tenancy agreement.
+4. The Tenant’s
+application alleges that the stovetop and oven in the rental unit became
+non-functional on February 13, 2020.It
+was inspected by a repair person on February 19, 2020, and a decision taken by
+the Landlord to replace the stove on February 24, 2020.Thenewstovewas
+ordered,installedonMarch3,2020.Theseeventsanddates are not contested by the Landlord.
+5. The Tenant claims that
+the replacement of the stove could have been accomplished quicker had the
+Landlord sourced a used appliance, and that is consequence the Tenant was
+without a means of cooking meals for 21 days other than a microwave.The Tenant claims that she incurred
+$469.85 in take-away and microwaveable food expenses during thisrepairperiod whenshewasunabletousethestoveforcooking.Sheattributesthese costs to the Landlord having failed
+to meet the obligations in section 20 of the Act.
+6. The Tenant has provided
+bank statements showing her food expenditure during the period the stove was
+non-functional, but as I noted at the hearing, she has provided no base-line of
+comparable expenses in a similar period when the stove was functional, either
+before or after the period in which it was out of service.Even were there a finding thattheLandlordhadfailed
+tomeetmaintenanceobligations,alltheTenanthasshownis theamount she spenton foodwhenthe
+stove was awaiting replacement.Anydifference from a typical baseline (which
+I would consider to be the quantification of damages) is therefore speculative.
+7. Inaddition,section16oftheActrequiresthataninjuredpartytakereasonablestepsto mitigate
+their losses:
+When a landlord or a tenant becomes liable to pay any
+amount as a result of a breachofatenancyagreement,**thepersonentitledtoclaimtheamounthasa**
+****
+**dutytotakereasonablestepstominimizetheperson’slosses**.[Emphasisadded]
+8. The onus is on the
+Tenant to demonstrate that she took reasonable steps to mitigate the Landlords’damagesGiventheamountclaimedforfood,IhavetoaskwhytheTenantdid not mitigate her losses from the loss of stove-top burners by
+purchasing an electronic burner-style hot plate that might cost between $30 and
+$50 from a local hardware store. Her position was that she ought not to incur
+expenses of temporary replacement appliances when theLandlordsmightbe inbreachof theirmaintenance obligations.This
+position flies in the face of the principle of mitigation –a reasonable and
+inexpensive means of mitigating losses was available to the Tenant.If the Landlords were in breach of their
+maintenance obligations, incurring such an expense in the course of mitigating
+damage could be validly brought before this Board.Instead, the Tenant has incurred over $450 in what she claims to
+be excess food bills.Her first
+incurred food expenditure that she attributes to the broken stove was on
+February 19, 2020.Between February
+19 and 21, 2020, the Tenant incurred $170.30 in expenses that she claimed in
+this application –well above the cost of alternate mitigation noted above.She has failed to demonstrate that she
+attempted to mitigate her losses.
+9. As the Tenant has
+proven neither damages, nor mitigation, her application is moot.I thereforemakenoexpressdeterminationontheLandlord’s
+compliancewithmaintenance obligations, although I do
+consider the Landlord’s response to the stove’s failure was reasonable in the
+circumstances.
+EAT-92160-20
+10.The Tenant objects to the requirement under
+her tenancy agreement that she be responsible for lawn care and snow removal.The rental unit also contains a pool, and
+theTenantobjectstotheLandlordnotcoveringthecostofitsoperationalmaintenanceof the
+pool
+11.The Tenant argues that these are
+maintenance obligations of the Landlord, and specifically pleads the decision
+ofthe Ontario Court of Appeal in*Montgomery v. Van*,[2009ONCA808](https://www.canlii

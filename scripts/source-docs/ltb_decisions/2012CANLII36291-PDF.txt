@@ -1,0 +1,134 @@
+#meta: date=2026-05-24, clause_types=quiet_enjoyment, url=https://www.canlii.org/en/on/onltb/doc/2012/2012canlii36291/2012canlii36291.pdf
+
+ONTARIO LANDLORD AND TENANT BOARD
+
+
+
+Order Page 1 of 12
+Order under Section 31
+Residential Tenancies Act, 2006
+File Number: TST-18802-11
+P.S. and M.H. (the 'Tenants') applied for an order determining that The Landlord or the Landlord's
+agents harassed, obstructed, coerced, threatened or interfered with them, entered the rental unit
+illegally, altered the locking system on a door giving entry to the rental unit or residential complex
+without giving them replacement keys and substantially interfered with the reasonable enjoyment
+of the rental unit or residential complex by the Tenants or by a member of their household.
+This application was heard in Toronto on September 15, November 10, November 30, 2011 and
+February 14, 2012.
+The first-named Tenant and the Landlord attended the hearing on each day except for November
+10, 2011 when only the Tenant attended. The Landlord was represented by M.P. who testified on
+the Landlord’s behalf and called as a witness: E.P. (the ‘Landlord’s Witness’).
+Determinations:
+1. The residential complex is a Victorian style three storey building in downtown Toronto
+that has been divided into three apartments. In June of 2006 the Tenants rented unit 1
+from the previous landlord. In 2010 the building was sold to the current Landlord. The
+apartment on the third floor subsequently became vacant and the Tenants rented that
+unit in March, 2011 in addition to unit 1 because they wanted the additional living space.
+The Issue Concerning the Backyard
+2. Although this application raises a number of issues, the primary dispute between the
+parties concerns whether or not the enclosed yard beside and behind the residential
+complex constitutes part of unit 1 or not. The Tenants take the position that these areas
+are part of the rental unit and therefore the Landlord cannot use them for its own
+purposes and must give proper notice of entry if it wishes to enter onto the grounds. The
+Landlord takes the position that the disputed areas should be considered analogous to
+exclusive use common areas as is the case in condominium complexes.
+3. According to the Tenant who testified before me, when the unit was originally rented it
+was understood between the previous landlord and the Tenants that the exterior back
+and gated side entrance were for the exclusive use of the Tenants of unit 1. The Tenants
+entered into evidence the original advertisement for the rental unit that was posted by the
+previous landlord. It describes the unit, the number of bathrooms and bedrooms and
+says: “walkout to Deck/Garden (Exclusive Use)”. Unlike most yards the one at issue here
+is locked with a gate and cannot be accessed by anyone without a key. Unit 1 is also the
+only unit with a door leading out to the yard. It occupies the first floor of the building and
+the basement; the main bedroom has an exterior door exiting directly into the backyard.
+2012 CanLII 36291 (ON LTB)
+File Number: TST-18802-11
+Order Page 2 of 12
+4. The Tenants also entered into evidence an e-mail from the agent who represented the
+previous landlord confirming that the Landlord’s agent was told during negotiations that
+the tenancy agreement for unit 1 included a provision whereby the yard and shed were
+for the exclusive use of the Tenants. They also provided an e-mail from the previous
+landlord from before the sale wherein she gave notice that she was planning on entering
+the yard, the shed in the backyard, and the furnace room. According to the Landlord’s
+representative and Witness the Landlord was never told during the sale that the disputed
+areas were part of the rental unit and not to be accessed without proper notice; however,
+the e-mails filed show that the new Landlord did recognise the areas were for the
+Tenants’ “exclusive use” but disputed what that meant in terms of rights to access and
+notice.
+5. As the previous landlord was not called as a witness by either party and as the Tenants’
+evidence was substantiated by the original advertisement for the unit, I accept their
+evidence that when the tenancy agreement was entered into the Tenants were told that
+the yard and side areas were for their exclusive use. I also accept that until the property
+was sold that meant the Tenants were routinely given notice of entry whenever the
+previous landlord needed to access the areas in question. I say this even though the
+original lease is silent on the issue because it is not unusual in residential tenancies for a
+written lease to be silent on some aspect of the agreement between the parties. In fact
+section 202 of the Residential Tenancies Act, 2006 (the 'Act') explicitly addresses the
+idea that the terms of a written lease should not be determinative in any dispute. It says:
+“In making findings on an application, the Board shall ascertain the real substance of all
+transactions and activities … and in doing so … may disregard the outward form of a
+transaction… and… may have regard to the pattern of activities relating to the residential
+complex or the rental unit.”
+6. The definition of “landlord” under subsection 2(1) of the Act includes “successors in title”
+and section 18 says covenants run with the land. What these provisions mean is that
+when the property was sold the Landlord stepped into the shoes of the previous owner
+with respect to the tenancy agreement and was bound by its terms.
+7. So the issue that must be addressed is what rights did the respective parties have
+regarding the disputed areas under the Act, given the fact that the tenancy agreement
+gave the Tenants’ exclusive possession of them?
+8. The definition of “rental unit” in subsection 2(1) of the Act “means any living
+accommodation used or intended for use as rented residential premise” and includes a
+site for a mobile home and a room in a rooming house. As the definition of rental unit
+includes a “site for a mobile home” it is not apparent or obvious that just because an area
+is outside walls rather than inside means that it is not a part of the rental unit. This
+distinguishes rental units from the normal situation in condominium complexes where
+there is a clear demarcation in ownership and rights based on what is inside the walls
+and what is outside. In condominium corporations it is not unusual for a roof deck or
+balcony to be for the “exclusive use” of an owner, but the area itself is actually owned by
+the condominium corporation which thereby has rights of access by virtue of being the
+owner of those areas.
+2012 CanLII 36291 (ON LTB)
+File Number: TST-18802-11
+Order Page 3 of 12
+9. Given the definition of “rental unit” in the Act, I do not believe the situation here is
+analogous to that of balconies or roof tops in condominium complexes. Rather what the
+definition means is that “rental unit” includes any areas intended by the parties to be used
+for residential purposes. As cooking, entertaining and relaxing are all normal parts of
+residential activities and those things can be done in a yard as well as inside, I see no
+immediate reason for accepting the Landlord’s proposition that the disputed area in
+question here should not be considered part of the rental unit.
+10. In the Act the definition of “rental unit” is different from that of “residential complex”.
+“Residential complex” is the phrase used to describe the entire building and grounds
+including the rental units within it. Subsection 2(1) says “residential complex” “means a
+building or related group of buildings in which one or more rental units are located, a
+mobile home park or land lease community, a site that is a rental unit, a care home, and
+includes all common areas and services and facilities available for the use of its
+residents.” [Emphasis added.] In other words, all rental units are part of and included in
+the definition of residential complex, but something can be part of the residential complex
+and yet not a part of any rental unit. This is particularly important in the context of this
+application because the privacy provisions of the Act only refer to the “rental unit” but
+contain no restrictions with respect to a landlord’s right to access the “residential
+complex”.
+11. One of the things that the Landlord’s Witness said during the hearing was that she had
+discussed the status of the disputed areas with the real estate agent who had
+represented the Landlord during the purchase and sale and that he had agreed with her
+that the proposition put forward by the Tenants was “silly”. I took this to be a submission
+that the Tenants’ position was so impractical in its implications that the Act should not be
+interpreted in a manner that created an absurdity. Now it seems to me that if the area in
+question had not been gated and locked as was the case here then that argument might
+have some merit. In that situation the area would probably constitute a common area or
+facility as anyone could access it at any time and it would be impractical for anyone to try
+and claim exclusive possession of it regardless of an agreement to the contrary.
+However, that is not the case here. As the area in question is securely locked it would not
+be absurd in any way for the Board to find that it constitutes part of the rental unit. In
+addition, in this case the Landlord and Tenants both agreed that the disputed areas were
+not “common areas…available for the use of residents” because only the occupants of
+unit 1 were supposed to have use of the yard.
+12. As the disputed areas are not common areas, services or facilities but are indisputably
+part of the residential complex the logical result is that they must be part of the rental unit.
+As a result of all of the above, I accept the Tenants’ argument that the exterior areas like
+the back yard, walkway and shed were included in their tenancy agreement and
+comprised part of rental unit 1.
+Illegal Entry
+13. The necessary result that flows from this conclusion is that every time the Landlord’s
+representative and Witness

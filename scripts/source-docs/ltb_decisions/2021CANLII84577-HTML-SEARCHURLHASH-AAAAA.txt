@@ -1,0 +1,184 @@
+#meta: date=2026-05-24, clause_types=early_termination, url=https://www.canlii.org/en/on/onltb/doc/2021/2021canlii84577/2021canlii84577.html?searchUrlHash=AAAAAQAs4oCcbm90IGluIHBvc3Nlc3Npb27igJ0sIOKAnGpvaW50IHRlbmFuY3nigJ0AAAAAAQ&resultIndex=1
+
+ONTARIO LANDLORD AND TENANT BOARD
+
+Residential   Tenancies   Act,   2006
+
+2021 CanLII 84577 (ON LTB) | Janzen v Booker | CanLII
+This website uses cookies to various ends, as detailed in our[Privacy Policy](https://www.canlii.org/en/info/privacy.html). You may accept all these cookies or choose only those categories of cookies that are acceptable to you.
+Manage your cookiesAccept all cookies
+## Manage your cookies
+Cookies are saved on your device to ensure proper operation and security of the website, help statistical analysis of its usage, improve its functionality, or record navigational choices you make. Further details can be found in the[cookies section](https://www.canlii.org/en/info/privacy.html#cookies)of CanLII's Privacy Policy.
+A few cookies are strictly necessary to use CanLII and are always active. Cookies that are used to measure performance or improve functionality can be enabled using the buttons below.
+Reset all cookies
+Accept all cookies
+**Strictly necessary cookies
+**Always active**
+These cookies are necessary for the operation of the website and cannot be deactivated. They enable the basic operation of the site and prevent abusive access.
+**Performance cookies
+Témoins de performance
+These cookies collect anonymous data about users' visits to the site. This data is used to measure site performance and improve search functions.
+**Functionality cookies
+Témoins de fonctionnalité
+These cookies record your browsing preferences, for example by storing your browsing language or your myCanLII account login.
+**Targeting cookies
+**Not applicable**
+We do not use cookies to establish your profile or target you for advertising purposes.
+Accept selection
+[![CanLII Logo](https://www.canlii.org/images/canliiLogo.svg)](https://www.canlii.org/en/)
+[Home](https://www.canlii.org/en/)›[Ontario](https://www.canlii.org/en/on/)›[Landlord and Tenant Board](https://www.canlii.org/en/on/onltb/)›2021 CanLII 84577 (ON LTB)
+Page
+****
+"not in possession""joint tenancy"
+0of6
+******
+Loading paragraph markers**
+## Janzen v Booker, 2021 CanLII 84577 (ON LTB)
+* [Document](#document)
+* [History(0)](#related)
+* [Cited documents(2)](#cited)
+* [Treatment(0)](#citing)
+* [CanLII Connects(0)](#external)
+[**PDF](https://www.canlii.org/en/on/onltb/doc/2021/2021canlii84577/2021canlii84577.pdf)
+Date:
+2021-04-13
+File number:
+SOL-16434-20
+Citation:
+Janzen v Booker, 2021 CanLII 84577 (ON LTB), <[https://canlii.ca/t/jj0qd](https://canlii.ca/t/jj0qd)>, retrieved on 2024-07-05
+### Legislation
+[Conveyancing and Law of Property Act](https://www.canlii.org/en/on/laws/stat/rso-1990-c-c34/latest/rso-1990-c-c34.html), RSO 1990, c C.34;[13](https://www.canlii.org/en/on/laws/stat/rso-1990-c-c34/latest/rso-1990-c-c34.html#sec13_smooth)
+[](https://www.canlii.org/en/#search/origin1=/en/on/laws/stat/rso-1990-c-c34/latest/rso-1990-c-c34.html&nquery1=RSO%201990,%20c%20C.34&linkedNoteup=)
+### Decisions
+2004-05-21
+[1162994 Ontario Inc. v. Bakker](https://www.canlii.org/en/on/onca/doc/2004/2004canlii59995/2004canlii59995.html), 2004 CanLII 59995 (ON CA)
+[](https://www.canlii.org/en/#search/origin1=/en/on/onca/doc/2004/2004canlii59995/2004canlii59995.html&nquery1=2004%20CanLII%2059995%20(ON%20CA)&linkedNoteup=)
+[Citations**(0)](#citing)[Discussions**](#discussing)[Unfavourable mentions**](#unfavourable)
+ExpandedCollapsed
+No summaries or commentary from the legal community available.[Add your own](http://canliiconnects.org/en/cases/2021canlii84577)
+![](images/image001.jpg)
+OrderunderSubsection87(1)
+# ResidentialTenanciesAct,2006
+****
+**FileNumber:**SOL-16434-20
+**Inthematterof:**
+|
+3, 360 GLENRIDGE AVENUESTCATHARINESONL2T3K7
+|
+|
+**Between:**
+|
+JohnJanzen
+|
+Landlord
+|
+|
+**and**
+|
+|
+|
+Ross BookerShannonCrosson
+|
+Tenants
+|
+John Janzen (the
+'Landlord') applied for an order requiring Shannon Crosson, Ross Booker (the'Tenants')andPresilaMasontopaytherentthat
+theyowe.
+This application
+was heard by videoconference on February 23, 2021. The Landlord and PresilaMason attended the hearing. Presila Mason
+(P.M.) spoke to Duty Counsel prior to the hearing.RossBooker(R.B.)andShannonCrosson(S.C.)wererepresentedbyErinO’Rourke(E.O.).
+# Agreeduponstatementoffacts:
+****
+**
+1.Parties agreed that
+this tenancy commenced in May 2020 after P.M., R.B. and S.C. allsigned a one-year lease. The lease was for
+the entire rental unit and the lawful monthlyrent was$1,500.00.
+2.P.M., R.B. and S.C.
+provided the Landlord with a $1,500.00 rent deposit. After that, theLandlord only received $1,000.00 a month
+from S.C. and R.B. He did not receive anypayments
+from P.M. thus leaving an outstanding balance of $4,686.00 inclusive of rentarrears($4,500.00)and costs($186.00)tothe endof February2021.
+3.In the Summer of 2020
+P.M. vacated the rental unit. R.B. and S.C. have remained inpossession oftherental unit.
+4.What is in dispute is
+who is liable for the arrears of rent, and whether or not the partiesactedreasonably
+in attemptingtomitigatetheselosses.
+# Determinations:
+****
+*BoardlacksjurisdictiontomakeanorderagainstP.M.:*
+**
+5.Section 87 of the*Residential
+Tenancies Act, 2006*sets certain conditions on a Landlord’sabilitytoapplytotheBoard foranorderforarrearsofrent:
+87(1) A
+landlord may apply to the Tribunal for an order for the payment of arrears ofrent if,
+(a)the
+tenant has not paid rent lawfully required under the tenancyagreement;and
+(b)**thetenantisinpossessionoftherentalunit**.[emphasisadded]
+6.TheCourtofAppealanalyzedthisprovision(s.86atthetime),in*1162994OntarioInc.v.Bakker,*[*2004CanLII59995*](https://www.canlii.org/en/on/onca/doc/2004/2004canlii59995/2004canlii59995.html)**(ON
+CA):
+[13] Section 86(1)(b) limits those against whom the Tribunal can
+make an order forthe payment of
+rent arrears. Even if the individual had not paid rent owed under atenancy agreement (s. 86(1)(a)), the
+Tribunal cannot make an order against thatindividual
+unless he or she is "a tenant in possession of the rental unit". Thequestion of whether a tenant is "in
+possession of the rental unit" is distinct from thequestionofwhetherthattenant islegallyliablefortherentarrears…………..
+[18] Not every dispute over rent arrears can be resolved
+by the Tribunal in aspeedy, fair and
+efficient manner. I think the requirement that the tenant be "inpossession of the rental unit" at the
+time of the application reflects a determinationthat rent arrears disputes can be resolved efficiently and
+fairly through the Tribunalwhere
+the tenant at the time of the application continues to have some connectionwith the rental unit and, therefore, some
+relationship with the landlord. Situationswhere
+that connection has been severed and the relationship gone are bestresolved through themore formalcourtprocesses.
+……………[20]Possessionisadifficultconcepttodefine.Both incommonandlegalparlance,it connotes some form of control over the thing said to be
+possessed: e.g. D.Dukelow, B. Nuse,
+The Dictionary of Canadian Law 2nd ed., (1995) Carswell at p.916; The Shorter Oxford English
+Dictionary, Vol. II (1973) p. 1635. Clearly,possession in s. 86(1)(b) is not limited to immediate physical control.
+For example, atenant who locks up a
+rental unit and leaves on an extended vacation, continues toexercise sufficient control over that
+rental unit so as to qualify as a "tenant inpossession" for the purposes of s. 86(1)(b).**In my view,
+possession of a rentalunit refers to
+some form of control over that unit as demonstrated by factorssuchas
+access to, useof, oroccupationoftheunit.**[emphasisadded]
+7.IfindthatP.M.wasnotinpossessionoftherentalunitwhenthisapplicationwasfiled.
+8.P.M. testified that she
+permanently vacated the rental unit on July 13, 2020 after notifyingthe Landlord of her intention to vacate
+on May 31, 2020.She testified that
+she left somefoodandsmallitems at therental unitfortheuseof R.B.andS.C.
+9.I found P.M.’s evidence
+to be credible and reliable. She was forthcoming and admitted thatshe did not return the keys, and was
+willing to pay some arrears of rent as a result. Shetestified that she unequivocally vacated the rental unit on July
+13, 2020 with no intention toreturn.
+She testified that she did not return the key to the rental unit because R.B.
+told hernot to.
+10.The Landlord testified that he started
+looking for a new tenant to replace P.M. after shenotified him that she intended to move out. However, his
+position was that P.M. maintainedpossession
+of the unit because she never returned the keys. The Landlord’s evidence wasthat he nevertheless advertised the
+rental unit, showed it to prospective tenants, and evenfound atenantwho was very close tomovinginto theunit.
+11.I find that P.M. did not exercise any
+control over the unit, did not access, use or occupy theunit after May 31, 2020, despite the fact that she still had
+the key. The fact that theLandlord
+showed the rental unit to multiple tenants after P.M. moved out suggests that
+theLandlord was aware that P.M. had
+permanently vacated. I find that in light of all of theevidence before me she wasnot in possessionof the rental unit
+when this application wasfiled onAugust28,2020.
+12.As P.M. wasnot in possessionof the rental
+unit, the Board lacks jurisdiction under s. 87 ofthe Act to order her to pay rent arrears to the Landlord. This
+application is amended toremove P.M.as aparty.
+13.I note however that this does not
+necessarily mean that the tenancy is or was lawfullyterminated, and the Landlord may have recourse against P.M. in
+another court ofcompetent
+jurisdiction.
+# Determinations:
+****
+*P.M.,S.C.and R.B.were jointtenants*
+**
+14.One of the main issues in this application
+was whether P.M., S.C. and R.B. were jointtenantsortenants-in-common.
+15.In ajoint tenancy, there is a single
+tenancy agreement and the tenants are jointly andseverally (individually) liable for the payment of the entire
+rent for the rental unit.Bycontrast, in the case of a
+tenancy-in-common, although there may be a single tenancyagreement document and while all the
+tenants may occupy the same premises, eachtenant-in-common
+has a separate tenancy with the landlord.Each
+tenant in common isindividuallyresponsibl

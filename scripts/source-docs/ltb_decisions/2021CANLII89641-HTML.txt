@@ -1,0 +1,206 @@
+#meta: date=2026-05-24, clause_types=subletting_assignment, url=https://www.canlii.org/en/on/onltb/doc/2021/2021canlii89641/2021canlii89641.html
+
+ONTARIO LANDLORD AND TENANT BOARD
+
+Residential   Tenancies   Act,   2006
+
+2021 CanLII 89641 (ON LTB) | 940412 Ontario Ltd. v Stanoev | CanLII
+This website uses cookies to various ends, as detailed in our[Privacy Policy](https://www.canlii.org/en/info/privacy.html). You may accept all these cookies or choose only those categories of cookies that are acceptable to you.
+Manage your cookiesAccept all cookies
+## Manage your cookies
+Cookies are saved on your device to ensure proper operation and security of the website, help statistical analysis of its usage, improve its functionality, or record navigational choices you make. Further details can be found in the[cookies section](https://www.canlii.org/en/info/privacy.html#cookies)of CanLII's Privacy Policy.
+A few cookies are strictly necessary to use CanLII and are always active. Cookies that are used to measure performance or improve functionality can be enabled using the buttons below.
+Reset all cookies
+Accept all cookies
+**Strictly necessary cookies
+**Always active**
+These cookies are necessary for the operation of the website and cannot be deactivated. They enable the basic operation of the site and prevent abusive access.
+**Performance cookies
+Témoins de performance
+These cookies collect anonymous data about users' visits to the site. This data is used to measure site performance and improve search functions.
+**Functionality cookies
+Témoins de fonctionnalité
+These cookies record your browsing preferences, for example by storing your browsing language or your myCanLII account login.
+**Targeting cookies
+**Not applicable**
+We do not use cookies to establish your profile or target you for advertising purposes.
+Accept selection
+[![CanLII Logo](https://www.canlii.org/images/canliiLogo.svg)](https://www.canlii.org/en/)
+[Home](https://www.canlii.org/en/)›[Ontario](https://www.canlii.org/en/on/)›[Landlord and Tenant Board](https://www.canlii.org/en/on/onltb/)›2021 CanLII 89641 (ON LTB)
+Loading paragraph markers**
+## 940412 Ontario Ltd. v Stanoev, 2021 CanLII 89641 (ON LTB)
+* [Document](#document)
+* [History**](#related)
+* [Cited documents**](#cited)
+* [Treatment**](#citing)
+* [CanLII Connects**](#external)
+[**PDF](https://www.canlii.org/en/on/onltb/doc/2021/2021canlii89641/2021canlii89641.pdf)
+Date:
+2021-05-18
+File number:
+SOL-16798-20
+Citation:
+940412 Ontario Ltd. v Stanoev, 2021 CanLII 89641 (ON LTB), <[https://canlii.ca/t/jj71s](https://canlii.ca/t/jj71s)>, retrieved on 2024-07-04
+[Citations**](#citing)[Discussions**](#discussing)[Unfavourable mentions**](#unfavourable)
+ExpandedCollapsed
+![](images/image001.gif)
+OrderunderSection100
+# ResidentialTenanciesAct,2006
+****
+**FileNumber:**SOL-16798-20
+**Inthe
+matter of:**
+|
+209, 4070 OLD DUNDAS STREETTORONTOON M6S 2R6
+|
+|
+**Between:**
+|
+940412OntarioLtd.
+|
+Landlord
+|
+|
+**and**
+|
+|
+|
+EstateofNarandzaStanoev
+**and**
+MarcStanoev
+|
+Tenant
+Occupant
+|
+940412Ontario Ltd.(the‘Landlord’)appliedforanordertoterminatethetenancyoftheEstateofNarandza Stanoev (the ‘Tenant’) because
+the Landlord did not consent to the assignment orsubletofthetenancyandforcompensationfortheuseoftherentalunit(the‘A2Application’).
+This application
+was heard via video conference on May 5, 2021.The Landlord’s LegalRepresentative,
+David Rubin, the Occupant, Marc Stanoev (‘M.S.’), the Occupant’s Agent,Andrea Adanasov (‘A.A.’), and the witness,
+Gerald Rozario (‘G.R.’), attended the hearing.M.S.declinedtheopportunity
+tospeak withDuty Counselpriortothehearing.
+# PreliminaryIssues:
+*AdjournmentRequest*
+**
+**
+1. Shortly after the
+beginning of the hearing block, M.S. and his Agent interrupted anotherhearing as they wanted to proceed with
+their hearing first.This request was
+denied astheothermatterhadcommencedandtheyofferednoreasonforthepresumedurgencyof their matter over
+that of the matter in progress.M.S.
+subsequently requested anadjournment
+as he had assumed that this application would be the only matter on thedocket and he and A.A. had arranged to
+return to work by 3:00 p.m.The
+Landlord’sLegal Representative
+opposed the adjournment request, noting that M.S. had notindicated any need for a postponement or
+sought the Landlord’s consent to reschedulethematter prior to the start
+ofthehearing.
+**
+2. There was no basis for
+M.S. to assume that no other matters would be scheduled for thesame hearing block as the present
+application.As well, M.S. had
+indicated to theLandlord and Tenant
+Board (the ‘Board’) that he was available to participate in thehearing on May 5, 2021 and did not mention
+any time limitations that would prevent himfromparticipatinginanafternoonblock.Ifhehadotherpressingcommitmentswithintwo
+hours of the
+start of the hearing block, he should have indicated that he was not availablefor a hearing at 1:00 p.m. on May 5,
+2021.Instead, he simply presumed
+that the Boardwould accommodate his
+schedule on the date of the hearing and gambled that no othermatters would proceed during the hearing
+block.As a result, the adjournment
+requestwas denied.
+*ExclusionofOccupant’sEvidence*
+**
+**
+3. Atthehearing,A.A.intendedtorelyuponseveraldocumentsnotdisclosedtotheLandlordor itsLegal
+Representativeprior tothe hearing.
+**
+4. The Notice of Hearing
+emailed to both parties included the following cautionaryinformation regarding disclosure:
+**WHAT YOUSHOULDDOIFYOUHAVEEVIDENCETOPRESENT:**
+****
+• Each
+party must give the other party a complete copy of all of the evidence theywanttouseduringthehearing
+assoonaspossiblebut**atleast**7daysbeforethehearing.
+• Eachpartymustalso emailtheirevidencetotheLTB**atleast**7
+daysbeforethehearing.
+• Emailyourevidenceto:[**SO-LTB@ontario.ca**](mailto:SO-LTB@ontario.ca)
+****
+• Thesubjectlineofyouremailshouldinclude:theword“EVIDENCE”;yourFILENumber;andyourhearingdate
+• If you
+do not provide the other party and the Board with a copy of your evidence**atleast**7 days before the hearing you
+may not permitted to rely on the evidenceduringthehearing.[Emphasis inoriginal]
+**
+5. M.S. and A.A. offered
+no explanation for their failure to comply with the above disclosurerequirements.
+6. A.A. testified that she
+had sent this evidence to the Board on an unspecified day andreceivedamessagethatithad beenaccepted.Noneoftheproposedevidencehadbeen uploaded until 6:37 p.m., roughly two
+hours after the hearing had ended and wastherefore
+not available to the Board during the hearing.Board records indicate however,that
+A.A. only filed these items on May 3, 2021, again well after the deadline in
+the NoticeofHearing.
+7. M.S. and A.A. did not
+deny receipt of the Notice of Hearing and offered no explanation orjustification for their decision to
+simply ignore the deadlines for disclosure and filing theirevidence.
+8. Consequently, this
+evidence was excluded.As noted in
+the Reasons below, none of theproposed
+evidence relating to payment of the rent would have had a material effect ontheoutcome
+ofthe hearingandnoneofitwascontestedbytheLandlord.
+# DeterminationsandReasons:
+****
+1. G.R. has been the
+property manager for the residential complex since the Landlordpurchased the building in 2011.The Tenant, Narandza Stanoev, had resided
+in therental unit since 2004 under
+the prior landlord.At all material
+times, she was the onlyoccupantnamed in the writtentenancy agreement.
+2. In June, 2020, the
+Tenant’s son, M.S., made a complaint to the superintendent withrespect to a parking issue.The superintendent asked who was on the
+lease and wasadvised that the Tenant
+was the only leaseholder.On July 1,
+2020, the Landlord sent aletter to
+the Tenant requesting that she attend at the office regarding her tenancy.Aftertwo
+months, the Landlords sent another letter to the Tenant in early September,
+2020,reiterating the lack of contact
+with the Tenant.Having received no
+response to eitherletter, the
+Landlord then served a notice of entry for September 4, 2020 to inspect theunit.
+3. In the interim, the
+superintendent had spoken with M.S.’s spouse on multiple occasionsand asked to speak to the Tenant.At that time, M.S.’s spouse resided in the
+rental unitwith M.S.She consistently rebuffed his inquiries
+and insisted that he must discuss thematter
+with M.S.While he denied receipt of
+the Landlord’s letters, M.S. did not contestG.R.’s evidence that his spouse had spoken with the superintendent on
+multipleoccasions or that he was
+aware of these inquiries.He did not
+contact the superintendentto
+resolvetheissue.
+4. When the superintendent
+attended at the rental unit on September 4, 2020, he observedno evidence of the Tenant’s occupation.Following this inspection, G.R. entered a
+googlesearch of the Tenant’s name
+and discovered that she had passed away on or about June17,2016.
+5. The Landlord filed the
+A2 Application on September 10, 2020.Read
+together,subsections 100(1) and (2)
+of the*Residential Tenancies Act, 2006*(the ‘Act’) set out thetime limitationfortheLandlordtofileanA2Application:
+100. (1) If a tenant transferstheoccupancyofa rentalunit to
+a person in amannerother thanby an assignment
+authorized under section 95 or a subletting authorized under section97, the landlord may apply to the Board
+for an order terminating the tenancy and evictingthetenantandthepersontowhomoccupancyoftherentalunit was transferred.
+(2)Anapplicationundersubsection (1)mustbe
+madenolaterthan60 daysafterthelandlorddiscoverstheunauthorizedoccupancy.
+**
+6. Subsection104(4)oftheActdeemsthatatenancyhasbeencreatediftheLandlordfailsto apply to terminate the tenancy within
+sixty days of discovering the unauthorizedtransfer:
+104. (4) A person’s occupation of a rental unit shall be
+deemedto be an assignment of
+therentalunitwiththeconsentofthelandlord asofthedatetheunauthorizedoccupancybeganif,
+(a)atenancyagreementisnotenteredintoundersubsection(1)or(2)withintheperiodsetoutinsubsection(3);
+(b)thelandlorddoesnotapplytotheBoardundersection
+100foranorderevictingthepersonwithin 60daysofthelandlorddiscoveringtheunauthorizedoccupancy;and
+(c)neitherthelandlord
+nor thetenantappliestothe Boardundersection101within
+60daysaftertheend ofthesubtenancy foranorderevictingthesubtenant.
+**
+7. M.S.explainedthathehad movedinto the
+rent
