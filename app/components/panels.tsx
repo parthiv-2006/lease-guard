@@ -63,6 +63,8 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
         borderRadius: "8px",
         overflow: "hidden",
         borderLeft: `3px solid ${col}`,
+        boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
+        transition: "box-shadow 0.15s",
       }}
     >
       {/* Header */}
@@ -204,8 +206,9 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             </div>
             <div
               style={{
-                fontSize: "12px",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "13px",
+                fontFamily: "'DM Sans', sans-serif",
+                fontStyle: "italic",
                 lineHeight: 1.7,
                 color: "#5c5751",
                 background: "#f6f3ee",
@@ -634,6 +637,7 @@ function NegotiationCard({
         borderRadius: "8px",
         overflow: "hidden",
         borderLeft: `3px solid ${col}`,
+        boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
       }}
     >
       <button
@@ -1228,6 +1232,7 @@ export function ContradictionsPanel({
               borderRadius: "8px",
               overflow: "hidden",
               borderLeft: `3px solid ${sevColor[x.severity] ?? "#6b7280"}`,
+              boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
             }}
           >
             <div
@@ -1424,6 +1429,7 @@ export function SourcesPanel({
               border: "1px solid #e8e4dc",
               borderRadius: "8px",
               padding: "18px 20px",
+              boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
             }}
           >
             <div style={{ flex: 1 }}>
@@ -1852,9 +1858,29 @@ export function AgentTracePanel({ report }: { report: Report }) {
               color: view === v ? "#181614" : "#9a9590",
               boxShadow: view === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
               transition: "all 0.15s",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            {v === "gantt" ? "⏱ Timeline" : "≡ List"}
+            {v === "gantt" ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="4" width="5" height="2" rx="0.5" />
+                  <rect x="2" y="8" width="9" height="2" rx="0.5" />
+                  <rect x="2" y="12" width="7" height="2" rx="0.5" />
+                  <path d="M14 2v12" strokeLinecap="round" />
+                </svg>
+                Timeline
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M3 4h10M3 8h10M3 12h10" strokeLinecap="round" />
+                </svg>
+                List
+              </>
+            )}
           </button>
         ))}
       </div>

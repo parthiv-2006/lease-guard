@@ -291,7 +291,7 @@ function ReportSidebar({
         </div>
       </div>
 
-      {/* Lease info */}
+      {/* Lease info + risk score */}
       <div
         style={{ padding: "16px 20px", borderBottom: "1px solid #252220" }}
       >
@@ -311,17 +311,89 @@ function ReportSidebar({
             fontSize: "12px",
             color: "#7a7570",
             lineHeight: 1.4,
-            marginBottom: "10px",
+            marginBottom: "14px",
           }}
         >
           {lease.city}
         </div>
-        <RiskBadge
-          level={overall.risk_level}
-          score={overall.risk_score}
-          small
-        />
-        <div style={{ marginTop: "8px", fontSize: "11px", color: "#4a4744" }}>
+
+        {/* Risk score block */}
+        <div
+          style={{
+            padding: "12px 14px",
+            background: "#1a1816",
+            borderRadius: "8px",
+            marginBottom: "12px",
+            border: "1px solid #2a2623",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#4a4744",
+              fontWeight: 500,
+              marginBottom: "6px",
+            }}
+          >
+            Overall Risk
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "36px",
+                fontWeight: 600,
+                lineHeight: 1,
+                color: overall.risk_level === "critical" ? "#f87171"
+                  : overall.risk_level === "high" ? "#fb923c"
+                  : overall.risk_level === "medium" ? "#fbbf24"
+                  : "#4ade80",
+              }}
+            >
+              {overall.risk_score.toFixed(1)}
+            </span>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: overall.risk_level === "critical" ? "#f87171"
+                  : overall.risk_level === "high" ? "#fb923c"
+                  : overall.risk_level === "medium" ? "#fbbf24"
+                  : "#4ade80",
+              }}
+            >
+              {overall.risk_level}
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: "8px",
+              height: "3px",
+              background: "#252220",
+              borderRadius: "2px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${(overall.risk_score / 10) * 100}%`,
+                borderRadius: "2px",
+                background: overall.risk_level === "critical" ? "#f87171"
+                  : overall.risk_level === "high" ? "#fb923c"
+                  : overall.risk_level === "medium" ? "#fbbf24"
+                  : "#4ade80",
+                transition: "width 0.8s cubic-bezier(0.34, 1.0, 0.64, 1)",
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ fontSize: "11px", color: "#4a4744" }}>
           {lease.page_count > 0 && (
             `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `
           )}
@@ -944,30 +1016,100 @@ function LoadingState() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#f6f3ee",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        height: "100vh",
+        overflow: "hidden",
+        background: "#f6f3ee",
         fontFamily: "'DM Sans', sans-serif",
-        flexDirection: "column",
-        gap: "16px",
       }}
     >
+      {/* Sidebar skeleton */}
       <div
         style={{
-          width: 32,
-          height: 32,
-          border: "2px solid #e8e4dc",
-          borderTopColor: "#181614",
-          borderRadius: "50%",
-          animation: "spin 0.8s linear infinite",
+          width: "256px",
+          minWidth: "256px",
+          background: "#131110",
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          borderRight: "1px solid #252220",
+          padding: "20px",
+          gap: "16px",
         }}
-      />
-      <span style={{ fontSize: "13px", color: "#9a9590" }}>
-        Loading report…
-      </span>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      >
+        {/* Brand */}
+        <div style={{ width: "100px", height: "18px", background: "#252220", borderRadius: "4px", marginBottom: "8px" }} />
+        {/* Address lines */}
+        <div style={{ width: "80%", height: "14px", background: "#252220", borderRadius: "4px" }} />
+        <div style={{ width: "50%", height: "12px", background: "#252220", borderRadius: "4px" }} />
+        {/* Risk badge */}
+        <div style={{ width: "90px", height: "24px", background: "#252220", borderRadius: "4px" }} />
+        <div style={{ height: "1px", background: "#252220", margin: "4px 0" }} />
+        {/* Nav items */}
+        {[90, 70, 80, 75, 65, 55, 60, 50].map((w, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: 15, height: 15, background: "#252220", borderRadius: "3px", flexShrink: 0 }} />
+            <div style={{ width: `${w}%`, height: "12px", background: "#252220", borderRadius: "3px" }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Main area skeleton */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Top bar skeleton */}
+        <div
+          style={{
+            height: "52px",
+            borderBottom: "1px solid #e8e4dc",
+            background: "#f6f3ee",
+            display: "flex",
+            alignItems: "center",
+            padding: "0 24px",
+            gap: "12px",
+          }}
+        >
+          <div className="skeleton" style={{ width: "70px", height: "12px" }} />
+          <div style={{ width: "1px", height: "16px", background: "#e8e4dc" }} />
+          <div className="skeleton" style={{ width: "90px", height: "12px" }} />
+          <div style={{ flex: 1 }} />
+          <div className="skeleton" style={{ width: "80px", height: "28px", borderRadius: "6px" }} />
+        </div>
+
+        {/* Content skeleton */}
+        <div style={{ flex: 1, padding: "36px 40px", maxWidth: "860px", width: "100%" }}>
+          {/* Panel header */}
+          <div className="skeleton" style={{ width: "160px", height: "28px", marginBottom: "8px" }} />
+          <div className="skeleton" style={{ width: "340px", height: "13px", marginBottom: "28px" }} />
+          <div style={{ height: "1px", background: "#e8e4dc", marginBottom: "28px" }} />
+
+          {/* Overview arc placeholder */}
+          <div style={{ display: "flex", gap: "32px", marginBottom: "36px" }}>
+            <div className="skeleton" style={{ width: "140px", height: "140px", borderRadius: "50%" }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px", justifyContent: "center" }}>
+              <div className="skeleton" style={{ width: "90%", height: "13px" }} />
+              <div className="skeleton" style={{ width: "80%", height: "13px" }} />
+              <div className="skeleton" style={{ width: "70%", height: "13px" }} />
+              <div className="skeleton" style={{ width: "85%", height: "13px" }} />
+            </div>
+          </div>
+
+          {/* Stat cards placeholder */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "8px" }} />
+            ))}
+          </div>
+
+          {/* Card list placeholders */}
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="skeleton"
+              style={{ height: "64px", borderRadius: "8px", marginBottom: "10px" }}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

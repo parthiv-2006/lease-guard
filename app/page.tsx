@@ -11,28 +11,28 @@ type Screen = "landing" | "processing";
 const PROCESSING_STEPS = [
   {
     id: "parse",
-    label: "Extracting text",
-    detail: "Reading PDF and detecting page structure",
+    label: "Reading your document",
+    detail: "Extracting text from every page of your lease",
   },
   {
     id: "jurisdiction",
-    label: "Detecting jurisdiction",
-    detail: "Ontario (CA-ON) confirmed — high confidence",
+    label: "Confirming Ontario jurisdiction",
+    detail: "Verifying this is an Ontario residential tenancy agreement",
   },
   {
     id: "segment",
-    label: "Reading clauses",
-    detail: "Segmenting lease into individual clauses…",
+    label: "Finding each clause",
+    detail: "Breaking your lease into individual clauses for analysis",
   },
   {
     id: "research",
-    label: "Researching law",
-    detail: "Querying 2,372 RTA statute chunks via RAG…",
+    label: "Looking up the law",
+    detail: "Checking 2,372 RTA sections for relevant rules",
   },
   {
     id: "report",
-    label: "Building report",
-    detail: "Scoring risk · detecting contradictions · generating negotiation guide…",
+    label: "Writing your report",
+    detail: "Scoring risk, flagging issues, and building your negotiation guide",
   },
 ];
 
@@ -173,19 +173,22 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           {showNav && (
             <nav style={{ display: "flex", gap: "28px" }}>
               {[
-                { label: "How it works", href: "/how-it-works" },
-                { label: "Ontario RTA", href: "/ontario-rta" },
-                { label: "About", href: "/about" },
-              ].map(({ label, href }) => (
+                { label: "Dashboard", href: "/dashboard" },
+                { label: "Ontario RTA", href: "https://www.ontario.ca/laws/statute/06r17", external: true },
+                { label: "Privacy", href: "/privacy" },
+              ].map(({ label, href, external }) => (
                 <a
                   key={label}
                   href={href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener noreferrer" : undefined}
                   style={{
                     fontSize: "13px",
                     color: "#6b6560",
                     textDecoration: "none",
                     fontWeight: 400,
                     letterSpacing: "0.01em",
+                    transition: "color 0.12s ease",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.color = "#181614")
@@ -541,16 +544,24 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                       border: `1px solid ${!consentGiven && !uploading ? "#9a9590" : "#181614"}`,
                       color: "#fff",
                       letterSpacing: "0.02em",
-                      transition: "background 0.15s",
+                      transition: "background 0.15s, transform 0.12s ease, box-shadow 0.12s ease",
                       opacity: !consentGiven && !uploading ? 0.7 : 1,
+                      transform: "translateY(0)",
+                      boxShadow: "none",
                     }}
                     onMouseEnter={(e) => {
-                      if (!uploading && consentGiven)
+                      if (!uploading && consentGiven) {
                         e.currentTarget.style.background = "#2d2926";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(24,22,20,0.20)";
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      if (!uploading && consentGiven)
+                      if (!uploading && consentGiven) {
                         e.currentTarget.style.background = "#181614";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }
                     }}
                   >
                     {uploading ? "Uploading…" : "Analyse Lease"}
@@ -638,11 +649,11 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           style={{
             marginTop: "48px",
             display: "flex",
-            gap: "40px",
-            padding: "20px 40px",
+            padding: "22px 40px",
             background: "#fff",
             border: "1px solid #e8e4dc",
             borderRadius: "10px",
+            boxShadow: "0 1px 3px rgba(24,22,20,0.06)",
             flexWrap: "wrap",
             justifyContent: "center",
             width: "100%",
@@ -650,19 +661,30 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           }}
         >
           {[
-            { n: "< 90s", d: "Median analysis time" },
-            { n: "2,372", d: "RTA sections indexed" },
+            { n: "< 90s", d: "Analysis time" },
+            { n: "2,372", d: "RTA sections" },
             { n: "100%", d: "Cited to statute" },
-            { n: "Free", d: "No account required" },
-          ].map(({ n, d }) => (
-            <div key={d} style={{ textAlign: "center" }}>
+            { n: "Free", d: "No account needed" },
+          ].map(({ n, d }, i) => (
+            <div
+              key={d}
+              style={{
+                textAlign: "center",
+                flex: "1 1 0",
+                minWidth: "80px",
+                paddingLeft: i > 0 ? "20px" : 0,
+                paddingRight: "20px",
+                borderLeft: i > 0 ? "1px solid #e8e4dc" : "none",
+              }}
+            >
               <div
                 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontWeight: 600,
-                  fontSize: "22px",
+                  fontSize: "28px",
                   color: "#181614",
-                  letterSpacing: "-0.01em",
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
                 }}
               >
                 {n}
@@ -671,8 +693,10 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 style={{
                   fontSize: "11px",
                   color: "#9a9590",
-                  marginTop: "2px",
-                  letterSpacing: "0.03em",
+                  marginTop: "5px",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  fontWeight: 500,
                 }}
               >
                 {d}

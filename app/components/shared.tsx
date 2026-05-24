@@ -4,7 +4,7 @@
 // RiskArc, RiskBadge, ClauseTypeTag, SectionHeader, CopyButton,
 // FeedbackBar, Icon, StatCard, Collapsible
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { RiskLevel } from "./types";
 
 // ── Risk colour utilities ─────────────────────────────────────────────────────
@@ -76,6 +76,14 @@ interface RiskArcProps {
 }
 
 export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    // Short delay so the arc animates in after mount
+    const t = setTimeout(() => setAnimated(true), 80);
+    return () => clearTimeout(t);
+  }, [score]);
+
   const r = (size - strokeWidth) / 2;
   const cx = size / 2;
   const cy = size / 2;
@@ -108,6 +116,9 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
   const level = scoreToLevel(score);
   const levelLabel = { critical: "Critical", high: "High", medium: "Medium", low: "Low" }[level];
 
+  // Arc length for the fill stroke — used for the dasharray animation
+  const fillArcLen = Math.ceil((fillSweep / 360) * 2 * Math.PI * r) + 2;
+
   return (
     <svg
       width={size}
@@ -129,7 +140,12 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
           stroke={col}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 6px ${col}40)` }}
+          strokeDasharray={fillArcLen}
+          style={{
+            strokeDashoffset: animated ? 0 : fillArcLen,
+            transition: "stroke-dashoffset 0.9s cubic-bezier(0.34, 1.0, 0.64, 1)",
+            filter: `drop-shadow(0 0 8px ${col}50)`,
+          }}
         />
       )}
       <text
@@ -141,6 +157,10 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
         fontSize={size * 0.26}
         fontFamily="'Cormorant Garamond', serif"
         fontWeight="600"
+        style={{
+          opacity: animated ? 1 : 0,
+          transition: "opacity 0.4s ease 0.5s",
+        }}
       >
         {score.toFixed(1)}
       </text>
@@ -152,6 +172,10 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
         fontSize={size * 0.09}
         fontFamily="'DM Sans', sans-serif"
         letterSpacing="0.08em"
+        style={{
+          opacity: animated ? 1 : 0,
+          transition: "opacity 0.3s ease 0.7s",
+        }}
       >
         {levelLabel?.toUpperCase()}
       </text>
@@ -656,7 +680,11 @@ export function StatCard({ value, label, color, onClick }: StatCardProps) {
         borderRadius: "8px",
         padding: "16px 20px",
         cursor: onClick ? "pointer" : "default",
-        transition: "border-color 0.15s",
+        transition: "border-color 0.15s, box-shadow 0.15s, transform 0.12s ease",
+        boxShadow: hovered
+          ? "0 4px 14px rgba(24,22,20,0.10), 0 1px 4px rgba(24,22,20,0.06)"
+          : "0 1px 3px rgba(24,22,20,0.07), 0 1px 2px rgba(24,22,20,0.04)",
+        transform: hovered && onClick ? "translateY(-1px)" : "translateY(0)",
       }}
     >
       <div
@@ -710,6 +738,7 @@ export function Collapsible({
         borderRadius: "8px",
         overflow: "hidden",
         borderLeft: accentColor ? `3px solid ${accentColor}` : "1px solid #e8e4dc",
+        boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
       }}
     >
       <button
