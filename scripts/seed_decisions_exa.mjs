@@ -147,7 +147,7 @@ const SEARCH_TARGETS = [
 // ---------------------------------------------------------------------------
 // Exa REST API
 // ---------------------------------------------------------------------------
-async function exaSearch(query, numResults = 8) {
+async function exaSearch(query, numResults = 20) {
   const resp = await fetch('https://api.exa.ai/search', {
     method: 'POST',
     headers: {
@@ -157,7 +157,7 @@ async function exaSearch(query, numResults = 8) {
     body: JSON.stringify({
       query,
       numResults,
-      includeDomains: ['canlii.org', 'tribunalsontario.ca'],
+      includeDomains: ['canlii.org'],
       contents: {
         text: { maxCharacters: 10000 },
         highlights: { numSentences: 5, highlightsPerUrl: 3 },
@@ -244,7 +244,7 @@ async function main() {
 
       let results = [];
       try {
-        const data = await exaSearch(query, 8);
+        const data = await exaSearch(query, 20);
         results = data.results ?? [];
         console.log(`       → ${results.length} results from Exa`);
       } catch (err) {
