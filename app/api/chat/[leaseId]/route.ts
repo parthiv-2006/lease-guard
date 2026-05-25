@@ -1,0 +1,480 @@
+/**
+ * app/api/chat/[leaseId]/route.ts — Ask Your Lease: streaming conversational AI.
+ *
+ * POST /api/chat/[leaseId]
+ * Body: { message: string; history: Array<{ role: "user"|"assistant"; content: string }> }
+ *
+ * Streams back text/event-stream SSE events:
+ *   {"type":"token","text":"..."} — partial response text
+ *   {"type":"sources","sources":[...]} — retrieved statute/decision citations
+ *   {"type":"done"} — stream complete
+ *   {"type":"error","message":"..."} — error occurred
+ *
+ * Architecture:
+ *   1. Validate request
+ *   2. Rate-limit (20 req/hr/IP)
+ *   3. Fetch lease context from Supabase
+ *   4. Embed user question via Gemini REST (RETRIEVAL_QUERY, 768-dim)
+ *   5. Parallel hybrid search: statutes + tribunal decisions
+ *   6. Build grounded system prompt
+ *   7. Stream Claude Haiku response
+ *
+ * CRITICAL: Do NOT import from mcp-server/src/lib/embeddings.ts — that module
+ * uses ESM imports for the MCP server environment. Gemini embed is duplicated
+ * inline here using the same REST approach (Gotcha #1 from HANDOFF.md).
+ */
+
+import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { getAnthropicClient } from "@/lib/anthropic";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const LEASE_ID_RE = /^[0-9a-f-]{36}$/;
+const GEMINI_EMBED_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
+const JURISDICTION = "CA-ON";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface ChatHistory {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface StatuteSource {
+  act_name: string;
+  section_number: string;
+  section_title: string;
+  full_text: string;
+  url: string;
+}
+
+interface DecisionSource {
+  case_number: string;
+  relevant_principle: string;
+  ruling_summary: string;
+  url: string;
+}
+
+// ── Gemini Embed (REST, no SDK — Gotcha #1) ───────────────────────────────────
+
+async function embedQuery(text: string): Promise<number[]> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+
+  const resp = await fetch(`${GEMINI_EMBED_URL}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: { parts: [{ text: text.trim().slice(0, 2000) }] },
+      taskType: "RETRIEVAL_QUERY",
+      outputDimensionality: 768,
+    }),
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`Gemini embed error ${resp.status}: ${body}`);
+  }
+
+  const data = (await resp.json()) as { embedding?: { values?: number[] } };
+  const values = data.embedding?.values;
+  if (!values || values.length !== 768) {
+    throw new Error("Gemini returned unexpected embedding dimensions");
+  }
+  return values;
+}
+
+// ── Supabase RAG retrieval ────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function retrieveStatutes(
+  embedding: number[],
+  queryText: string,
+  supabase: any
+): Promise<StatuteSource[]> {
+  // Try hybrid search first (migration 005), fall back to pure vector
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("search_statutes_hybrid", {
+    query_embedding: embedding,
+    query_text: queryText,
+    jurisdiction: JURISDICTION,
+    match_threshold: 0.55,
+    match_count: 5,
+  });
+
+  if (error) {
+    // PGRST202 = hybrid RPC not found — fall back to pure vector
+    if (error.code === "PGRST202" || error.message?.includes("search_statutes_hybrid")) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: vData, error: vErr } = await (supabase as any).rpc("search_statutes", {
+        query_embedding: embedding,
+        jurisdiction: JURISDICTION,
+        match_threshold: 0.60,
+        match_count: 5,
+      });
+      if (vErr || !Array.isArray(vData)) return [];
+      return (vData as Record<string, unknown>[]).map((r) => ({
+        act_name: (r.act_name as string) ?? "",
+        section_number: (r.section_number as string) ?? "",
+        section_title: (r.section_title as string) ?? "",
+        full_text: ((r.full_text as string) ?? "").slice(0, 600),
+        url: (r.url as string) ?? "",
+      }));
+    }
+    return [];
+  }
+
+  if (!Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    act_name: (r.act_name as string) ?? "",
+    section_number: (r.section_number as string) ?? "",
+    section_title: (r.section_title as string) ?? "",
+    full_text: ((r.full_text as string) ?? "").slice(0, 600),
+    url: (r.url as string) ?? "",
+  }));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function retrieveDecisions(
+  embedding: number[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any
+): Promise<DecisionSource[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("search_decisions", {
+    query_embedding: embedding,
+    jurisdiction: JURISDICTION,
+    match_threshold: 0.45,
+    match_count: 3,
+  });
+
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    case_number: (r.case_number as string) ?? "",
+    relevant_principle: (r.relevant_principle as string) ?? "",
+    ruling_summary: ((r.ruling_summary as string) ?? "").slice(0, 400),
+    url: (r.url as string) ?? "",
+  }));
+}
+
+// ── System prompt builder ─────────────────────────────────────────────────────
+
+function buildSystemPrompt(
+  leaseContext: {
+    address: string;
+    city: string;
+    riskScore: number;
+    riskLevel: string;
+    clauseCount: number;
+    clauses: Array<{
+      number: string;
+      heading: string;
+      risk_level: string;
+      plain_english_explanation: string;
+      statutory_violations: Array<{ statute_section: string }>;
+      is_potentially_unenforceable: boolean;
+    }>;
+  },
+  statutes: StatuteSource[],
+  decisions: DecisionSource[]
+): string {
+  const clausesSummary = leaseContext.clauses
+    .slice(0, 12) // cap to avoid token overflow
+    .map(
+      (c) =>
+        `Clause ${c.number} — ${c.heading} [${c.risk_level.toUpperCase()}]${
+          c.is_potentially_unenforceable ? " ⚠ potentially unenforceable" : ""
+        }: ${c.plain_english_explanation}` +
+        (c.statutory_violations.length > 0
+          ? ` (Violations: ${c.statutory_violations.map((v) => v.statute_section).join(", ")})`
+          : "")
+    )
+    .join("\n");
+
+  const statutesSummary =
+    statutes.length > 0
+      ? statutes
+          .map(
+            (s) =>
+              `${s.act_name} ${s.section_number} — ${s.section_title}:\n${s.full_text}`
+          )
+          .join("\n\n")
+      : "No specific statutes retrieved for this question.";
+
+  const decisionsSummary =
+    decisions.length > 0
+      ? decisions
+          .map(
+            (d) =>
+              `Case ${d.case_number} — Principle: ${d.relevant_principle}\nSummary: ${d.ruling_summary}`
+          )
+          .join("\n\n")
+      : "No LTB decisions retrieved for this question.";
+
+  return `You are LeaseGuard's AI legal assistant. You help Ontario tenants understand their specific lease document using retrieved legal sources.
+
+CRITICAL RULES — follow these exactly:
+1. Only make legal claims that are directly supported by the RETRIEVED STATUTES or LTB DECISIONS below. If no retrieved source covers the question, say so clearly and recommend consulting a paralegal or the Landlord and Tenant Board.
+2. Never use the word "illegal" — always say "potentially unenforceable under the RTA" or "void under the Residential Tenancies Act".
+3. Always cite the specific statute section when making a legal claim (e.g., "Under RTA s.105..." or "As established in...").
+4. Keep answers concise (3-5 sentences max). Use plain language that a non-lawyer can understand.
+5. End every response with: "⚠ This is educational information, not legal advice. For your specific situation, consult a paralegal or contact the Landlord and Tenant Board at 1-888-332-3234."
+
+LEASE CONTEXT:
+Property: ${leaseContext.address}${leaseContext.city ? `, ${leaseContext.city}` : ""}
+Overall Risk Score: ${leaseContext.riskScore.toFixed(1)}/10 (${leaseContext.riskLevel})
+Clauses analyzed: ${leaseContext.clauseCount}
+
+KEY CLAUSES FROM THIS LEASE:
+${clausesSummary}
+
+RETRIEVED STATUTES (cite these in your answer):
+${statutesSummary}
+
+RETRIEVED LTB DECISIONS (use as precedents if relevant):
+${decisionsSummary}`;
+}
+
+// ── SSE helpers ───────────────────────────────────────────────────────────────
+
+function sseEvent(data: object): string {
+  return `data: ${JSON.stringify(data)}\n\n`;
+}
+
+// ── POST handler ─────────────────────────────────────────────────────────────
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ leaseId: string }> }
+) {
+  const { leaseId } = await params;
+
+  // ── Validate lease ID ────────────────────────────────────────────────────
+  if (!leaseId || !LEASE_ID_RE.test(leaseId)) {
+    return Response.json(
+      { error: "invalid_id", message: "Invalid lease ID format." },
+      { status: 400 }
+    );
+  }
+
+  // ── Rate limit: 20 questions/hour/IP ────────────────────────────────────
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkRateLimit(ip, {
+    maxRequests: 20,
+    windowMs: 60 * 60 * 1000,
+    storeKey: "chat",
+  });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return Response.json(body, { status, headers });
+  }
+
+  // ── Parse body ───────────────────────────────────────────────────────────
+  let message: string;
+  let history: ChatHistory[];
+  try {
+    const body = await req.json();
+    message = typeof body.message === "string" ? body.message.trim() : "";
+    history = Array.isArray(body.history) ? body.history : [];
+  } catch {
+    return Response.json(
+      { error: "invalid_body", message: "Request body must be valid JSON." },
+      { status: 400 }
+    );
+  }
+
+  if (!message) {
+    return Response.json(
+      { error: "empty_message", message: "Message cannot be empty." },
+      { status: 400 }
+    );
+  }
+
+  if (message.length > 500) {
+    return Response.json(
+      { error: "message_too_long", message: "Message must be 500 characters or fewer." },
+      { status: 400 }
+    );
+  }
+
+  // ── Supabase client ──────────────────────────────────────────────────────
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // ── SSE stream ───────────────────────────────────────────────────────────
+  const encoder = new TextEncoder();
+  let closed = false;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(event: object) {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(sseEvent(event)));
+        } catch {
+          closed = true;
+        }
+      }
+
+      function close() {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      }
+
+      try {
+        // ── 1. Fetch lease context ───────────────────────────────────────
+        const [clausesResult, leaseResult, reportResult] = await Promise.all([
+          supabase
+            .from("clauses")
+            .select(
+              "id, clause_number, heading, risk_level, plain_english_explanation, statutory_violations, is_potentially_unenforceable"
+            )
+            .eq("lease_id", leaseId)
+            .order("clause_number"),
+          supabase
+            .from("leases")
+            .select("property_address, property_city, jurisdiction")
+            .eq("id", leaseId)
+            .single(),
+          supabase
+            .from("reports")
+            .select("overall_risk_score, overall_risk_level")
+            .eq("lease_id", leaseId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single(),
+        ]);
+
+        const rawClauses = (clausesResult.data ?? []) as Array<Record<string, unknown>>;
+        const leaseRow = leaseResult.data as Record<string, unknown> | null;
+        const reportRow = reportResult.data as Record<string, unknown> | null;
+
+        const leaseContext = {
+          address: (leaseRow?.property_address as string) ?? "Rental Unit",
+          city: (leaseRow?.property_city as string) ?? (leaseRow?.jurisdiction as string) ?? "",
+          riskScore: (reportRow?.overall_risk_score as number) ?? 0,
+          riskLevel: (reportRow?.overall_risk_level as string) ?? "unknown",
+          clauseCount: rawClauses.length,
+          clauses: rawClauses
+            .filter((c) => !String(c.clause_number ?? "").startsWith("synthetic"))
+            .map((c) => ({
+              number: String(c.clause_number ?? ""),
+              heading: (c.heading as string) ?? "",
+              risk_level: (c.risk_level as string) ?? "low",
+              plain_english_explanation: (c.plain_english_explanation as string) ?? "",
+              statutory_violations:
+                (c.statutory_violations as Array<{ statute_section: string }>) ?? [],
+              is_potentially_unenforceable: (c.is_potentially_unenforceable as boolean) ?? false,
+            })),
+        };
+
+        // ── 2. Embed user question ───────────────────────────────────────
+        let embedding: number[] | null = null;
+        let statutes: StatuteSource[] = [];
+        let decisions: DecisionSource[] = [];
+
+        try {
+          embedding = await embedQuery(message);
+
+          // ── 3. Parallel RAG retrieval ──────────────────────────────────
+          [statutes, decisions] = await Promise.all([
+            retrieveStatutes(embedding, message, supabase),
+            retrieveDecisions(embedding, supabase),
+          ]);
+        } catch (embedErr) {
+          console.error("[chat] embed/retrieval error:", embedErr);
+          // Proceed with empty sources — Claude will answer based on lease context only
+        }
+
+        // ── 4. Build system prompt ───────────────────────────────────────
+        const systemPrompt = buildSystemPrompt(leaseContext, statutes, decisions);
+
+        // ── 5. Stream Claude Haiku response ─────────────────────────────
+        // Use getAnthropicClient() — handles both real API key + OAuth token (Gotcha #23)
+        const anthropic = getAnthropicClient();
+
+        // Build messages array: last 6 history turns + current user message
+        const recentHistory = history.slice(-6);
+        const anthropicMessages: Array<{ role: "user" | "assistant"; content: string }> = [
+          ...recentHistory.map((h) => ({
+            role: h.role as "user" | "assistant",
+            content: h.content,
+          })),
+          { role: "user" as const, content: message },
+        ];
+
+        const streamResponse = await anthropic.messages.stream({
+          model: "claude-haiku-4-5",
+          max_tokens: 600,
+          system: systemPrompt,
+          messages: anthropicMessages,
+        });
+
+        for await (const chunk of streamResponse) {
+          if (
+            chunk.type === "content_block_delta" &&
+            chunk.delta.type === "text_delta"
+          ) {
+            send({ type: "token", text: chunk.delta.text });
+          }
+        }
+
+        // ── 6. Send sources after full response ──────────────────────────
+        const sourcePayload = [
+          ...statutes.map((s) => ({
+            type: "statute" as const,
+            act_name: s.act_name,
+            section_number: s.section_number,
+            section_title: s.section_title,
+            url: s.url,
+          })),
+          ...decisions.map((d) => ({
+            type: "decision" as const,
+            case_number: d.case_number,
+            relevant_principle: d.relevant_principle,
+            url: d.url,
+          })),
+        ];
+
+        send({ type: "sources", sources: sourcePayload });
+        send({ type: "done" });
+      } catch (err) {
+        console.error("[chat] stream error:", err);
+        send({
+          type: "error",
+          message:
+            err instanceof Error
+              ? err.message
+              : "An unexpected error occurred. Please try again.",
+        });
+      } finally {
+        close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
