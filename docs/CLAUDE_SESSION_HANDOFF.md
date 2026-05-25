@@ -134,3 +134,50 @@ npm run dev
 # 2. In another terminal, run visual verification
 node scripts/verify-rag-drawer.mjs
 ```
+
+---
+
+## Feature 3: "Ask Your Lease" Conversational AI Chat (Technical Wow-Factor)
+* **Branch:** `feature/ask-your-lease` (Branched off `feature/pdf-rag-drawer`)
+* **Status:** Fully implemented, verified, and locally committed (ready to push/merge).
+
+### 1. Streaming SSE API Endpoint
+* Created [app/api/chat/[leaseId]/route.ts](file:///c:/Users/Parthiv%20Paul/Documents/leaseguard/app/api/chat/%5BleaseId%5D/route.ts).
+* Features implemented:
+  * Gemini REST Embeddings (`gemini-embedding-001`, `RETRIEVAL_QUERY`) to find statutory and tribunal precedents.
+  * Multi-table fetch using `Promise.all` (`reports`, `leases`, `clauses`) for RAG context building.
+  * System prompt instructing Claude to cite real Ontario law and barring the word "illegal" per legal constraints.
+  * Claude Haiku 3.5 structured output via streaming SSE returning `token` and `sources` payloads.
+  * Real-time text streaming to browser.
+  * Integrated rate limiting (max 20 requests per hour).
+* Fully unit tested with 8 passing test cases (including SSE parsing and error handling) in [__tests__/api-chat.test.ts](file:///c:/Users/Parthiv%20Paul/Documents/leaseguard/__tests__/api-chat.test.ts).
+
+### 2. Glassmorphism Chat Interface
+* Created [app/components/lease-chat.tsx](file:///c:/Users/Parthiv%20Paul/Documents/leaseguard/app/components/lease-chat.tsx).
+* Added to the report shell at [app/report/[id]/page.tsx](file:///c:/Users/Parthiv%20Paul/Documents/leaseguard/app/report/%5Bid%5D/page.tsx).
+* Features:
+  * Minimalist floating action button with "Ask Your Lease" tag and dynamic risk score dot.
+  * Animated glassmorphism panel that smoothly scales into view using existing design tokens.
+  * "Starter chips" suggesting common legal questions (e.g., "Can my landlord enter without notice?").
+  * In-line RTA and LTB source pill citations integrated directly into the chat stream via popovers.
+  * Elegant dark-mode UI with Cormorant Garamond typography.
+
+### 3. Playwright Visual Verification
+* Created [scripts/verify-chat.mjs](file:///c:/Users/Parthiv%20Paul/Documents/leaseguard/scripts/verify-chat.mjs) which successfully validates the chat UI rendering and state interactions.
+* **Verification screenshots** saved in `.github/assets/chat-verification/`:
+  * `01-chat-button.png`
+  * `02-chat-open.png`
+  * `03-chat-typing.png`
+  * `04-chat-closed.png`
+
+---
+
+## Ready to Test Commands
+To spin up and run the visual validation yourself in your Claude Code session:
+```bash
+# 1. Start the next dev server
+npm run dev
+
+# 2. In another terminal, run visual verification for the chat feature
+node scripts/verify-chat.mjs
+```

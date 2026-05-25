@@ -135,8 +135,8 @@ Key locations for quick reference:
 ├── app/
 │   ├── page.tsx                     ← Landing + upload + processing
 │   ├── report/[id]/page.tsx         ← Report shell + normaliseApiResponse()
-│   ├── components/                  ← panels.tsx, pdf-viewer.tsx, trace-timeline.tsx, shared.tsx
-│   └── api/                         ← upload/, job/[id]/, report/[id]/, feedback/
+│   ├── components/                  ← panels.tsx, pdf-viewer.tsx, trace-timeline.tsx, lease-chat.tsx, shared.tsx
+│   └── api/                         ← upload/, job/[id]/, report/[id]/, chat/[leaseId]/, feedback/
 ├── lib/
 │   ├── agent.ts                     ← 14-step pipeline with parallel batches
 │   └── mcp-client.ts               ← stdio subprocess, 90s timeout
