@@ -143,3 +143,23 @@ export type PanelId =
   | "contradictions"
   | "sources"
   | "trace";
+
+// ── Ask Your Lease chat types ─────────────────────────────────────────────────
+
+export interface ChatSource {
+  type: "statute" | "decision";
+  act_name?: string;
+  section_number?: string;
+  section_title?: string;
+  case_number?: string;
+  relevant_principle?: string;
+  url?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources?: ChatSource[];
+  isStreaming?: boolean;
+}

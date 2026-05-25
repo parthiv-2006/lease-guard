@@ -19,6 +19,7 @@ import { NegotiationCopilot } from "../../components/negotiation-copilot";
 import type { Report, PanelId } from "../../components/types";
 import { PDFViewer } from "../../components/pdf-viewer";
 import { exportReportPDF } from "../../../lib/pdf-export";
+import { LeaseChat } from "../../components/lease-chat";
 
 // ── Nav config ────────────────────────────────────────────────────────────────
 
@@ -985,6 +986,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         negotiationPoints={report.negotiation_points}
         propertyAddress={report.lease.address || "the rental unit"}
       />
+
+      <LeaseChat leaseId={reportId} report={report} />
 
       {/* Slim privacy footer */}
       <footer
