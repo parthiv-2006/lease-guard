@@ -349,7 +349,7 @@ that visualises parallel tool calls, RAG latency phases, and overall pipeline th
 |---|--------|-------|--------|
 | 1.1 | Seed full RTA with all subsections | `scripts/build_corpus.py` | ✅ 2372 chunks — granular subsections + s.12 all 5 sub-clauses (commits 691c3b9, 7dce980) |
 | 1.2 | Seed Ontario Regulations (516/06, 517/06, Form T) | `scripts/build_regulations.py` | ✅ O.Reg.516/06 + O.Reg.517/06 + Standard Form seeded (commit 2a0357a) |
-| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | ✅ 46 decisions seeded via `seed_decisions_manual.py` (2026-05-23 commit 53b9308 + 2026-05-24 commits 9d0f664, 01d7a29). 8 categories: entry_rights ×8, security_deposit ×7, maintenance_repairs ×4, early_termination ×7, rent_increase ×4, quiet_enjoyment ×4, rent_payment ×5, dispute_resolution ×3, pets ×4. CanLII API path still pending for scale-up. |
+| 1.3 | Seed LTB decisions via CanLII API | new `scripts/seed_decisions.py` | ✅ 84 decisions in DB. 46 manual/original + 18 new decisions seeded via Exa API fallback (`scripts/seed_decisions_exa.mjs`) on 2026-05-25. Reaches target count ranges across all key clause categories. |
 | 2.1 | Multi-query retrieval (3 queries per clause) | `mcp-server/src/tools/lookup-statute.ts` | ✅ 3 queries/clause (raw/risk-angle/statute-targeted), RRF k=60 (commit f9e5343) |
 | 2.2 | Add hybrid BM25 + vector search | `supabase/migrations/005_hybrid_search.sql` | ✅ SQL migration written + applied 2026-05-20; hybridSearch() with PGRST202 fallback (commit 92ce515) |
 | 2.3 | Validate + tune similarity threshold | `scripts/validate_retrieval.py` | ✅ 7/7 (100%) under hybrid search (all scores ≥ 0.72). Threshold 0.55 hybrid / 0.60 vector confirmed. Re-validate after corpus changes. |
@@ -379,10 +379,10 @@ These are documented failures from smoke testing. Fix them before any other work
 
 ---
 
-*Last updated: 2026-05-24*
-*Current corpus version: 2026-05-20 (2372 statute chunks — RTA subsections + regs + standard form)*
-*tribunal_decisions: 46 rows (26 original + 20 new across rent_payment, dispute_resolution, pets, entry_rights ×3, security_deposit ×2 — commit 01d7a29)*
-*validate_retrieval.py: 7/7 (100%) confirmed after corpus expansion (2026-05-24)*
+*Last updated: 2026-05-25*
+*Current corpus version: 2026-05-25 (Parent RTA row trimming re-embedded; 2372 statute chunks — RTA subsections + regs + standard form)*
+*tribunal_decisions: 84 rows (46 manual/original + 18 new decisions across early_termination, quiet_enjoyment, pets, maintenance_repairs, entry_rights, security_deposit, subletting_assignment, rent_increase, rent_payment, guest_policy, dispute_resolution)*
+*validate_retrieval.py: 7/7 (100%) confirmed after corpus expansion (2026-05-25)*
 *eval-accuracy.mjs: 30/30 (100%) — Precision 100%, Recall 100%, FP 0% as of 9d0f664*
 *score-risk.ts: 17 MANDATORY_PROVISION_VIOLATION_TYPES (added early_termination_fee, surveillance_in_unit, guest_surcharge, assignment_fee — commit 9d0f664)*
 *Test suite: 100/100 passing (7 suites, includes 34 Gantt computation unit tests) as of be08a41*
