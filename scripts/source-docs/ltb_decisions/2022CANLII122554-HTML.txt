@@ -1,0 +1,131 @@
+#meta: date=2026-05-25, clause_types=guest_policy, url=https://www.canlii.org/en/on/onltb/doc/2022/2022canlii122554/2022canlii122554.html
+
+ONTARIO LANDLORD AND TENANT BOARD
+
+Residential   Tenancies   Act,   2006
+
+2022 CanLII 122554 (ON LTB) | Shemesh v Yousefirad | CanLII
+This website uses cookies to various ends, as detailed in our[Privacy Policy](https://www.canlii.org/en/info/privacy.html). You may accept all these cookies or choose only those categories of cookies that are acceptable to you.
+Manage your cookiesAccept all cookies
+## Manage your cookies
+Cookies are saved on your device to ensure proper operation and security of the website, help statistical analysis of its usage, improve its functionality, or record navigational choices you make. Further details can be found in the[cookies section](https://www.canlii.org/en/info/privacy.html#cookies)of CanLII's Privacy Policy.
+A few cookies are strictly necessary to use CanLII and are always active. Cookies that are used to measure performance or improve functionality can be enabled using the buttons below.
+Reset all cookies
+Accept all cookies
+**Strictly necessary cookies
+**Always active**
+These cookies are necessary for the operation of the website and cannot be deactivated. They enable the basic operation of the site and prevent abusive access.
+**Performance cookies
+Témoins de performance
+These cookies collect anonymous data about users' visits to the site. This data is used to measure site performance and improve search functions.
+**Functionality cookies
+Témoins de fonctionnalité
+These cookies record your browsing preferences, for example by storing your browsing language or your myCanLII account login.
+**Targeting cookies
+**Not applicable**
+We do not use cookies to establish your profile or target you for advertising purposes.
+Accept selection
+[![CanLII Logo](https://www.canlii.org/images/canliiLogo.svg)](https://www.canlii.org/en/)
+[Home](https://www.canlii.org/en/)›[Ontario](https://www.canlii.org/en/on/)›[Landlord and Tenant Board](https://www.canlii.org/en/on/onltb/)›2022 CanLII 122554 (ON LTB)
+Loading paragraph markers**
+## Shemesh v Yousefirad, 2022 CanLII 122554 (ON LTB)
+* [Document](#document)
+* [History**](#related)
+* [Cited documents**](#cited)
+* [Treatment**](#citing)
+* [CanLII Connects**](#external)
+[**PDF](https://www.canlii.org/en/on/onltb/doc/2022/2022canlii122554/2022canlii122554.pdf)
+Date:
+2022-02-07
+File number:
+TNT-30723-21
+Citation:
+Shemesh v Yousefirad, 2022 CanLII 122554 (ON LTB), <[https://canlii.ca/t/jtp53](https://canlii.ca/t/jtp53)>, retrieved on 2024-07-05
+[Citations**](#citing)[Discussions**](#discussing)[Unfavourable mentions**](#unfavourable)
+ExpandedCollapsed
+![](images/image001.jpg)
+OrderunderSection30
+# ResidentialTenanciesAct,2006
+****
+**FileNumber:**TNT-30723-21
+**Inthematterof: **326AUTUMNHILLBOULEVARD
+THORNHILLONL4J9A6
+**Between:**** **IanShemesh LauraWalker
+Tenants
+# and
+****
+BehzadYousefirad Shohreh Saremi
+Landlords
+Ian Shemesh and Laura Walker (the
+'Tenants') applied for an order determining that Shohreh Saremi and Behzad
+Yousefirad (the 'Landlords') failed to meet the Landlords' maintenance
+obligationsunderthe*ResidentialTenanciesAct,2006*(the'Act')orfailedtocomplywithhealth,
+safety, housing or maintenance standards.
+Thisapplicationwasheardbyvideoconference onOctober14,2021.
+TheTenant,IanShamesh,theTenant'sLegalRepresentative,AshleyFriel,andtheLandlord Behzad Yousefirad, attended the
+hearing.
+# Determinations:
+****
+**
+1. Thisapplicationisbroughtpursuanttosubsection20(1)of*theResidentialTenanciesAct, 2006*(the ‘Act’) which states:
+A landlord is responsible for
+providing and maintaining a residential complex, includingtherentalunitsinit,inagoodstateofrepairandfitforhabitationandfor complying with
+health, safety, housing and maintenance standards.
+**
+2. TheTenantstakethepositionthattheLandlordisinbreachofsubsection20(1)oftheAct
+by failing to provide snow removal and lawn maintenance.
+**
+3. The Landlords’ position is that the Tenants are
+responsible for snow removal and lawn maintenance pursuant to the lease
+agreement between the parties which states that the Tenants “agree to be
+responsible for snow removal and lawn maintenance on the premisesforthetermofthelease.”
+TheLandlordalsoclaimsthattheTenantsdidnotask him to provide snow removal or lawn maintenance.
+4. AlthoughthetenancyagreementstatesthattheTenantsareresponsibletomaintainthe lawn,section3oftheActspecifiesthattheActappliesdespiteanyagreementorwaiver
+to the contrary.
+5. Consequently,byrequiringatenanttomaintainthelawn
+andremovethesnowalandlord
+is essentially transferring its responsibility to maintain a unit in a good
+state of repair including compliance with housing and maintenance standards to
+a tenant. This contravenes section 3 of the Act.
+6. In*Montgomery v. Van*,[2009 ONCA 808 (CanLII)](https://www.canlii.org/en/on/onca/doc/2009/2009onca808/2009onca808.html),
+the Court of Appeal found that a landlord cannot fulfill its statutory duty by
+requiring tenants to perform prescribed maintenanceunlessthereisaseverablecontractualobligation.Thismeansthatifthereis an agreement that the tenant maintains the lawn, there must be
+consideration givento the tenant
+for this responsibility. In this case, there was no evidence of any
+consideration provided to the Tenant for maintaining the lawn such as a rent
+discount or otherincentives.
+7. I find that the Tenants did ask
+the Landlords to provide snow removal and lawn maintenance. The Landlord
+concedes that the Tenants informed him that this was the Landlords
+responsibility. It does not make sense to me that the Tenants would bring up
+thisobligationwiththeLandlordswithout requestingthattheLandlordsfulfillitsobligation.
+8. Fortheabovereasons,IfindthattheLandlordsfailedtomeettheirobligationsunder subsection 20(1) of the Act.
+9. The Tenants provided invoices and receipts to prove
+that they incurred out of pocket costsof$565forsnowremoval,
+$559.35forlawnmaintenance,and$118.65forbagsof salt. These expenses were incurred
+because of the Landlords’ failure to maintain the rental unit.Based on similar casesandmy
+experiencewith the Board, I find
+these costs to be reasonable. Therefore, the Tenants are entitled to these
+costs.
+10.Thisordercontainsallofthereasonsforthedecisionwithinitandnofurtherreasonswill be issued.
+# Itis orderedthat:
+****
+1. TheLandlordsshallpaytotheTenants$1,243.00whichisthereasonableout-of-pocket expenses the Tenants have incurred for snow
+removal, lawn maintenance and bags ofsalt
+2. TheLandlordsshallalsopaytheTenants$48.00forthecostoffilingtheapplication.
+3. ThetotalamounttheLandlordsowetheTenantsis$1,291.00.
+**
+4. TheLandlordsshallpaytheTenantsthefullamountowingbyFebruary18,2022.
+5. If the Landlords do not pay the
+Tenants the full amount owing by February 18, 2022 the Landlordswilloweinterest.Thiswillbesimpleinterestcalculatedfrom February19,2022
+at 2.00% annually on the outstanding balance.
+6. TheTenantshavetheright,atanytime,tocollectthefullamountowingoranybalance
+outstanding under this order.
+**February 7, 2022**** **
+**Date Issued **Khalid Akram
+Member,LandlordandTenantBoard
+TorontoNorth-RO
+47SheppardAvenueEast,Suite700,7thFloor
+Toronto ON M2N5X5
+Ifyouhaveanyquestionsaboutthisorder,call416-645-8080ortollfreeat1-888-332-3234.
+* Back to top
