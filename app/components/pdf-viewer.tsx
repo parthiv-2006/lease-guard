@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { riskColor, riskBg, riskBorder } from "./shared";
-import type { Clause } from "./types";
+import type { Clause, Source } from "./types";
 
 // ── CSS injection for pdfjs text layer ───────────────────────────────────────
 
@@ -311,7 +311,7 @@ function SigSection() {
   );
 }
 
-function MockPDFViewer({ clauses, activeClauseId }: { clauses: Clause[]; activeClauseId: string | null }) {
+function MockPDFViewer({ clauses, activeClauseId, sources = [], onCloseActiveClause }: { clauses: Clause[]; activeClauseId: string | null; sources?: Source[]; onCloseActiveClause?: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [flashId, setFlashId] = useState<string | null>(null);
 
@@ -347,34 +347,42 @@ function MockPDFViewer({ clauses, activeClauseId }: { clauses: Clause[]; activeC
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#484848" }}>
-      <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
-        <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-          <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
-          <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
-        </svg>
-        <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>KingSt_Lease_2026.pdf</span>
-        <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>6 pp.</span>
-        <div style={{ flex: 1 }} />
-        {activeClause ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
-            <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>Clause {activeClause.number} — {activeClause.heading}</span>
-          </div>
-        ) : (
-          <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>Click a clause to highlight</span>
-        )}
+    <div style={{ display: "flex", width: "100%", height: "100%", background: "#484848", position: "relative" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, height: "100%" }}>
+        <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
+            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
+            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
+          </svg>
+          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>KingSt_Lease_2026.pdf</span>
+          <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>6 pp.</span>
+          <div style={{ flex: 1 }} />
+          {activeClause ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
+              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>Clause {activeClause.number} — {activeClause.heading}</span>
+            </div>
+          ) : (
+            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>Click a clause to highlight</span>
+          )}
+        </div>
+        <div ref={scrollRef} style={{ flex: 1, overflow: "auto", padding: "16px 12px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          {PAGES.map((page) => (
+            <div key={page.num} style={{ background: "#fff", width: "100%", maxWidth: 620, padding: "44px 48px 34px", boxShadow: "0 2px 12px rgba(0,0,0,0.42)", position: "relative" }}>
+              <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", fontSize: 8.5, color: "#c5bfb5", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em" }}>— {page.num} —</div>
+              {page.sections.map((sec, i) => renderSection(sec, i))}
+            </div>
+          ))}
+          <div style={{ height: 12 }} />
+        </div>
       </div>
-      <div ref={scrollRef} style={{ flex: 1, overflow: "auto", padding: "16px 12px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-        {PAGES.map((page) => (
-          <div key={page.num} style={{ background: "#fff", width: "100%", maxWidth: 620, padding: "44px 48px 34px", boxShadow: "0 2px 12px rgba(0,0,0,0.42)", position: "relative" }}>
-            <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", fontSize: 8.5, color: "#c5bfb5", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em" }}>— {page.num} —</div>
-            {page.sections.map((sec, i) => renderSection(sec, i))}
-          </div>
-        ))}
-        <div style={{ height: 12 }} />
-      </div>
+      <GroundingDrawer
+        activeClauseId={activeClauseId}
+        clauses={clauses}
+        sources={sources}
+        onClose={onCloseActiveClause}
+      />
     </div>
   );
 }
@@ -389,6 +397,8 @@ interface RealPDFProps {
   activeClauseId: string | null;
   filename: string;
   leaseId?: string;
+  sources: Source[];
+  onCloseActiveClause?: () => void;
 }
 
 // Per-page text data collected after renderTextLayer completes
@@ -397,7 +407,7 @@ type PageTextData = {
   spans: HTMLSpanElement[]; // span[i] corresponds to items[i]
 };
 
-function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: RealPDFProps) {
+function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sources, onCloseActiveClause }: RealPDFProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState(0);
@@ -731,71 +741,335 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId }: R
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#484848" }}>
-      {/* Toolbar */}
-      <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
-        <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-          <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
-          <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-          <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
-        </svg>
-        <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {filename}
-        </span>
-        {pageCount > 0 && (
-          <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>
-            {pageCount} pp.
+    <div style={{ display: "flex", width: "100%", height: "100%", background: "#484848", position: "relative", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, height: "100%" }}>
+        {/* Toolbar */}
+        <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
+          <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
+            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
+            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
+          </svg>
+          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {filename}
           </span>
-        )}
-        <div style={{ flex: 1 }} />
-        {activeClause ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
-            <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>
-              Clause {activeClause.number} — {activeClause.heading}
+          {pageCount > 0 && (
+            <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>
+              {pageCount} pp.
             </span>
+          )}
+          <div style={{ flex: 1 }} />
+          {activeClause ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
+              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>
+                Clause {activeClause.number} — {activeClause.heading}
+              </span>
+            </div>
+          ) : (
+            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>
+              Click a clause to highlight
+            </span>
+          )}
+        </div>
+
+        {/* Scrollable page stack */}
+        <div
+          ref={scrollRef}
+          style={{ flex: 1, overflow: "auto", padding: "16px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}
+        >
+          {pageCount === 0 && (
+            <div style={{ color: "#666", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginTop: 60 }}>
+              Loading PDF…
+            </div>
+          )}
+
+          <div
+            ref={containerRef}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 660, padding: "0 12px" }}
+          >
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((pageNum) => (
+              <div
+                key={pageNum}
+                data-page={pageNum}
+                style={{
+                  position: "relative",
+                  background: "#fff",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.42)",
+                  width: "100%",
+                  overflow: "hidden",
+                  // height set by render effect once page dimensions are known
+                }}
+              >
+                <canvas style={{ display: "block" }} />
+                <div className="lg-pdf-text-layer" />
+              </div>
+            ))}
           </div>
-        ) : (
-          <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>
-            Click a clause to highlight
-          </span>
-        )}
+          <div style={{ height: 12 }} />
+        </div>
+      </div>
+      <GroundingDrawer
+        activeClauseId={activeClauseId}
+        clauses={clauses}
+        sources={sources}
+        onClose={onCloseActiveClause}
+      />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RAG Grounding Drawer
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface GroundingDrawerProps {
+  activeClauseId: string | null;
+  clauses: Clause[];
+  sources: Source[];
+  onClose?: () => void;
+}
+
+function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: GroundingDrawerProps) {
+  const [lastActiveClauseId, setLastActiveClauseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeClauseId) {
+      setLastActiveClauseId(activeClauseId);
+    }
+  }, [activeClauseId]);
+
+  const displayClauseId = activeClauseId || lastActiveClauseId;
+  const activeClause = displayClauseId ? clauses.find((c) => c.id === displayClauseId) : null;
+  const matchingSources = displayClauseId ? sources.filter((s) => s.relevant_clauses?.includes(displayClauseId)) : [];
+
+  return (
+    <div
+      style={{
+        width: activeClauseId ? "340px" : "0px",
+        minWidth: activeClauseId ? "340px" : "0px",
+        height: "100%",
+        background: "#191715",
+        borderLeft: activeClauseId ? "1px solid #2d2b28" : "0px solid transparent",
+        display: "flex",
+        flexDirection: "column",
+        transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s",
+        overflow: "hidden",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid #2d2b28",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "4px",
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#ebe8e2",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontFamily: "'Cormorant Garamond', serif",
+            }}
+          >
+            Grounding Evidence
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              display: "flex",
+              color: "#7a7570",
+              fontSize: "14px",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#ebe8e2")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#7a7570")}
+          >
+            ✕
+          </button>
+        </div>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#9a9590",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {activeClause ? `Clause ${activeClause.number} — ${activeClause.heading}` : "No active clause selected"}
+        </div>
       </div>
 
-      {/* Scrollable page stack */}
+      {/* Content */}
       <div
-        ref={scrollRef}
-        style={{ flex: 1, overflow: "auto", padding: "16px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
       >
-        {pageCount === 0 && (
-          <div style={{ color: "#666", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginTop: 60 }}>
-            Loading PDF…
+        {matchingSources.length > 0 ? (
+          matchingSources.map((source) => {
+            const isStatute =
+              source.act_name.toLowerCase().includes("act") ||
+              source.act_name.toLowerCase().includes("statute");
+            const badgeText = isStatute ? "RTA Statute" : "LTB Precedent";
+            const badgeColor = isStatute ? "#f59e0b" : "#3b82f6";
+            const badgeBg = isStatute ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)";
+            const badgeBorder = isStatute ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(59,130,246,0.2)";
+
+            return (
+              <div
+                key={source.id}
+                style={{
+                  background: "#22201d",
+                  border: "1px solid #302e2a",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  transition: "transform 0.2s ease, border-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#45423c";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#302e2a";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {/* Badge and score */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 600,
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      color: badgeColor,
+                      background: badgeBg,
+                      border: badgeBorder,
+                      letterSpacing: "0.02em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {badgeText}
+                  </span>
+                  {source.relevance_score > 0 && (
+                    <span style={{ fontSize: "10px", color: "#7a7570", fontWeight: 500 }}>
+                      Match: {Math.round(source.relevance_score * 100)}%
+                    </span>
+                  )}
+                </div>
+
+                {/* Citation */}
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#ebe8e2",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {source.section_number ? `Section ${source.section_number}: ` : ""}
+                  {source.section_title || source.act_name}
+                </div>
+
+                {/* Excerpt */}
+                <div
+                  style={{
+                    fontSize: "11px",
+                    lineHeight: "1.6",
+                    color: "#b0aaa4",
+                    background: "#181614",
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #23211f",
+                    maxHeight: "160px",
+                    overflowY: "auto",
+                    textAlign: "justify",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                  }}
+                >
+                  {source.full_text}
+                </div>
+
+                {/* Link */}
+                {source.url && (
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: "11px",
+                      color: "#a78bfa",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      marginTop: "2px",
+                      fontWeight: 500,
+                      alignSelf: "flex-start",
+                      transition: "color 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#c084fc")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#a78bfa")}
+                  >
+                    View official source ↗
+                  </a>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flex: 1,
+              padding: "40px 20px",
+              textAlign: "center",
+              gap: "12px",
+              opacity: 0.75,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7a7570" strokeWidth="1.5">
+              <path d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 01-2.5-2.5z" />
+              <path d="M6 6h10M6 10h10" />
+            </svg>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#ebe8e2" }}>
+              No direct database grounding
+            </div>
+            <div style={{ fontSize: "11px", color: "#7a7570", lineHeight: 1.5, maxWidth: "220px" }}>
+              This clause was assessed using the model's standard Ontario tenancy rules. No specific RTA statute section or LTB case was direct-matched.
+            </div>
           </div>
         )}
-
-        <div
-          ref={containerRef}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 660, padding: "0 12px" }}
-        >
-          {Array.from({ length: pageCount }, (_, i) => i + 1).map((pageNum) => (
-            <div
-              key={pageNum}
-              data-page={pageNum}
-              style={{
-                position: "relative",
-                background: "#fff",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.42)",
-                width: "100%",
-                overflow: "hidden",
-                // height set by render effect once page dimensions are known
-              }}
-            >
-              <canvas style={{ display: "block" }} />
-              <div className="lg-pdf-text-layer" />
-            </div>
-          ))}
-        </div>
-        <div style={{ height: 12 }} />
       </div>
     </div>
   );
@@ -811,9 +1085,19 @@ interface PDFViewerProps {
   pdfUrl?: string | null;
   filename?: string;
   leaseId?: string;
+  sources?: Source[];
+  onCloseActiveClause?: () => void;
 }
 
-export function PDFViewer({ clauses, activeClauseId, pdfUrl, filename, leaseId }: PDFViewerProps) {
+export function PDFViewer({
+  clauses,
+  activeClauseId,
+  pdfUrl,
+  filename,
+  leaseId,
+  sources = [],
+  onCloseActiveClause,
+}: PDFViewerProps) {
   if (pdfUrl) {
     return (
       <RealPDFViewer
@@ -822,8 +1106,17 @@ export function PDFViewer({ clauses, activeClauseId, pdfUrl, filename, leaseId }
         activeClauseId={activeClauseId}
         filename={filename ?? "lease.pdf"}
         leaseId={leaseId}
+        sources={sources}
+        onCloseActiveClause={onCloseActiveClause}
       />
     );
   }
-  return <MockPDFViewer clauses={clauses} activeClauseId={activeClauseId} />;
+  return (
+    <MockPDFViewer
+      clauses={clauses}
+      activeClauseId={activeClauseId}
+      sources={sources}
+      onCloseActiveClause={onCloseActiveClause}
+    />
+  );
 }

@@ -843,6 +843,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                 pdfUrl={report.lease.pdf_url}
                 filename={report.lease.filename}
                 leaseId={reportId}
+                sources={report.sources}
+                onCloseActiveClause={() => setActiveClauseId(null)}
               />
             </div>
 
@@ -1395,16 +1397,43 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     const ref = (s.reference as string) ?? "";
     // e.g. "Residential Tenancies Act, 2006 s.22 — Quiet enjoyment"
     const sectionMatch = ref.match(/s\.(\S+)\s*[—–-]\s*(.+)/);
+    const sectionNum = sectionMatch?.[1] ?? "";
+
+    // Dynamically match sources to clauses based on RTA section numbers and text references
+    const rawRelevant = (s.relevant_clauses as string[]) ?? (s.relevantClauses as string[]) ?? [];
+    const resolvedClauses = clauses
+      .filter((c) => {
+        // Match by section number in statutory violations
+        const cleanSectionNum = sectionNum.toLowerCase().trim();
+        const matchesViolation = cleanSectionNum && c.statutory_violations?.some((v) => {
+          const vSec = String(v.statute_section ?? "").toLowerCase().replace(/\s+/g, "");
+          return vSec.includes(`s.${cleanSectionNum}`) || vSec.includes(`section${cleanSectionNum}`);
+        });
+
+        // Match by citation references in plain English explanations or risk reasoning
+        const explanationText = `${c.plain_english_explanation} ${c.risk_reasoning}`.toLowerCase();
+        const matchesText = cleanSectionNum && (
+          explanationText.includes(`s. ${cleanSectionNum}`) ||
+          explanationText.includes(`s.${cleanSectionNum}`) ||
+          explanationText.includes(`section ${cleanSectionNum}`)
+        );
+
+        return matchesViolation || matchesText;
+      })
+      .map((c) => c.id);
+
+    const relevant_clauses = [...new Set([...rawRelevant, ...resolvedClauses])];
+
     return {
       id: `source-${i}`,
       act_name: ref.split(/\ss\.\d/)[0]?.trim() ?? ref,
-      section_number: sectionMatch?.[1] ?? "",
+      section_number: sectionNum,
       section_title: sectionMatch?.[2]?.trim() ?? ref,
       full_text: (s.full_text as string) ?? "",
       url: (s.url as string) ?? "",
-      relevance_score: 0,
+      relevance_score: typeof s.relevance_score === "number" ? s.relevance_score : 0,
       corpus_version: (data.corpus_version as string) ?? "",
-      relevant_clauses: [],
+      relevant_clauses,
     };
   });
 
