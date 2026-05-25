@@ -162,7 +162,15 @@ Both produce selectable, searchable text PDFs. Wired `exportReportPDF` to sideba
 raw_text = (raw_text
   .replace("‘", "'").replace("’", "'")   # curly apostrophes
   .replace("“", '"').replace("”", '"')   # curly double quotes
-  .replace("□", "'").replace("�", "'")   # replacement squares/chars
+  .replace("□", "'").replace("", "'")   # replacement squares/chars
 )
 ```
 **Resolution:** Issue already resolved in a prior session. Known Issue #13 closed 2026-05-23 with no new commit needed.
+
+---
+
+## [RESOLVED 2026-05-25] #11 — Stale Parent Rows After Subsection Seeding
+
+**Was:** Parent sections in the statutes table (e.g. section 26) still contained their full subsection texts, causing them to compete weakly with the newly seeded individual subsection rows during vector/hybrid retrieval.
+**Root cause:** `build_corpus.py` previously skipped any sections that already existed in the database (`_section_exists`), preventing updates to parent rows once they were split into separate subsections.
+**Fix applied:** Replaced `_section_exists` in `scripts/build_corpus.py` with `_get_existing_section_text`. The script now compares the database row's `full_text` with the parsed chunk's text and automatically updates/re-embeds the row on text mismatch. Running the corpus build successfully updated and trimmed all parent RTA sections (e.g. s.26 now contains only its introductory sentence). Commit: `3848354`.

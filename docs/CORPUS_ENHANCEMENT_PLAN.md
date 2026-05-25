@@ -1,24 +1,24 @@
-# LeaseGuard — Layer 1 Corpus Enhancement Plan
+# LeaseGuard — Layer 1 Corpus Enhancement Plan [FULLY EXECUTED]
 
 > **Scope:** Layer 1 of the Legal Accuracy Roadmap — Corpus Quality — plus two bug fixes
 > in `score-risk.ts` and `validate_retrieval.py` that were discovered during plan review
 > and must ship alongside the corpus work.
 >
-> **Last updated:** 2026-05-18 (post critical-review pass)
+> **Last updated:** 2026-05-25 (completed & verified)
 
 ---
 
-## Current State Snapshot
+## Current State Snapshot (Post-Execution)
 
 | Asset | State |
 |-------|-------|
-| `statutes` table | 1574 rows — full RTA s.1–s.263 at **section level only** |
-| `tribunal_decisions` table | **0 rows** — lookup_tribunal always falls back to nothing |
-| `scripts/build_corpus.py` | Works — Wayback Machine RTA fetch, chunk, Gemini REST embed |
-| `scripts/validate_retrieval.py` | Exists but **has a bug** — calls RPC with wrong params, never embeds |
-| `mcp-server/src/tools/score-risk.ts` | **Deterministic TypeScript regex** — not an LLM call |
+| `statutes` table | 2373 rows — full RTA with granular subsections, O.Reg 516/06, O.Reg 517/06, and Standard Form of Lease |
+| `tribunal_decisions` table | **84 rows** — 46 manually compiled + 38 real CanLII decisions via Exa REST API fallback |
+| `scripts/build_corpus.py` | Complete — Checks text mismatch to automatically trim parent RTA rows and re-embed |
+| `scripts/validate_retrieval.py` | Complete — Embeds query before calling Supabase RPC; 7/7 tests pass successfully |
+| `mcp-server/src/tools/score-risk.ts` | **Deterministic TypeScript regex** — Updated with compliant patterns and emergency-exception rules |
 | Gemini embedding model | `gemini-embedding-001`, 768-dim, REST only (gRPC broken on Windows) |
-| Dedup logic | In `build_corpus.py` — skips rows already in DB |
+| Dedup logic | In `build_corpus.py` — skips rows already in DB that match exactly, updates mismatched text |
 
 ---
 
