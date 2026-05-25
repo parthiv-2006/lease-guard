@@ -380,21 +380,23 @@ def _get_supabase_client():
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 
-def _section_exists(client, jurisdiction_code: str, act_name: str, section_number: str) -> bool:
-    """Check if a section already exists in the DB."""
+def _get_existing_section_text(client, jurisdiction_code: str, act_name: str, section_number: str) -> str | None:
+    """Get the full_text of an existing section in the DB, or None if it doesn't exist."""
     try:
         resp = (
             client.table("statutes")
-            .select("id")
+            .select("full_text")
             .eq("jurisdiction_code", jurisdiction_code)
             .eq("act_name", act_name)
             .eq("section_number", section_number)
             .limit(1)
             .execute()
         )
-        return len(resp.data) > 0
+        if resp.data:
+            return resp.data[0].get("full_text")
+        return None
     except Exception:
-        return False
+        return None
 
 
 def _upsert_section(client, row: dict[str, Any]) -> None:
@@ -471,11 +473,15 @@ def main() -> None:
             skipped += 1
             continue
 
-        # Check if already in DB
-        if _section_exists(client, JURISDICTION_CODE, ACT_NAME, sec_num):
-            print(f"       Already in DB — skipping.", file=sys.stderr)
-            skipped += 1
-            continue
+        # Check if already in DB and matches
+        existing_text = _get_existing_section_text(client, JURISDICTION_CODE, ACT_NAME, sec_num)
+        if existing_text is not None:
+            if existing_text.strip() == full_text.strip():
+                print(f"       Already in DB and matches — skipping.", file=sys.stderr)
+                skipped += 1
+                continue
+            else:
+                print(f"       Text mismatch (DB len={len(existing_text)}, chunk len={len(full_text)}) — updating and re-embedding.", file=sys.stderr)
 
         # Embed — 1s pause keeps us at ~60 RPM, safely under free-tier limits
         time.sleep(1.0)
