@@ -12,12 +12,14 @@
  *
  * Architecture:
  *   1. Validate request
- *   2. Rate-limit (20 req/hr/IP)
- *   3. Fetch lease context from Supabase
- *   4. Embed user question via Gemini REST (RETRIEVAL_QUERY, 768-dim)
- *   5. Parallel hybrid search: statutes + tribunal decisions
- *   6. Build grounded system prompt
- *   7. Stream Claude Haiku response
+ *   2. Auth check (identifies user for rate limiting)
+ *   3. DB-backed rate limit (daily · hourly · per-lease — see lib/chat-rate-limit.ts)
+ *   4. Fetch lease context from Supabase
+ *   5. Embed user question via Gemini REST (RETRIEVAL_QUERY, 768-dim)
+ *   6. Parallel hybrid search: statutes + tribunal decisions
+ *   7. Build grounded system prompt
+ *   8. Stream Gemini response
+ *   9. Record request in chat_requests (for future rate limit counts)
  *
  * CRITICAL: Do NOT import from mcp-server/src/lib/embeddings.ts — that module
  * uses ESM imports for the MCP server environment. Gemini embed is duplicated
@@ -26,7 +28,8 @@
 
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { checkDbChatRateLimit } from "@/lib/chat-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,15 +42,6 @@ const GEMINI_EMBED_URL =
 const GEMINI_GENERATE_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent";
 const JURISDICTION = "CA-ON";
-
-/**
- * Gemini free-tier limits (2025):
- *   gemini-2.0-flash: 15 RPM, 1 500 RPD, 1 M TPM
- *
- * We apply a per-IP cap of 10 req/hr.  With up to ~6 concurrent users this
- * keeps the global RPD well under 1 500 and leaves headroom for embed calls.
- */
-const CHAT_RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 60 * 1000, storeKey: "chat" } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -346,6 +340,21 @@ function sseEvent(data: object): string {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+// ── Friendly error messages ───────────────────────────────────────────────────
+
+const RATE_LIMIT_MESSAGES: Record<string, string> = {
+  daily_user_limit:
+    "You've used all 50 chat messages for today. Your limit resets in 24 hours.",
+  hourly_user_limit:
+    "You're sending messages too quickly. Please wait a few minutes before asking another question.",
+  daily_ip_limit:
+    "You've reached today's chat limit. Sign in for a higher limit, or try again tomorrow.",
+  hourly_ip_limit:
+    "You're sending messages too quickly. Please wait before asking another question.",
+  per_lease_limit:
+    "You've reached the limit of 30 questions for this lease today. Try again tomorrow or ask about a different lease.",
+};
+
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(
@@ -362,17 +371,49 @@ export async function POST(
     );
   }
 
-  // ── Rate limit: 10 questions/hour/IP ────────────────────────────────────
-  // Gemini 2.0 Flash free tier: 1 500 RPD globally. 10/IP/hr keeps the global
-  // daily budget safe for up to ~6 concurrent active users.
+  // ── Extract IP ───────────────────────────────────────────────────────────
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
     "unknown";
-  const rl = checkRateLimit(ip, CHAT_RATE_LIMIT);
+
+  // ── Auth check (identifies user for rate limiting) ───────────────────────
+  let userId: string | null = null;
+  try {
+    const authClient = await createSupabaseServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    // Auth failure is non-fatal — treat as guest
+    userId = null;
+  }
+
+  // ── Service-role Supabase client (DB queries + rate limit) ───────────────
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // ── DB-backed rate limit ─────────────────────────────────────────────────
+  // Three checks in parallel: daily user/IP, hourly user/IP, per-lease daily.
+  // Persists across Vercel cold starts — counts actual rows in chat_requests.
+  const rl = await checkDbChatRateLimit(userId, ip, leaseId, supabase);
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
-    return Response.json(body, { status, headers });
+    const retryAfterSecs = Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000);
+    return Response.json(
+      {
+        error:     "rate_limit_exceeded",
+        reason:    rl.reason,
+        message:   RATE_LIMIT_MESSAGES[rl.reason ?? ""] ?? "Too many requests. Please try again later.",
+        limit:     rl.limit,
+        reset_at:  rl.resetAt.toISOString(),
+        remaining: 0,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSecs) },
+      }
+    );
   }
 
   // ── Parse body ───────────────────────────────────────────────────────────
@@ -403,12 +444,6 @@ export async function POST(
     );
   }
 
-  // ── Supabase client ──────────────────────────────────────────────────────
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   // ── SSE stream ───────────────────────────────────────────────────────────
   const encoder = new TextEncoder();
   let closed = false;
@@ -435,6 +470,17 @@ export async function POST(
       }
 
       try {
+        // ── Record request before Gemini calls ──────────────────────────
+        // Fire-and-forget: logs the usage slot so future rate limit checks
+        // count this request. Failure is non-fatal — worst case the user
+        // gets one undercounted message.
+        supabase
+          .from("chat_requests")
+          .insert({ user_id: userId, ip, lease_id: leaseId })
+          .then(({ error }: { error: unknown }) => {
+            if (error) console.error("[chat] failed to record chat_request:", error);
+          });
+
         // ── 1. Fetch lease context ───────────────────────────────────────
         const [clausesResult, leaseResult, reportResult] = await Promise.all([
           supabase
