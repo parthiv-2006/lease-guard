@@ -931,10 +931,16 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
       >
         {matchingSources.length > 0 ? (
           matchingSources.map((source) => {
+            const actLower = source.act_name.toLowerCase();
             const isStatute =
-              source.act_name.toLowerCase().includes("act") ||
-              source.act_name.toLowerCase().includes("statute");
-            const badgeText = isStatute ? "RTA Statute" : "LTB Precedent";
+              actLower.includes("act") ||
+              actLower.includes("statute") ||
+              actLower.includes("regulation") ||
+              actLower.includes("standard form") ||
+              actLower.includes("standard lease") ||
+              actLower.includes("o. reg") ||
+              actLower.includes("o.reg");
+            const badgeText = isStatute ? "RTA / Statute" : "LTB Precedent";
             const badgeColor = isStatute ? "#f59e0b" : "#3b82f6";
             const badgeBg = isStatute ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)";
             const badgeBorder = isStatute ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(59,130,246,0.2)";
@@ -1018,9 +1024,15 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                 </div>
 
                 {/* Link */}
-                {source.url && (
+                {source.url && (() => {
+                  const URL_REMAPS: Record<string, string> = {
+                    "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease":
+                      "https://www.ontario.ca/forms/residential-tenancy-agreement-standard-lease",
+                  };
+                  const effectiveUrl = URL_REMAPS[source.url] ?? source.url;
+                  return (
                   <a
-                    href={source.url}
+                    href={effectiveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -1040,7 +1052,8 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                   >
                     View official source ↗
                   </a>
-                )}
+                  );
+                })()}
               </div>
             );
           })
