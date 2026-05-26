@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkDbUploadRateLimit } from "@/lib/upload-rate-limit";
 import { runLeaseAnalysis } from "@/lib/agent";
 import { v4 as uuidv4 } from "uuid";
 
@@ -17,30 +17,9 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  // ── Rate limiting ──────────────────────────────────────────────────────────
   const ip = getClientIp(req);
-  const rateCheck = checkRateLimit(ip);
 
-  if (!rateCheck.allowed) {
-    return NextResponse.json(
-      {
-        error: "rate_limit_exceeded",
-        message:
-          "You have exceeded 5 analyses per hour. Please try again later.",
-        reset_at: new Date(rateCheck.resetAt).toISOString(),
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(
-            Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
-          ),
-        },
-      }
-    );
-  }
-
-  // ── Parse multipart body ───────────────────────────────────────────────────
+  // ── Parse multipart body first (needed before auth check) ─────────────────
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -85,12 +64,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Upload to Supabase Storage ─────────────────────────────────────────────
+  // ── Auth (needed before rate limit check) ─────────────────────────────────
+  const authClient = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
+  // ── DB-backed rate limiting (reliable across serverless instances) ─────────
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  const rateCheck = await checkDbUploadRateLimit(user?.id ?? null, ip, supabase);
+
+  if (!rateCheck.allowed) {
+    const limit = rateCheck.limit;
+    const who = user ? "Your account has" : "This IP address has";
+    return NextResponse.json(
+      {
+        error: "rate_limit_exceeded",
+        message: `${who} reached the limit of ${limit} analyses per 24 hours. Please try again tomorrow.`,
+        reset_at: rateCheck.resetAt.toISOString(),
+        limit,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.ceil((rateCheck.resetAt.getTime() - Date.now()) / 1000)
+          ),
+        },
+      }
+    );
+  }
+
+  // ── Upload to Supabase Storage ─────────────────────────────────────────────
   const leaseId = uuidv4();
   const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storagePath = `leases/${leaseId}/${safeFilename}`;
@@ -113,18 +122,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Associate with authenticated user (null for guest uploads) ────────────
-  const authClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await authClient.auth.getUser();
-
   // ── Create lease row ───────────────────────────────────────────────────────
   const { error: dbError } = await supabase.from("leases").insert({
     id: leaseId,
     status: "pending",
     file_path: storagePath,
     user_id: user?.id ?? null,
+    upload_ip: ip,
   });
 
   if (dbError) {
