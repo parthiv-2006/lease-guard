@@ -26,7 +26,6 @@
 
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAnthropicClient } from "@/lib/anthropic";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +36,18 @@ export const runtime = "nodejs";
 const LEASE_ID_RE = /^[0-9a-f-]{36}$/;
 const GEMINI_EMBED_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
+const GEMINI_GENERATE_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent";
 const JURISDICTION = "CA-ON";
+
+/**
+ * Gemini free-tier limits (2025):
+ *   gemini-2.0-flash: 15 RPM, 1 500 RPD, 1 M TPM
+ *
+ * We apply a per-IP cap of 10 req/hr.  With up to ~6 concurrent users this
+ * keeps the global RPD well under 1 500 and leaves headroom for embed calls.
+ */
+const CHAT_RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 60 * 1000, storeKey: "chat" } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -88,6 +98,83 @@ async function embedQuery(text: string): Promise<number[]> {
     throw new Error("Gemini returned unexpected embedding dimensions");
   }
   return values;
+}
+
+// ── Gemini Chat Streaming (REST, no SDK — Gotcha #1) ─────────────────────────
+
+/**
+ * Calls gemini-2.0-flash via streamGenerateContent SSE endpoint.
+ * Converts "assistant" role → "model" as required by the Gemini API.
+ * Invokes onToken for each partial text chunk received.
+ */
+async function streamGeminiChat(
+  systemPrompt: string,
+  history: ChatHistory[],
+  userMessage: string,
+  onToken: (text: string) => void
+): Promise<void> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+
+  // Keep the last 6 turns; convert role names for Gemini
+  const contents = [
+    ...history.slice(-6).map((h) => ({
+      role: h.role === "assistant" ? "model" : "user",
+      parts: [{ text: h.content }],
+    })),
+    { role: "user", parts: [{ text: userMessage }] },
+  ];
+
+  const resp = await fetch(`${GEMINI_GENERATE_URL}?alt=sse&key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents,
+      generationConfig: {
+        maxOutputTokens: 600,
+        temperature: 0.4,
+      },
+    }),
+  });
+
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`Gemini generate error ${resp.status}: ${body}`);
+  }
+
+  if (!resp.body) throw new Error("Gemini returned no response body");
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  // Parse the SSE stream: each chunk may contain multiple `data: {...}` lines
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? ""; // keep any incomplete trailing line
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const raw = line.slice(6).trim();
+      if (!raw || raw === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(raw) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+        };
+        const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (typeof text === "string" && text) onToken(text);
+      } catch {
+        // skip malformed SSE chunk
+      }
+    }
+  }
 }
 
 // ── Supabase RAG retrieval ────────────────────────────────────────────────────
@@ -263,16 +350,14 @@ export async function POST(
     );
   }
 
-  // ── Rate limit: 20 questions/hour/IP ────────────────────────────────────
+  // ── Rate limit: 10 questions/hour/IP ────────────────────────────────────
+  // Gemini 2.0 Flash free tier: 1 500 RPD globally. 10/IP/hr keeps the global
+  // daily budget safe for up to ~6 concurrent active users.
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
     "unknown";
-  const rl = checkRateLimit(ip, {
-    maxRequests: 20,
-    windowMs: 60 * 60 * 1000,
-    storeKey: "chat",
-  });
+  const rl = checkRateLimit(ip, CHAT_RATE_LIMIT);
   if (!rl.allowed) {
     const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
     return Response.json(body, { status, headers });
@@ -399,41 +484,16 @@ export async function POST(
           ]);
         } catch (embedErr) {
           console.error("[chat] embed/retrieval error:", embedErr);
-          // Proceed with empty sources — Claude will answer based on lease context only
+          // Proceed with empty sources — Gemini will answer based on lease context only
         }
 
         // ── 4. Build system prompt ───────────────────────────────────────
         const systemPrompt = buildSystemPrompt(leaseContext, statutes, decisions);
 
-        // ── 5. Stream Claude Haiku response ─────────────────────────────
-        // Use getAnthropicClient() — handles both real API key + OAuth token (Gotcha #23)
-        const anthropic = getAnthropicClient();
-
-        // Build messages array: last 6 history turns + current user message
-        const recentHistory = history.slice(-6);
-        const anthropicMessages: Array<{ role: "user" | "assistant"; content: string }> = [
-          ...recentHistory.map((h) => ({
-            role: h.role as "user" | "assistant",
-            content: h.content,
-          })),
-          { role: "user" as const, content: message },
-        ];
-
-        const streamResponse = await anthropic.messages.stream({
-          model: "claude-haiku-4-5",
-          max_tokens: 600,
-          system: systemPrompt,
-          messages: anthropicMessages,
+        // ── 5. Stream Gemini 2.0 Flash response ─────────────────────────
+        await streamGeminiChat(systemPrompt, history, message, (text) => {
+          send({ type: "token", text });
         });
-
-        for await (const chunk of streamResponse) {
-          if (
-            chunk.type === "content_block_delta" &&
-            chunk.delta.type === "text_delta"
-          ) {
-            send({ type: "token", text: chunk.delta.text });
-          }
-        }
 
         // ── 6. Send sources after full response ──────────────────────────
         const sourcePayload = [
