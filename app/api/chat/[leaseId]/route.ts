@@ -139,8 +139,20 @@ async function streamGeminiChat(
   });
 
   if (!resp.ok) {
-    const body = await resp.text();
-    throw new Error(`Gemini generate error ${resp.status}: ${body}`);
+    // Map HTTP status codes to structured error codes so the outer catch
+    // can send user-friendly messages instead of raw API JSON blobs.
+    if (resp.status === 429) {
+      throw Object.assign(new Error("rate_limit_exceeded"), { code: "rate_limit_exceeded" });
+    }
+    if (resp.status === 401 || resp.status === 403) {
+      throw Object.assign(new Error("auth_error"), { code: "auth_error" });
+    }
+    if (resp.status >= 500) {
+      throw Object.assign(new Error("service_unavailable"), { code: "service_unavailable" });
+    }
+    const body = await resp.text().catch(() => "");
+    console.error(`[chat] Gemini generate error ${resp.status}:`, body);
+    throw Object.assign(new Error("generate_failed"), { code: "generate_failed" });
   }
 
   if (!resp.body) throw new Error("Gemini returned no response body");
@@ -516,12 +528,25 @@ export async function POST(
         send({ type: "done" });
       } catch (err) {
         console.error("[chat] stream error:", err);
+
+        // Map structured error codes → friendly, actionable user messages.
+        const code = (err as { code?: string }).code ?? "unknown";
+        const FRIENDLY_ERRORS: Record<string, string> = {
+          rate_limit_exceeded:
+            "You've reached the hourly chat limit. Please wait a few minutes, then try again.",
+          auth_error:
+            "The AI assistant isn't configured correctly right now. Please try again later.",
+          service_unavailable:
+            "The AI assistant is temporarily unavailable. Please try again in a moment.",
+          generate_failed:
+            "The AI assistant couldn't generate a response. Please try again.",
+          unknown:
+            "Something went wrong. Please try again.",
+        };
         send({
           type: "error",
-          message:
-            err instanceof Error
-              ? err.message
-              : "An unexpected error occurred. Please try again.",
+          code,
+          message: FRIENDLY_ERRORS[code] ?? FRIENDLY_ERRORS.unknown,
         });
       } finally {
         close();

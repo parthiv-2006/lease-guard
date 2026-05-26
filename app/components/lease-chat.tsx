@@ -32,6 +32,8 @@ export interface ChatMessage {
   content: string;
   sources?: ChatSource[];
   isStreaming?: boolean;
+  isError?: boolean;
+  errorCode?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -160,7 +162,84 @@ function SourcePill({ source }: { source: ChatSource }) {
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
+function ErrorBubble({ msg }: { msg: ChatMessage }) {
+  // Icon: warning triangle
+  const iconMap: Record<string, string> = {
+    rate_limit_exceeded: "⏱",
+    service_unavailable: "🔌",
+    auth_error: "🔑",
+  };
+  const icon = iconMap[msg.errorCode ?? ""] ?? "⚠";
+
+  const titleMap: Record<string, string> = {
+    rate_limit_exceeded: "Usage limit reached",
+    service_unavailable: "Temporarily unavailable",
+    auth_error: "Configuration error",
+  };
+  const title = titleMap[msg.errorCode ?? ""] ?? "Something went wrong";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        animation: "fadeUpChat 0.18s ease",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "92%",
+          padding: "12px 14px",
+          borderRadius: "12px 12px 12px 4px",
+          background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.25)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
+        }}
+      >
+        {/* Title row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+          }}
+        >
+          <span style={{ fontSize: "14px", lineHeight: 1 }}>{icon}</span>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#f59e0b",
+              fontFamily: "'DM Sans', sans-serif",
+              letterSpacing: "0.01em",
+            }}
+          >
+            {title}
+          </span>
+        </div>
+        {/* Friendly message */}
+        <p
+          style={{
+            margin: 0,
+            fontSize: "12px",
+            color: "#c5bfb5",
+            fontFamily: "'DM Sans', sans-serif",
+            lineHeight: 1.55,
+          }}
+        >
+          {msg.content}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function MessageBubble({ msg }: { msg: ChatMessage }) {
+  if (msg.isError) return <ErrorBubble msg={msg} />;
+
   const isUser = msg.role === "user";
 
   return (
@@ -346,15 +425,17 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
         });
 
         if (!res.ok || !res.body) {
-          const errData = await res.json().catch(() => ({ message: "Request failed." }));
+          const errData = await res.json().catch(() => ({}));
+          const code: string = errData.error ?? (res.status === 429 ? "rate_limit_exceeded" : "unknown");
+          const FRIENDLY: Record<string, string> = {
+            rate_limit_exceeded: "You've reached the hourly chat limit. Please wait a few minutes, then try again.",
+            unknown: "Something went wrong. Please try again.",
+          };
+          const message = errData.message ?? FRIENDLY[code] ?? FRIENDLY.unknown;
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
-                ? {
-                    ...m,
-                    content: `Sorry, I couldn't process that. ${errData.message ?? ""}`,
-                    isStreaming: false,
-                  }
+                ? { ...m, content: message, isError: true, errorCode: code, isStreaming: false }
                 : m
             )
           );
@@ -401,14 +482,24 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
               } else if (event.type === "sources" && event.sources) {
                 sources = event.sources;
               } else if (event.type === "error") {
-                accumulatedText = `Sorry, I encountered an error: ${event.message ?? "unknown error"}`;
+                const friendlyMsg =
+                  event.message ?? "Something went wrong. Please try again.";
+                const errCode = (event as { code?: string }).code;
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantMsg.id
-                      ? { ...m, content: accumulatedText }
+                      ? {
+                          ...m,
+                          content: friendlyMsg,
+                          isError: true,
+                          errorCode: errCode,
+                          isStreaming: false,
+                        }
                       : m
                   )
                 );
+                // Don't accumulate error text into the normal response
+                accumulatedText = "";
               } else if (event.type === "done") {
                 break;
               }
