@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthButton } from "./components/auth-button";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
@@ -890,6 +890,7 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
   const [detectedAs, setDetectedAs] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<LogLine[]>([]);
   const [usePollingFallback, setUsePollingFallback] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const startRef = useRef(Date.now());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const lineIdRef = useRef(0);
@@ -901,6 +902,47 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
     }, 1000);
     return () => clearInterval(iv);
   }, []);
+
+  // Client-side timeout: if 3 minutes pass with no completion, show retry screen
+  useEffect(() => {
+    if (failed || elapsed < 180) return;
+    setFailed(true);
+    setErrorCode("analysis_failed");
+    setErrorMsg(
+      "Analysis timed out after 3 minutes. Please try again — this is usually a temporary issue."
+    );
+  }, [elapsed, failed]);
+
+  // Retry handler — calls POST /api/job/[id]/retry, then resets state for a fresh attempt
+  async function handleRetry() {
+    setRetrying(true);
+    try {
+      const res = await fetch(`/api/job/${leaseId}/retry`, { method: "POST" });
+      if (res.ok) {
+        // Reset all state for the fresh attempt
+        startRef.current = Date.now();
+        setElapsed(0);
+        setFailed(false);
+        setErrorCode("analysis_failed");
+        setErrorMsg(null);
+        setDetectedAs(null);
+        setLogLines([]);
+        setCurrentStep(0);
+        setCompletedSteps([]);
+        setUsePollingFallback(false);
+        setRetrying(false);
+      } else {
+        const body = (await res.json()) as { message?: string };
+        setErrorMsg(
+          body.message ?? "Retry failed. Please try uploading a different file."
+        );
+        setRetrying(false);
+      }
+    } catch {
+      setErrorMsg("Could not reach the server. Please check your connection and try again.");
+      setRetrying(false);
+    }
+  }
 
   // Auto-scroll log container when new lines arrive
   useEffect(() => {
@@ -1291,14 +1333,23 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
       >
         <div
           style={{
-            padding: "24px 32px",
+            padding: "28px 32px",
             background: "#fef2f2",
             border: "1px solid #fecaca",
             borderRadius: "10px",
             maxWidth: "480px",
+            width: "100%",
             textAlign: "center",
           }}
         >
+          {/* Icon */}
+          <div style={{ marginBottom: "12px" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block" }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
           <div
             style={{
               fontSize: "16px",
@@ -1309,10 +1360,50 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
           >
             Analysis failed
           </div>
-          <div style={{ fontSize: "13px", color: "#6b6560" }}>
-            {errorMsg}
+          <div style={{ fontSize: "13px", color: "#6b6560", lineHeight: 1.6 }}>
+            {errorMsg ?? "Something went wrong during analysis. Please try again."}
           </div>
         </div>
+
+        {/* Primary action: retry same file */}
+        <button
+          onClick={handleRetry}
+          disabled={retrying}
+          style={{
+            padding: "11px 28px",
+            borderRadius: "7px",
+            background: retrying ? "#9a9590" : "#181614",
+            color: "#fff",
+            fontSize: "13px",
+            fontWeight: 500,
+            cursor: retrying ? "not-allowed" : "pointer",
+            border: "none",
+            letterSpacing: "0.01em",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          {retrying ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"/>
+                <path d="M21 12a9 9 0 01-9 9"/>
+              </svg>
+              Retrying…
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+              </svg>
+              Try again
+            </>
+          )}
+        </button>
+
+        {/* Secondary action: upload different file */}
         <button
           onClick={() => onReset()}
           style={{
@@ -1322,11 +1413,13 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
             background: "#fff",
             fontSize: "13px",
             cursor: "pointer",
-            color: "#181614",
+            color: "#5c5751",
           }}
         >
-          Try another lease
+          Upload a different file
         </button>
+
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -1793,10 +1886,24 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
 
 // ── Root page (screen router) ─────────────────────────────────────────────────
 
-export default function HomePage() {
+function HomePageInner() {
+  const searchParams = useSearchParams();
   const [screen, setScreen] = useState<Screen>("landing");
   const [leaseId, setLeaseId] = useState("");
   const [filename, setFilename] = useState("");
+
+  // If ?leaseId=xxx is present in the URL (e.g. from dashboard "View progress →" link),
+  // jump straight to the processing screen for that lease.
+  useEffect(() => {
+    const paramId = searchParams.get("leaseId");
+    if (paramId && screen === "landing") {
+      setLeaseId(paramId);
+      setFilename(""); // filename not available from URL; ProcessingPage handles it
+      setScreen("processing");
+    }
+  // Only run on mount — deliberately exclude screen to avoid loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function handleUploadSuccess(id: string, name: string) {
     setLeaseId(id);
@@ -1808,6 +1915,10 @@ export default function HomePage() {
     setLeaseId("");
     setFilename("");
     setScreen("landing");
+    // Clear the ?leaseId param so a fresh upload doesn't re-enter processing
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/");
+    }
   }
 
   if (screen === "processing") {
@@ -1815,4 +1926,12 @@ export default function HomePage() {
   }
 
   return <LandingPage onUploadSuccess={handleUploadSuccess} />;
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<LandingPage onUploadSuccess={() => {}} />}>
+      <HomePageInner />
+    </Suspense>
+  );
 }
