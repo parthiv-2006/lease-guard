@@ -1,52 +1,52 @@
 /**
  * Tests for POST /api/chat/[leaseId]
  *
- * Supabase and Gemini fetch (both embed + generate) are fully mocked.
- * No real credentials required. Anthropic is NOT used by this route.
+ * Supabase, Gemini fetch (both embed + generate), auth client, and the
+ * DB-backed chat rate limiter are all mocked. No real credentials required.
  */
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-// Supabase mock
-const mockRpc = jest.fn();
-const mockSingle = jest.fn();
-const mockEq = jest.fn();
-const mockOrder = jest.fn();
-const mockLimit = jest.fn();
-const mockFrom = jest.fn();
-
-jest.mock("@supabase/supabase-js", () => ({
-  createClient: jest.fn(() => ({
-    from: mockFrom,
-    rpc: mockRpc,
+// Auth client mock — default: guest (null user)
+const mockGetUser = jest.fn().mockResolvedValue({ data: { user: null } });
+jest.mock("../lib/supabase-server", () => ({
+  createSupabaseServerClient: jest.fn(async () => ({
+    auth: { getUser: mockGetUser },
   })),
 }));
 
-// Global fetch mock — handles both Gemini embed and Gemini generate calls
+// DB-backed chat rate limiter — default: allowed, 9 remaining
+const mockCheckDbChatRateLimit = jest.fn().mockResolvedValue({
+  allowed: true,
+  remaining: 9,
+  resetAt: new Date(Date.now() + 3_600_000),
+  limit: 5,
+});
+jest.mock("../lib/chat-rate-limit", () => ({
+  checkDbChatRateLimit: (...args: unknown[]) => mockCheckDbChatRateLimit(...args),
+}));
+
+// Supabase service client mock
+const mockRpc  = jest.fn();
+const mockFrom = jest.fn();
+jest.mock("@supabase/supabase-js", () => ({
+  createClient: jest.fn(() => ({ from: mockFrom, rpc: mockRpc })),
+}));
+
+// Global fetch mock — handles Gemini embed + generate calls
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
-
-// Rate limiter — allow by default (max 10 req/hr → remaining 9)
-jest.mock("@/lib/rate-limiter", () => ({
-  checkRateLimit: jest.fn(() => ({ allowed: true, remaining: 9, resetAt: Date.now() + 3600000 })),
-  rateLimitExceededResponse: jest.fn(() => ({
-    body: { error: "rate_limit_exceeded", message: "Too many requests.", reset_at: "" },
-    headers: { "Retry-After": "3600" },
-    status: 429,
-  })),
-}));
 
 // ─── Imports ──────────────────────────────────────────────────────────────────
 
 import { NextRequest } from "next/server";
 import { POST } from "../app/api/chat/[leaseId]/route";
-import { checkRateLimit } from "@/lib/rate-limiter";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const VALID_LEASE_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-
 const MOCK_EMBEDDING = new Array(768).fill(0.01);
+
 const MOCK_CLAUSES = [
   {
     id: "clause-1",
@@ -75,7 +75,6 @@ function makeParams(leaseId: string) {
 
 /**
  * Build a ReadableStream that emits Gemini SSE chunks for the given tokens.
- * The route reads resp.body.getReader() and parses `data: {...}` lines.
  */
 function makeGeminiStreamResponse(tokens: string[] = ["Based ", "on ", "your ", "lease..."]) {
   const encoder = new TextEncoder();
@@ -99,9 +98,7 @@ function makeGeminiStreamResponse(tokens: string[] = ["Based ", "on ", "your ", 
 }
 
 /**
- * Set up global fetch to:
- *   - Return a 768-dim embedding for embedContent calls
- *   - Return a Gemini SSE stream for streamGenerateContent calls
+ * Set up global fetch for embed + generate calls.
  */
 function setupGeminiMocks(tokens?: string[]) {
   mockFetch.mockImplementation((url: string) => {
@@ -112,18 +109,30 @@ function setupGeminiMocks(tokens?: string[]) {
         text: async () => "",
       });
     }
-    // streamGenerateContent
     return Promise.resolve(makeGeminiStreamResponse(tokens));
   });
 }
 
-/** Build a Supabase from() mock that handles the 3-way parallel query */
-function buildParallelSupabaseMock() {
-  let callCount = 0;
+/**
+ * Build a Supabase from() mock that handles:
+ *   - "chat_requests" table inserts (rate limit recording)
+ *   - clauses, leases, reports parallel queries
+ */
+function buildSupabaseMock() {
+  let dataCallCount = 0;
 
-  return jest.fn(() => {
-    callCount++;
-    const call = callCount;
+  return jest.fn((tableName: string) => {
+    // Rate limit recording — always succeeds silently
+    if (tableName === "chat_requests") {
+      return {
+        insert: jest.fn().mockReturnValue(
+          Promise.resolve({ error: null })
+        ),
+      };
+    }
+
+    dataCallCount++;
+    const call = dataCallCount;
 
     if (call === 1) {
       // clauses: .select().eq().order()
@@ -191,8 +200,16 @@ describe("POST /api/chat/[leaseId]", () => {
     process.env.GEMINI_API_KEY = "test-gemini-key";
     process.env.SUPABASE_URL = "https://test.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
-    // ANTHROPIC_API_KEY intentionally absent — route no longer uses it
     delete process.env.ANTHROPIC_API_KEY;
+
+    // Reset to defaults
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: true,
+      remaining: 9,
+      resetAt: new Date(Date.now() + 3_600_000),
+      limit: 5,
+    });
   });
 
   // ── Input validation ────────────────────────────────────────────────────────
@@ -240,30 +257,134 @@ describe("POST /api/chat/[leaseId]", () => {
 
   // ── Rate limiting ───────────────────────────────────────────────────────────
 
-  it("returns 429 when rate limit is exceeded", async () => {
-    (checkRateLimit as jest.Mock).mockReturnValueOnce({
+  it("returns 429 when auth daily limit is exceeded", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-123" } } });
+    mockCheckDbChatRateLimit.mockResolvedValue({
       allowed: false,
+      reason: "daily_user_limit",
       remaining: 0,
-      resetAt: Date.now() + 3600000,
+      resetAt: new Date(Date.now() + 86_400_000),
+      limit: 50,
     });
 
     const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
     expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.error).toBe("rate_limit_exceeded");
+    expect(body.reason).toBe("daily_user_limit");
+    expect(body.limit).toBe(50);
   });
 
-  it("calls checkRateLimit with maxRequests: 10 (Gemini free-tier cap)", async () => {
+  it("returns 429 when auth hourly burst limit is exceeded", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-123" } } });
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: false,
+      reason: "hourly_user_limit",
+      remaining: 0,
+      resetAt: new Date(Date.now() + 3_600_000),
+      limit: 15,
+    });
+
+    const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.reason).toBe("hourly_user_limit");
+    expect(body.limit).toBe(15);
+  });
+
+  it("returns 429 when guest daily limit is exceeded", async () => {
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: false,
+      reason: "daily_ip_limit",
+      remaining: 0,
+      resetAt: new Date(Date.now() + 86_400_000),
+      limit: 10,
+    });
+
+    const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.reason).toBe("daily_ip_limit");
+    expect(body.limit).toBe(10);
+  });
+
+  it("returns 429 when guest hourly burst limit is exceeded", async () => {
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: false,
+      reason: "hourly_ip_limit",
+      remaining: 0,
+      resetAt: new Date(Date.now() + 3_600_000),
+      limit: 5,
+    });
+
+    const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.reason).toBe("hourly_ip_limit");
+    expect(body.limit).toBe(5);
+  });
+
+  it("returns 429 when per-lease daily limit is exceeded", async () => {
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: false,
+      reason: "per_lease_limit",
+      remaining: 0,
+      resetAt: new Date(Date.now() + 86_400_000),
+      limit: 30,
+    });
+
+    const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.reason).toBe("per_lease_limit");
+    expect(body.limit).toBe(30);
+  });
+
+  it("429 response includes Retry-After header and reset_at field", async () => {
+    const resetAt = new Date(Date.now() + 3_600_000);
+    mockCheckDbChatRateLimit.mockResolvedValue({
+      allowed: false,
+      reason: "hourly_ip_limit",
+      remaining: 0,
+      resetAt,
+      limit: 5,
+    });
+
+    const res = await POST(makePost(VALID_LEASE_ID, { message: "Hi" }), makeParams(VALID_LEASE_ID));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBeTruthy();
+    const body = await res.json();
+    expect(body.reset_at).toBeDefined();
+  });
+
+  it("passes userId to rate limiter when authenticated", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-abc" } } });
     setupGeminiMocks();
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
-    await POST(
-      makePost(VALID_LEASE_ID, { message: "Test rate limit config" }),
-      makeParams(VALID_LEASE_ID)
-    );
+    await POST(makePost(VALID_LEASE_ID, { message: "What are my rights?" }), makeParams(VALID_LEASE_ID));
 
-    expect(checkRateLimit).toHaveBeenCalledWith(
+    expect(mockCheckDbChatRateLimit).toHaveBeenCalledWith(
+      "user-abc",
       expect.any(String),
-      expect.objectContaining({ maxRequests: 10 })
+      VALID_LEASE_ID,
+      expect.anything()
+    );
+  });
+
+  it("passes null userId to rate limiter for guest", async () => {
+    setupGeminiMocks();
+    mockFrom.mockImplementation(buildSupabaseMock());
+    mockRpc.mockResolvedValue({ data: [], error: null });
+
+    await POST(makePost(VALID_LEASE_ID, { message: "What are my rights?" }), makeParams(VALID_LEASE_ID));
+
+    expect(mockCheckDbChatRateLimit).toHaveBeenCalledWith(
+      null,
+      expect.any(String),
+      VALID_LEASE_ID,
+      expect.anything()
     );
   });
 
@@ -271,14 +392,13 @@ describe("POST /api/chat/[leaseId]", () => {
 
   it("calls Gemini embed endpoint for the user question", async () => {
     setupGeminiMocks();
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
       makePost(VALID_LEASE_ID, { message: "Can my landlord enter without notice?" }),
       makeParams(VALID_LEASE_ID)
     );
-    // Consume the body so the stream's async start() completes fully
     await res.text();
 
     const embedCall = (mockFetch as jest.Mock).mock.calls.find(([url]: [string]) =>
@@ -289,21 +409,19 @@ describe("POST /api/chat/[leaseId]", () => {
 
   it("calls Gemini streamGenerateContent endpoint for chat", async () => {
     setupGeminiMocks();
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
       makePost(VALID_LEASE_ID, { message: "What is my risk level?" }),
       makeParams(VALID_LEASE_ID)
     );
-    // Consume the body so the stream's async start() completes fully
     await res.text();
 
     const generateCall = (mockFetch as jest.Mock).mock.calls.find(([url]: [string]) =>
       url.includes("streamGenerateContent")
     );
     expect(generateCall).toBeDefined();
-    // Must use SSE streaming mode
     expect(generateCall[0]).toContain("alt=sse");
   });
 
@@ -311,7 +429,7 @@ describe("POST /api/chat/[leaseId]", () => {
 
   it("returns text/event-stream content-type on valid request", async () => {
     setupGeminiMocks();
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
@@ -324,7 +442,7 @@ describe("POST /api/chat/[leaseId]", () => {
 
   it("streams token events followed by sources and done", async () => {
     setupGeminiMocks(["Hello ", "world"]);
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
@@ -335,21 +453,20 @@ describe("POST /api/chat/[leaseId]", () => {
     const events = await collectSSE(res);
     const types = events.map((e) => e.type);
 
-    // Must have at least one token, then sources, then done — in that order
     expect(types).toContain("token");
     expect(types).toContain("sources");
     expect(types).toContain("done");
 
-    const tokenIdx = types.indexOf("token");
+    const tokenIdx   = types.indexOf("token");
     const sourcesIdx = types.indexOf("sources");
-    const doneIdx = types.indexOf("done");
+    const doneIdx    = types.indexOf("done");
     expect(tokenIdx).toBeLessThan(sourcesIdx);
     expect(sourcesIdx).toBeLessThan(doneIdx);
   });
 
   it("reassembles token text correctly from multiple Gemini chunks", async () => {
     setupGeminiMocks(["Based ", "on ", "your ", "lease..."]);
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
@@ -363,14 +480,13 @@ describe("POST /api/chat/[leaseId]", () => {
   });
 
   it("gracefully proceeds when embed fails (answers from lease context only)", async () => {
-    // Embed call fails; generate call still works
     mockFetch.mockImplementation((url: string) => {
       if (url.includes("embedContent")) {
         return Promise.resolve({ ok: false, status: 503, text: async () => "Service unavailable" });
       }
       return Promise.resolve(makeGeminiStreamResponse(["Fallback answer"]));
     });
-    mockFrom.mockImplementation(buildParallelSupabaseMock());
+    mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
     const res = await POST(
@@ -378,7 +494,6 @@ describe("POST /api/chat/[leaseId]", () => {
       makeParams(VALID_LEASE_ID)
     );
 
-    // Should still return a valid SSE stream (not a 500)
     expect(res.status).toBe(200);
     const events = await collectSSE(res);
     expect(events.map((e) => e.type)).toContain("done");
