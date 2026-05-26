@@ -509,7 +509,76 @@ function extractLeaseAddress(rawText: string): {
  * @param leaseId     UUID of the lease row already created in the DB.
  * @param storagePath Path of the PDF within the "leases" Supabase Storage bucket.
  */
+
+/** Maximum wall-clock time for a single analysis run (3 minutes). */
+const ANALYSIS_TIMEOUT_MS = 180_000;
+
+/**
+ * Public entry point. Wraps the pipeline in a 3-minute timeout.
+ * If the timeout fires before the pipeline completes, the lease is marked
+ * failed and the client can retry (one click, same file).
+ */
 export async function runLeaseAnalysis(
+  leaseId: string,
+  storagePath: string
+): Promise<void> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(
+      () =>
+        reject(
+          new Error(
+            "Analysis timed out after 3 minutes. Please try again — this is usually a temporary issue."
+          )
+        ),
+      ANALYSIS_TIMEOUT_MS
+    );
+  });
+
+  try {
+    await Promise.race([
+      _runLeaseAnalysisPipeline(leaseId, storagePath),
+      timeoutPromise,
+    ]);
+  } catch (err) {
+    // If the timeout won the race, the pipeline is still running in the
+    // background. Write failed status here so the client sees the error.
+    // The pipeline has its own catch that also writes failed — add a
+    // .neq("status","failed") guard at step 14 so it never overwrites this.
+    const isTimeout =
+      err instanceof Error && err.message.includes("timed out after 3 minutes");
+    if (isTimeout) {
+      try {
+        const { createClient: mkClient } = await import("@supabase/supabase-js");
+        const failSupabase = mkClient(
+          process.env.SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        await failSupabase
+          .from("leases")
+          .update({ status: "failed", error_message: (err as Error).message })
+          .eq("id", leaseId);
+
+        // Import inline to avoid circular at module level
+        const { emitAnalysisEvent: emit } = await import("./analysis-events");
+        emit(leaseId, {
+          type: "error",
+          message: (err as Error).message,
+          severity: "critical",
+        });
+      } catch {
+        /* swallow — already in error path */
+      }
+    }
+    throw err;
+  } finally {
+    if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+  }
+}
+
+/** Internal pipeline — do not call directly; use runLeaseAnalysis instead. */
+async function _runLeaseAnalysisPipeline(
   leaseId: string,
   storagePath: string
 ): Promise<void> {
@@ -1046,6 +1115,8 @@ export async function runLeaseAnalysis(
     });
 
     // ── 14. Mark lease complete ────────────────────────────────────────────
+    // Guard: if the timeout wrapper already set status = "failed", do not
+    // overwrite it with "complete" (the pipeline kept running after timeout).
     await supabase
       .from("leases")
       .update({
@@ -1055,7 +1126,8 @@ export async function runLeaseAnalysis(
         corpus_version: corpusVersion,
         analysis_completed_at: new Date().toISOString(),
       })
-      .eq("id", leaseId);
+      .eq("id", leaseId)
+      .neq("status", "failed");
 
     const completeSev =
       reportPayload.overall_risk_level === "critical" ? "critical"
