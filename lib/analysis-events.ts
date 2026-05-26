@@ -7,6 +7,14 @@
  *
  * Includes a replay buffer so clients that connect mid-analysis receive all
  * previously emitted events immediately on subscribe.
+ *
+ * IMPORTANT — globalThis pinning:
+ * Next.js (Turbopack / Webpack) compiles each API route into its own module
+ * graph, meaning a bare `const bus = new EventEmitter()` produces separate
+ * instances for upload/route.ts → agent.ts and stream/[id]/route.ts. Events
+ * emitted on one instance are invisible to the other. Pinning to globalThis
+ * guarantees a single shared instance across all module graphs within the same
+ * Node.js process, and also survives HMR hot-reloads in development.
  */
 
 import { EventEmitter } from "events";
@@ -20,12 +28,27 @@ export interface AnalysisEvent {
   timestamp: number; // Unix ms
 }
 
-// Module-level singleton — same instance for all imports in the process.
-const bus = new EventEmitter();
-bus.setMaxListeners(500);
+// ── GlobalThis singleton ──────────────────────────────────────────────────────
+// Typed augmentation so TypeScript doesn't complain about unknown properties.
+declare global {
+  // eslint-disable-next-line no-var
+  var __leaseAnalysisBus: EventEmitter | undefined;
+  // eslint-disable-next-line no-var
+  var __leaseReplayBuffers: Map<string, AnalysisEvent[]> | undefined;
+}
 
-// Replay buffers — keyed by leaseId. Allows late SSE connects to catch up.
-const replayBuffers = new Map<string, AnalysisEvent[]>();
+if (!globalThis.__leaseAnalysisBus) {
+  globalThis.__leaseAnalysisBus = new EventEmitter();
+  globalThis.__leaseAnalysisBus.setMaxListeners(500);
+}
+if (!globalThis.__leaseReplayBuffers) {
+  globalThis.__leaseReplayBuffers = new Map<string, AnalysisEvent[]>();
+}
+
+const bus = globalThis.__leaseAnalysisBus;
+const replayBuffers = globalThis.__leaseReplayBuffers;
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 export function emitAnalysisEvent(
   leaseId: string,
