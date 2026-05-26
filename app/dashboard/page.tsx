@@ -14,12 +14,14 @@ import { DeleteLeaseButton } from "../components/delete-lease-button";
 
 interface LeaseRow {
   id: string;
+  status: "pending" | "processing" | "complete" | "failed";
   uploaded_at: string;
   overall_risk_score: number | null;
   overall_risk_level: "low" | "medium" | "high" | "critical" | null;
   file_path: string;
   property_address: string | null;
   property_city: string | null;
+  error_message: string | null;
 }
 
 const RISK_COLORS: Record<string, { text: string; bg: string; border: string }> = {
@@ -48,6 +50,7 @@ function formatDate(iso: string): string {
 const dashboardStyles = `
   .dash-new-btn:hover { background: #2a2825 !important; }
   .dash-view-btn:hover { background: #f6f3ee !important; }
+  @keyframes dash-spin { to { transform: rotate(360deg); } }
 `;
 
 export default async function DashboardPage() {
@@ -66,10 +69,9 @@ export default async function DashboardPage() {
   const { data: leases } = await adminClient
     .from("leases")
     .select(
-      "id, uploaded_at, overall_risk_score, overall_risk_level, file_path, property_address, property_city"
+      "id, status, uploaded_at, overall_risk_score, overall_risk_level, file_path, property_address, property_city, error_message"
     )
     .eq("user_id", user.id)
-    .eq("status", "complete")
     .order("uploaded_at", { ascending: false });
 
   const rows = (leases ?? []) as LeaseRow[];
@@ -293,6 +295,9 @@ export default async function DashboardPage() {
                 filename(lease.file_path).replace(/\.[^.]+$/, "");
               const subtitle =
                 lease.property_city ?? filename(lease.file_path);
+              const isComplete = lease.status === "complete";
+              const isFailed = lease.status === "failed";
+              const isInProgress = lease.status === "pending" || lease.status === "processing";
 
               return (
                 <div
@@ -314,93 +319,131 @@ export default async function DashboardPage() {
                     gap: "16px",
                   }}
                 >
-                  {/* Risk score pill */}
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "8px",
-                      background: rs.bg,
-                      border: `1px solid ${rs.border}`,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
+                  {/* Status indicator */}
+                  {isComplete && (
+                    <div
                       style={{
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        color: rs.text,
-                        lineHeight: 1,
+                        flexShrink: 0,
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "8px",
+                        background: rs.bg,
+                        border: `1px solid ${rs.border}`,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      {lease.overall_risk_score?.toFixed(1) ?? "—"}
-                    </span>
-                    <span
+                      <span style={{ fontSize: "15px", fontWeight: 600, color: rs.text, lineHeight: 1 }}>
+                        {lease.overall_risk_score?.toFixed(1) ?? "—"}
+                      </span>
+                      <span style={{ fontSize: "9px", color: rs.text, letterSpacing: "0.04em", textTransform: "uppercase", marginTop: "2px" }}>
+                        {lease.overall_risk_level ?? "—"}
+                      </span>
+                    </div>
+                  )}
+
+                  {isFailed && (
+                    <div
                       style={{
-                        fontSize: "9px",
-                        color: rs.text,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                        marginTop: "2px",
+                        flexShrink: 0,
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "8px",
+                        background: "#fef2f2",
+                        border: "1px solid #fecaca",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      {lease.overall_risk_level ?? "—"}
-                    </span>
-                  </div>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                    </div>
+                  )}
+
+                  {isInProgress && (
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "8px",
+                        background: "#f0f9ff",
+                        border: "1px solid #bae6fd",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "dash-spin 1s linear infinite" }}>
+                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"/>
+                        <path d="M21 12a9 9 0 01-9 9"/>
+                      </svg>
+                    </div>
+                  )}
 
                   {/* Details */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: "14px",
-                        fontWeight: 500,
-                        color: "#181614",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <p style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#181614", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {title}
                     </p>
-                    <p
-                      style={{
-                        margin: "2px 0 0",
-                        fontSize: "12px",
-                        color: "#9a9590",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {subtitle} · {formatDate(lease.uploaded_at)}
+                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: isFailed ? "#b91c1c" : isInProgress ? "#0284c7" : "#9a9590", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {isFailed
+                        ? "Analysis failed"
+                        : isInProgress
+                        ? "Analysing…"
+                        : `${subtitle} · ${formatDate(lease.uploaded_at)}`}
                     </p>
                   </div>
 
-                  {/* View report link */}
-                  <Link
-                    href={`/report/${lease.id}`}
-                    className="dash-view-btn"
-                    style={{
-                      flexShrink: 0,
-                      padding: "6px 14px",
-                      borderRadius: "6px",
-                      border: "1px solid #e8e4dc",
-                      background: "#fff",
-                      fontSize: "12px",
-                      color: "#5c5751",
-                      textDecoration: "none",
-                      fontWeight: 500,
-                    }}
-                  >
-                    View report →
-                  </Link>
+                  {/* Action button — only complete gets "View report", in-progress gets "View progress", failed gets nothing */}
+                  {isComplete && (
+                    <Link
+                      href={`/report/${lease.id}`}
+                      className="dash-view-btn"
+                      style={{
+                        flexShrink: 0,
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        border: "1px solid #e8e4dc",
+                        background: "#fff",
+                        fontSize: "12px",
+                        color: "#5c5751",
+                        textDecoration: "none",
+                        fontWeight: 500,
+                      }}
+                    >
+                      View report →
+                    </Link>
+                  )}
 
-                  {/* PIPEDA erasure */}
+                  {isInProgress && (
+                    <Link
+                      href={`/?leaseId=${lease.id}`}
+                      className="dash-view-btn"
+                      style={{
+                        flexShrink: 0,
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        border: "1px solid #bae6fd",
+                        background: "#f0f9ff",
+                        fontSize: "12px",
+                        color: "#0284c7",
+                        textDecoration: "none",
+                        fontWeight: 500,
+                      }}
+                    >
+                      View progress →
+                    </Link>
+                  )}
+
+                  {/* PIPEDA erasure — always shown */}
                   <DeleteLeaseButton leaseId={lease.id} />
                 </div>
               );
