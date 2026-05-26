@@ -48,7 +48,13 @@ jest.mock("../lib/mcp-client", () => ({
 // ─── Supabase mock ────────────────────────────────────────────────────────────
 
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
-const mockUpdateEq = jest.fn().mockResolvedValue({ error: null });
+// mockUpdateEq must be both awaitable (Promise) AND chainable with .neq()
+// because step 14 does: .update({}).eq(id).neq("status","failed")
+// while other steps just do: .update({}).eq(id)
+const mockUpdateNeq = jest.fn().mockResolvedValue({ error: null });
+const mockUpdateEq = jest.fn().mockReturnValue(
+  Object.assign(Promise.resolve({ error: null }), { neq: mockUpdateNeq })
+);
 const mockUpdate = jest.fn().mockReturnValue({ eq: mockUpdateEq });
 const mockStorageDownload = jest.fn();
 const mockStorageRemove = jest.fn().mockResolvedValue({ error: null });
