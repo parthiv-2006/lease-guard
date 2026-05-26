@@ -7,11 +7,21 @@
 Upload your lease. Get a full risk report — every red flag cited to the RTA — in under 90 seconds.
 
 [![CI](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-100%20passing-brightgreen)](#testing)
-[![Eval](https://img.shields.io/badge/eval%20harness-15%2F15-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)](#testing)
+[![Scoring Accuracy](https://img.shields.io/badge/scoring%20accuracy-30%2F30-brightgreen)](#testing)
+[![Retrieval](https://img.shields.io/badge/retrieval%20precision-7%2F7-brightgreen)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
+
+<br/>
+
+| 📊 Scoring accuracy | 🔍 Retrieval precision | 🧪 Automated tests | 📚 Legal corpus |
+|:-------------------:|:---------------------:|:-----------------:|:---------------:|
+| **30 / 30** | **7 / 7** | **161** | **2,372 chunks** |
+| 100% — zero false positives on a labelled 30-case suite covering all 17 violation types | 100% — hybrid BM25+vector on RTA + O.Reg + Standard Form at threshold 0.55 | 113 unit · 48 Playwright E2E · full CI on every push | RTA granular subsections · O.Reg 516/06 · O.Reg 517/06 · Standard Form · 84 LTB decisions |
+
+<br/>
 
 <img src=".github/assets/landing.png" alt="LeaseGuard landing page" width="100%" style="border-radius:8px;border:1px solid #e5e7eb;" />
 
@@ -126,6 +136,8 @@ Supabase PostgreSQL  +  pgvector  +  Storage
 
 **Why grounded retrieval matters:** risk scoring is deterministic TypeScript — no LLM can hallucinate a score. Statute citations come from a pre-validated corpus (7/7 retrieval accuracy), not model memory. Clause enforceability is only flagged when a specific `MANDATORY_PROVISION_VIOLATION` is detected, not just because text sounds unusual.
 
+> **Architecture deep-dive →** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) covers every major design decision: why MCP over raw function-calling, why pgvector over Pinecone, why Claude as the agent when Gemini is free, and why scoring is deterministic TypeScript instead of a second LLM call.
+
 ---
 
 ## Tech stack
@@ -211,13 +223,16 @@ Open [http://localhost:3000](http://localhost:3000) and upload a lease PDF.
 ## Testing
 
 ```bash
-# Unit tests (100 passing)
+# Unit + integration tests (113 passing)
 npm test
 
 # With coverage report
 npm test -- --coverage
 
-# Scoring accuracy eval — 15-case labelled suite (expect 15/15, 0 false positives)
+# End-to-end tests (48 Playwright tests)
+npm run test:e2e
+
+# Scoring accuracy eval — 30-case labelled suite (expect 30/30, 0 false positives)
 node scripts/eval-accuracy.mjs
 
 # Retrieval accuracy — validates pgvector corpus (expect 7/7)
@@ -227,16 +242,21 @@ python scripts/validate_retrieval.py
 cd mcp-server && npm run build
 ```
 
-**Test breakdown:**
-- `__tests__/api-upload.test.ts` — upload route (file validation, size limits, MIME checks)
-- `__tests__/api-report.test.ts` — report API (response shape, normalisation)
-- `__tests__/api-job.test.ts` — job polling (SSE, status transitions)
-- `__tests__/api-negotiation.test.ts` — negotiation copilot (tone variants, fallback)
-- `__tests__/lib-agent.test.ts` — agent pipeline (tool call sequencing)
-- `__tests__/trace-timeline.test.ts` — Gantt computation helpers (34 tests)
-- `__tests__/rate-limiter.test.ts` — rate limiter (token bucket behaviour)
+**Test breakdown (161 total):**
 
-All external services (Supabase, Anthropic, Gemini) are mocked in `__tests__/setup.ts` — no credentials required to run the suite.
+| Suite | Tests | What it covers |
+|-------|-------|---------------|
+| `api-upload.test.ts` | 12 | File validation, size limits, MIME checks |
+| `api-report.test.ts` | 10 | Response shape, normalisation |
+| `api-job.test.ts` | 8 | SSE job status, polling transitions |
+| `api-chat.test.ts` | 13 | Gemini streaming, RAG retrieval, rate limiting |
+| `api-negotiation.test.ts` | 7 | Tone variants, copilot fallback |
+| `lib-agent.test.ts` | 9 | Pipeline tool call sequencing |
+| `trace-timeline.test.ts` | 34 | Gantt swim-lane computation |
+| `rate-limiter.test.ts` | 20 | Token bucket behaviour |
+| E2E (`e2e/*.spec.ts`) | 48 | Landing, static pages, report panels, chat |
+
+All external services (Supabase, Anthropic, Gemini) are mocked in `__tests__/setup.ts` — no credentials required to run the unit suite.
 
 ---
 
@@ -257,7 +277,7 @@ type  test     ← parallel
 | Job | What it checks |
 |-----|---------------|
 | `typecheck` | `tsc --noEmit` on both the Next.js app and MCP server |
-| `test` | Jest suite (100 tests), uploads lcov coverage artifact |
+| `test` | Jest suite (113 tests), uploads lcov coverage artifact |
 | `build` | MCP server `tsc` compile + Next.js production build |
 
 See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
