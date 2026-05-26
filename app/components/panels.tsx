@@ -29,6 +29,74 @@ function toToolLabel(name: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// ── Shared empty state ────────────────────────────────────────────────────────
+
+function PanelEmptyState({
+  icon,
+  title,
+  subtitle,
+  accentColor = "#15803d",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  accentColor?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "72px 32px 80px",
+        textAlign: "center",
+        gap: "18px",
+      }}
+    >
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: "50%",
+          background: `${accentColor}12`,
+          border: `1.5px solid ${accentColor}30`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </div>
+      <div style={{ maxWidth: 380 }}>
+        <div
+          style={{
+            fontSize: "16px",
+            fontWeight: 600,
+            color: "#181614",
+            marginBottom: "8px",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {title}
+        </div>
+        {subtitle && (
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#9a9590",
+              lineHeight: 1.65,
+            }}
+          >
+            {subtitle}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Clause detail card ────────────────────────────────────────────────────────
 
 interface ClauseCardProps {
@@ -460,6 +528,19 @@ export function RedFlagsPanel({
         subtitle="Clauses with risk score ≥ 6.0. These require your attention before signing."
         accentColor="#b91c1c"
       />
+      {redFlags.length === 0 ? (
+        <PanelEmptyState
+          accentColor="#15803d"
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#15803d" strokeWidth="1.5" />
+              <path d="M7.5 12.5l3 3 6-6" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+          title="No red flags found"
+          subtitle="Every clause in this lease scored below the high-risk threshold. There are no clauses that require urgent attention before signing."
+        />
+      ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {redFlags.map((clause, i) => {
           const neg = report.negotiation_points.find(
@@ -478,6 +559,7 @@ export function RedFlagsPanel({
           );
         })}
       </div>
+      )}
     </div>
   );
 }
@@ -591,6 +673,34 @@ export function ClauseExplorerPanel({
         </div>
       </div>
 
+      {filtered.length === 0 ? (
+        report.clauses.length === 0 ? (
+          <PanelEmptyState
+            accentColor="#9a9590"
+            icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="4" width="16" height="16" rx="3" stroke="#9a9590" strokeWidth="1.5" />
+                <path d="M8 8h8M8 12h8M8 16h5" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            }
+            title="No clauses detected"
+            subtitle="The agent did not find any identifiable clauses in this document. This can happen with scanned or image-based PDFs where text extraction was incomplete."
+          />
+        ) : (
+          <PanelEmptyState
+            accentColor="#9a9590"
+            icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="#9a9590" strokeWidth="1.5" />
+                <path d="M16.5 16.5l3.5 3.5" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M8.5 11h5M11 8.5v5" stroke="#9a9590" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+            }
+            title="No clauses match this filter"
+            subtitle="Try selecting a different risk level or switch to 'All' to see every clause."
+          />
+        )
+      ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {filtered.map((clause) => {
           const neg = report.negotiation_points.find(
@@ -607,6 +717,7 @@ export function ClauseExplorerPanel({
           );
         })}
       </div>
+      )}
     </div>
   );
 }
@@ -912,6 +1023,9 @@ export function NegotiationPanel({
   onLaunchCopilot?: () => void;
   onClauseActivate?: (clauseId: string) => void;
 }) {
+  const [showNoItemsNotice, setShowNoItemsNotice] = useState(false);
+  const hasPoints = report.negotiation_points.length > 0;
+
   const byPriority: Record<string, NegotiationPoint[]> = {
     high: [],
     medium: [],
@@ -921,6 +1035,15 @@ export function NegotiationPanel({
     if (byPriority[n.priority]) byPriority[n.priority].push(n);
   });
 
+  function handleCopilotClick() {
+    if (!hasPoints) {
+      setShowNoItemsNotice(true);
+      setTimeout(() => setShowNoItemsNotice(false), 4000);
+      return;
+    }
+    onLaunchCopilot?.();
+  }
+
   return (
     <div>
       <SectionHeader
@@ -929,32 +1052,70 @@ export function NegotiationPanel({
         subtitle="Prioritised by impact. Walk-away clauses are flagged separately."
         accentColor="#1d4ed8"
         action={
-          <button
-            onClick={onLaunchCopilot}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 14px",
-              background: "#181614",
-              border: "1px solid #181614",
-              color: "#fff",
-              borderRadius: "6px",
-              fontSize: "12px",
-              fontWeight: 500,
-              cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#2a2825")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#181614")}
-          >
-            <Icon name="negotiate" size={13} color="#fff" />
-            Open Negotiation Copilot
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+            <button
+              onClick={handleCopilotClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 14px",
+                background: hasPoints ? "#181614" : "#f3f1ee",
+                border: `1px solid ${hasPoints ? "#181614" : "#ddd8cf"}`,
+                color: hasPoints ? "#fff" : "#b0aaa4",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: 500,
+                cursor: hasPoints ? "pointer" : "not-allowed",
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.15s",
+                opacity: hasPoints ? 1 : 0.7,
+              }}
+              onMouseEnter={(e) => {
+                if (hasPoints) e.currentTarget.style.background = "#2a2825";
+              }}
+              onMouseLeave={(e) => {
+                if (hasPoints) e.currentTarget.style.background = "#181614";
+              }}
+            >
+              <Icon name="negotiate" size={13} color={hasPoints ? "#fff" : "#b0aaa4"} />
+              Open Negotiation Copilot
+            </button>
+            {showNoItemsNotice && (
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#92400e",
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "5px",
+                  padding: "5px 10px",
+                  maxWidth: "220px",
+                  textAlign: "right",
+                  lineHeight: 1.5,
+                  animation: "fade-up 0.2s ease",
+                }}
+              >
+                No negotiation points to work with — this lease has no clauses that need renegotiating.
+              </div>
+            )}
+          </div>
         }
       />
-      {(["high", "medium", "low"] as const).map((priority) => {
+      {!hasPoints ? (
+        <PanelEmptyState
+          accentColor="#15803d"
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3C8 3 4 6.5 4 11c0 2.8 1.4 5.3 3.5 6.8V20a1 1 0 001 1h7a1 1 0 001-1v-2.2C18.6 16.3 20 13.8 20 11c0-4.5-4-8-8-8z" stroke="#15803d" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M9 21v1M15 21v1" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          }
+          title="Nothing to negotiate"
+          subtitle="This lease has no high-risk or problematic clauses — there are no negotiation points to raise with your landlord. You're in a strong position."
+        />
+      ) : (
+      (["high", "medium", "low"] as const).map((priority) => {
         const items = byPriority[priority];
         if (!items.length) return null;
         const dotColor = {
@@ -1002,7 +1163,8 @@ export function NegotiationPanel({
             </div>
           </div>
         );
-      })}
+      })
+      )}
     </div>
   );
 }
@@ -1044,6 +1206,19 @@ export function MissingPanel({ report }: { report: Report }) {
         subtitle="Rights guaranteed by Ontario law that are absent from your lease. You have these rights regardless — but their absence means you may not know to enforce them."
         accentColor="#b45309"
       />
+      {sorted.length === 0 ? (
+        <PanelEmptyState
+          accentColor="#15803d"
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12l2 2 4-4" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="#15803d" strokeWidth="1.5" />
+            </svg>
+          }
+          title="All protections present"
+          subtitle="Your lease includes the standard Ontario tenant protections. There are no missing rights or absent safeguards that the agent expected to find."
+        />
+      ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {sorted.map((m) => (
           <Collapsible
@@ -1189,6 +1364,7 @@ export function MissingPanel({ report }: { report: Report }) {
           </Collapsible>
         ))}
       </div>
+      )}
     </div>
   );
 }
@@ -1231,6 +1407,20 @@ export function ContradictionsPanel({
         subtitle="Clauses within this lease that conflict with each other. Legal ambiguity in residential leases generally resolves in the tenant's favour, but disputes are costly."
         accentColor="#7c3aed"
       />
+      {report.contradictions.length === 0 ? (
+        <PanelEmptyState
+          accentColor="#15803d"
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16M4 12h16M4 18h10" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="19" cy="18" r="3" stroke="#15803d" strokeWidth="1.5" />
+              <path d="M17.5 18l1 1 2-2" stroke="#15803d" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
+          title="No contradictions found"
+          subtitle="The agent found no conflicting clauses in this lease. All provisions appear internally consistent with each other."
+        />
+      ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {report.contradictions.map((x) => (
           <div
@@ -1409,6 +1599,7 @@ export function ContradictionsPanel({
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
@@ -1430,6 +1621,21 @@ export function SourcesPanel({
         subtitle={`All statute sections retrieved during analysis. Corpus version ${report.overall.corpus_version}${report.overall.corpus_date ? ` · Updated ${report.overall.corpus_date}` : ""}`}
         accentColor="#0369a1"
       />
+      {report.sources.length === 0 ? (
+        <PanelEmptyState
+          accentColor="#9a9590"
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14" stroke="#9a9590" strokeWidth="1.5" />
+              <path d="M4 19a2 2 0 002 2h12a2 2 0 002-2" stroke="#9a9590" strokeWidth="1.5" />
+              <path d="M9 7h6M9 11h4" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          }
+          title="No sources retrieved"
+          subtitle="The agent did not retrieve any statute or tribunal sources during this analysis. This may indicate the lease had very few identifiable clauses, or the RAG retrieval threshold was not met."
+        />
+      ) : (
+      <>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {report.sources.map((s) => (
           <div
@@ -1568,6 +1774,8 @@ export function SourcesPanel({
         corpus is not yet available — LTB decision retrieval is planned for
         v1.1. Click any ontario.ca link to verify the statute text directly.
       </div>
+      </>
+      )}
     </div>
   );
 }
