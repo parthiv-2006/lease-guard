@@ -282,7 +282,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         <div
           style={{
             width: "100%",
-            maxWidth: "560px",
+            maxWidth: "720px",
             marginBottom: "36px",
             display: "flex",
             flexDirection: "column",
@@ -387,7 +387,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         </div>
 
         {/* Upload zone */}
-        <div style={{ width: "100%", maxWidth: "560px" }}>
+        <div style={{ width: "100%", maxWidth: "720px" }}>
           <div
             onDrop={onDrop}
             onDragOver={onDragOver}
@@ -765,7 +765,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             flexWrap: "wrap",
             justifyContent: "center",
             width: "100%",
-            maxWidth: "560px",
+            maxWidth: "720px",
           }}
         >
           {[
@@ -1376,7 +1376,7 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
           padding: "64px 24px",
         }}
       >
-        <div style={{ width: "100%", maxWidth: "520px" }}>
+        <div style={{ width: "100%", maxWidth: "640px" }}>
           {/* File info */}
           <div
             style={{

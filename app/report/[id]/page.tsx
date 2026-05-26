@@ -255,15 +255,15 @@ function ReportSidebar({
   return (
     <div
       style={{
-        width: "256px",
-        minWidth: "256px",
+        width: "300px",
+        minWidth: "300px",
         background: "#131110",
         display: "flex",
         flexDirection: "column",
         height: "100vh",
         position: isMobile ? "fixed" : "sticky",
         top: 0,
-        left: isMobile ? (sidebarOpen ? 0 : -272) : undefined,
+        left: isMobile ? (sidebarOpen ? 0 : -300) : undefined,
         overflow: "auto",
         borderRight: "1px solid #252220",
         flexShrink: 0,
@@ -968,7 +968,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             <div
               style={{
                 padding: "36px 40px 60px",
-                maxWidth: "860px",
+                maxWidth: "1400px",
                 width: "100%",
                 margin: "0 auto",
               }}
@@ -1092,7 +1092,7 @@ function LoadingState() {
         </div>
 
         {/* Content skeleton */}
-        <div style={{ flex: 1, padding: "36px 40px", maxWidth: "860px", width: "100%" }}>
+        <div style={{ flex: 1, padding: "36px 40px", maxWidth: "1400px", width: "100%", margin: "0 auto" }}>
           {/* Panel header */}
           <div className="skeleton" style={{ width: "160px", height: "28px", marginBottom: "8px" }} />
           <div className="skeleton" style={{ width: "340px", height: "13px", marginBottom: "28px" }} />
