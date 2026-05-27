@@ -207,7 +207,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-const LLM_MODEL = "claude-3-5-haiku-20241022";
+const LLM_MODEL = "claude-haiku-4-5-20251001";
 const LLM_TIMEOUT_MS = 12_000;
 
 /**
@@ -352,7 +352,12 @@ async function detectConflictWithLLM(
     `\n\nCall report_contradiction with your analysis.`;
 
   try {
-    const client = new Anthropic({ apiKey, timeout: LLM_TIMEOUT_MS });
+    // OAuth tokens (sk-ant-oat…) use authToken → Authorization: Bearer.
+    // Regular API keys use apiKey → x-api-key.
+    const isOAuth = apiKey.startsWith("sk-ant-oat");
+    const client = isOAuth
+      ? new Anthropic({ authToken: apiKey, apiKey: null, timeout: LLM_TIMEOUT_MS })
+      : new Anthropic({ apiKey, timeout: LLM_TIMEOUT_MS });
 
     const response = await client.messages.create({
       model: LLM_MODEL,

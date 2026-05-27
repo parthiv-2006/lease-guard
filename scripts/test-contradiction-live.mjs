@@ -48,6 +48,11 @@ if (!apiKey) {
   process.exit(1);
 }
 process.env.ANTHROPIC_API_KEY = apiKey;
+// Windows SSL fix — government CAs not trusted by Node.js default trust store.
+// Same fix as instrumentation.ts, applied here for standalone script execution.
+if (process.platform === "win32") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 console.log(`Credentials resolved (len=${apiKey.length}, prefix=${apiKey.slice(0, 8)})`);
 
 // Import the tool execute function from compiled MCP server

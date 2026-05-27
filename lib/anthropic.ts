@@ -60,6 +60,22 @@ function resolveApiKey(): string | undefined {
 }
 
 /**
+ * Create an Anthropic client configured for the given token.
+ * OAuth tokens (sk-ant-oat…) use SDK authToken → Authorization: Bearer.
+ * Regular API keys (sk-ant-api…) use SDK apiKey → x-api-key.
+ */
+function makeAnthropicClient(token: string): Anthropic {
+  const isOAuth = token.startsWith("sk-ant-oat");
+  if (isOAuth) {
+    // authToken sends Authorization: Bearer <token> without any x-api-key header.
+    // apiKey: null suppresses the SDK's automatic ANTHROPIC_API_KEY env-var fallback,
+    // which would otherwise send the OAuth token as x-api-key and get a 401.
+    return new Anthropic({ authToken: token, apiKey: null });
+  }
+  return new Anthropic({ apiKey: token });
+}
+
+/**
  * Return the shared Anthropic client, creating it on first call.
  * Throws if no credentials are available.
  */
@@ -73,7 +89,7 @@ export function getAnthropicClient(): Anthropic {
           "  • For Claude Code subscription: run `claude auth login` in your terminal"
       );
     }
-    _client = new Anthropic({ apiKey });
+    _client = makeAnthropicClient(apiKey);
   }
   return _client;
 }
