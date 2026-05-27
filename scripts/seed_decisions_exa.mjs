@@ -142,6 +142,70 @@ const SEARCH_TARGETS = [
     ],
     target: 3,
   },
+  // ── New violation types added 2026-05-27 ────────────────────────────────
+  {
+    clause_type: 'utilities',
+    label: 'vital services cutoff — landlord restricts heat/hydro/water (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision landlord cut off heat hydro water gas vital services tenant section 29 30 31 RTA T2 application remedy awarded tenant won',
+      'Ontario LTB ruling landlord disconnected utilities vital services rental unit section 29 RTA prohibited substantial interference quiet enjoyment abatement ordered',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'entry_rights',
+    label: 'landlord inspection without 24h notice — quiet enjoyment (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision landlord entered rental unit without 24 hour notice section 27 RTA unauthorized entry T2 application tenant rights violated',
+      'Ontario LTB ruling landlord conducted inspections without proper notice monthly quarterly unreasonable entry section 27 RTA tenant harassment substantial interference remedy',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'subletting_assignment',
+    label: 'complete assignment prohibition — no consent pathway (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision lease clause prohibiting all subletting assignment void section 95 97 RTA tenant cannot be prevented from subletting right to assign',
+      'Ontario LTB ruling no subletting clause residential tenancy agreement unenforceable section 97 134 RTA landlord cannot absolutely prohibit sublet or assignment',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'renewal_terms',
+    label: 'unlawful renewal obligation — forced re-sign or auto-renew (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision fixed term tenancy auto renews lease clause void section 38 RTA month to month continuation tenant does not need to re-sign',
+      'Ontario LTB ruling landlord required tenant give notice not to renew fixed term lease section 38 RTA tenancy continues month to month automatically void clause',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'rent_increase',
+    label: 'multiple rent increases per year — above guideline frequency (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision landlord increased rent more than once per year section 119 120 RTA T1 application illegal rent increase above guideline tenant won',
+      'Ontario LTB ruling monthly quarterly CPI-linked rent escalation clause void unenforceable section 119 RTA once per 12 months maximum frequency increase prohibited',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'parking_storage',
+    label: 'service reduction without rent reduction — parking/laundry removal (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision landlord removed parking locker laundry storage services without rent reduction section 121 125 RTA T2 application tenant remedy',
+      'Ontario LTB ruling landlord unilaterally reduced services amenities rental unit no corresponding rent reduction section 121 RTA substantial interference tenant rights',
+    ],
+    target: 5,
+  },
+  {
+    clause_type: 'dispute_resolution',
+    label: 'retaliation and coercion — waiver of LTB rights (new violation)',
+    queries: [
+      'Ontario Landlord Tenant Board decision lease clause requiring tenant waive right file LTB application section 3 RTA void unenforceable waiver rights cannot be contracted out',
+      'Ontario LTB ruling landlord threatened eviction tenant filed repair complaint section 83 137 139 RTA anti-reprisal retaliation coercion tenant T2 application remedy awarded',
+    ],
+    target: 5,
+  },
 ];
 
 // ---------------------------------------------------------------------------
