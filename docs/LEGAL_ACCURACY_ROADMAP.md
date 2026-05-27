@@ -381,7 +381,7 @@ These are documented failures from smoke testing. Fix them before any other work
 
 *Last updated: 2026-05-27*
 *Current corpus version: 2026-05-25 (Parent RTA row trimming re-embedded; 2372 statute chunks — RTA subsections + regs + standard form)*
-*tribunal_decisions: 84 rows (46 manual/original + 18 new decisions across early_termination, quiet_enjoyment, pets, maintenance_repairs, entry_rights, security_deposit, subletting_assignment, rent_increase, rent_payment, guest_policy, dispute_resolution)*
+*tribunal_decisions: 102 rows (84 prior + 18 new decisions seeded 2026-05-27 via seed_decisions_exa.mjs + seed_decisions_manual.py: early_termination×4, quiet_enjoyment×5, subletting_assignment×1, renewal_terms×2, parking_storage×1, dispute_resolution×3, pets×2)*
 *validate_retrieval.py: 7/7 (100%) confirmed after corpus expansion (2026-05-25)*
 *eval-accuracy.mjs: 45/45 (100%) — Precision 100%, Recall 100%, FP 0%, F1 100% as of commit 62737f3 (2026-05-27)*
 *score-risk.ts: 24 MANDATORY_PROVISION_VIOLATION_TYPES — added vital_services_cutoff, quiet_enjoyment_violation, assignment_prohibition, unlawful_renewal_obligation, multiple_rent_increases, service_reduction_no_rent_decrease, retaliation_or_coercion (commit eff7544)*
