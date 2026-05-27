@@ -25,6 +25,7 @@
     "formidable": "^3.5.2",
     "jspdf": "^4.2.1",
     "next": "^15.1.0",
+    "nextjs-toploader": "^3.9.17",
     "pdfjs-dist": "^5.7.284",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

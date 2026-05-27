@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
 const SITE_URL =
@@ -51,7 +52,17 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <NextTopLoader
+          color="#181614"
+          height={2}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="none"
+        />
+        {children}
+      </body>
     </html>
   );
 }
