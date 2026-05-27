@@ -51,7 +51,10 @@ interface LandingPageProps {
   onUploadSuccess: (leaseId: string, filename: string) => void;
 }
 
+const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
+
 function LandingPage({ onUploadSuccess }: LandingPageProps) {
+  const router = useRouter();
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -749,6 +752,97 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 </span>
               )
             )}
+          </div>
+
+          {/* Demo CTA */}
+          <div style={{ textAlign: "center", marginTop: "22px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "14px",
+              }}
+            >
+              <div style={{ flex: 1, height: "1px", background: "#e8e4dc" }} />
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: "#b0aaa4",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                or try a sample
+              </span>
+              <div style={{ flex: 1, height: "1px", background: "#e8e4dc" }} />
+            </div>
+
+            <button
+              onClick={() => router.push(`/report/${DEMO_LEASE_ID}`)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "10px 20px",
+                borderRadius: "7px",
+                border: "1px solid #ddd8cf",
+                background: "#fff",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#181614",
+                transition: "border-color 0.15s, box-shadow 0.15s",
+                boxShadow: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#181614";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 8px rgba(24,22,20,0.10)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#ddd8cf";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <span>Try with a sample lease</span>
+              <span
+                style={{
+                  padding: "2px 7px",
+                  borderRadius: "3px",
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#b91c1c",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                9.5 Critical
+              </span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M3 8h10M9 4l4 4-4 4"
+                  stroke="#181614"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            <p
+              style={{
+                marginTop: "8px",
+                fontSize: "11px",
+                color: "#b0aaa4",
+                lineHeight: 1.5,
+              }}
+            >
+              See a highly flawed Ontario lease — analysed instantly
+            </p>
           </div>
         </div>
 
