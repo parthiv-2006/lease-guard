@@ -39,8 +39,8 @@ export const runtime = "nodejs";
 const LEASE_ID_RE = /^[0-9a-f-]{36}$/;
 const GEMINI_EMBED_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
-const GEMINI_GENERATE_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent";
+const GROQ_GENERATE_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 const JURISDICTION = "CA-ON";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -82,6 +82,9 @@ async function embedQuery(text: string): Promise<number[]> {
   });
 
   if (!resp.ok) {
+    if (resp.status === 429) {
+      throw Object.assign(new Error("rate_limit_exceeded"), { code: "rate_limit_exceeded" });
+    }
     const body = await resp.text();
     throw new Error(`Gemini embed error ${resp.status}: ${body}`);
   }
@@ -94,47 +97,44 @@ async function embedQuery(text: string): Promise<number[]> {
   return values;
 }
 
-// ── Gemini Chat Streaming (REST, no SDK — Gotcha #1) ─────────────────────────
+// ── Groq Chat Streaming (OpenAI-compatible REST) ──────────────────────────────
 
 /**
- * Calls gemini-2.0-flash via streamGenerateContent SSE endpoint.
- * Converts "assistant" role → "model" as required by the Gemini API.
- * Invokes onToken for each partial text chunk received.
+ * Calls llama-3.3-70b-versatile via Groq's OpenAI-compatible streaming endpoint.
+ * Free tier: 14,400 RPD / 30 RPM — far exceeds Gemini's 1,500 RPD / 15 RPM.
+ * Groq uses standard OpenAI roles ("user" / "assistant") — no conversion needed.
  */
-async function streamGeminiChat(
+async function streamGroqChat(
   systemPrompt: string,
   history: ChatHistory[],
   userMessage: string,
   onToken: (text: string) => void
 ): Promise<void> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY not set");
 
-  // Keep the last 6 turns; convert role names for Gemini
-  const contents = [
-    ...history.slice(-6).map((h) => ({
-      role: h.role === "assistant" ? "model" : "user",
-      parts: [{ text: h.content }],
-    })),
-    { role: "user", parts: [{ text: userMessage }] },
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history.slice(-6).map((h) => ({ role: h.role, content: h.content })),
+    { role: "user", content: userMessage },
   ];
 
-  const resp = await fetch(`${GEMINI_GENERATE_URL}?alt=sse&key=${apiKey}`, {
+  const resp = await fetch(GROQ_GENERATE_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents,
-      generationConfig: {
-        maxOutputTokens: 600,
-        temperature: 0.4,
-      },
+      model: GROQ_MODEL,
+      messages,
+      stream: true,
+      max_tokens: 600,
+      temperature: 0.4,
     }),
   });
 
   if (!resp.ok) {
-    // Map HTTP status codes to structured error codes so the outer catch
-    // can send user-friendly messages instead of raw API JSON blobs.
     if (resp.status === 429) {
       throw Object.assign(new Error("rate_limit_exceeded"), { code: "rate_limit_exceeded" });
     }
@@ -145,24 +145,24 @@ async function streamGeminiChat(
       throw Object.assign(new Error("service_unavailable"), { code: "service_unavailable" });
     }
     const body = await resp.text().catch(() => "");
-    console.error(`[chat] Gemini generate error ${resp.status}:`, body);
+    console.error(`[chat] Groq generate error ${resp.status}:`, body);
     throw Object.assign(new Error("generate_failed"), { code: "generate_failed" });
   }
 
-  if (!resp.body) throw new Error("Gemini returned no response body");
+  if (!resp.body) throw new Error("Groq returned no response body");
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
-  // Parse the SSE stream: each chunk may contain multiple `data: {...}` lines
+  // Parse OpenAI-compatible SSE stream: data: {"choices":[{"delta":{"content":"..."}}]}
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split("\n");
-    buffer = lines.pop() ?? ""; // keep any incomplete trailing line
+    buffer = lines.pop() ?? "";
 
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
@@ -170,11 +170,9 @@ async function streamGeminiChat(
       if (!raw || raw === "[DONE]") continue;
       try {
         const parsed = JSON.parse(raw) as {
-          candidates?: Array<{
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
+          choices?: Array<{ delta?: { content?: string } }>;
         };
-        const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = parsed?.choices?.[0]?.delta?.content;
         if (typeof text === "string" && text) onToken(text);
       } catch {
         // skip malformed SSE chunk
@@ -541,15 +539,17 @@ export async function POST(
             retrieveDecisions(embedding, supabase),
           ]);
         } catch (embedErr) {
+          // Re-throw rate limit errors — no point making the generate call if quota is exhausted
+          if ((embedErr as { code?: string }).code === "rate_limit_exceeded") throw embedErr;
           console.error("[chat] embed/retrieval error:", embedErr);
-          // Proceed with empty sources — Gemini will answer based on lease context only
+          // Other embed/retrieval failures: proceed with empty sources
         }
 
         // ── 4. Build system prompt ───────────────────────────────────────
         const systemPrompt = buildSystemPrompt(leaseContext, statutes, decisions);
 
-        // ── 5. Stream Gemini 2.0 Flash response ─────────────────────────
-        await streamGeminiChat(systemPrompt, history, message, (text) => {
+        // ── 5. Stream Groq (Llama 3.3 70B) response ─────────────────────
+        await streamGroqChat(systemPrompt, history, message, (text) => {
           send({ type: "token", text });
         });
 
