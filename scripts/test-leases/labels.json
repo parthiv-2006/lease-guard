@@ -1,6 +1,6 @@
 {
-  "version": "2.0",
-  "description": "Labelled clause test suite for LeaseGuard accuracy evaluation. 30 Ontario residential lease clauses with known ground-truth outputs. Covers 16 unenforceable clauses and 14 compliant clauses across all major clause types. V2 adds early termination fees, surveillance, guest surcharges, assignment fees, rent abatement waivers, and additional false-positive guard cases.",
+  "version": "3.0",
+  "description": "Labelled clause test suite for LeaseGuard accuracy evaluation. 45 Ontario residential lease clauses with known ground-truth outputs. V3 adds vital services cutoff, quiet enjoyment violation, assignment prohibition, unlawful renewal obligation, multiple rent increases, service reduction without rent decrease, and retaliation/coercion — 7 new violation types with 15 new test cases (7 unenforceable + 7 compliant guards + 1 edge case).",
   "jurisdiction": "CA-ON",
   "ground_truth_basis": "Ontario Residential Tenancies Act, 2006 (RTA), as currently in force",
   "test_cases": [
@@ -789,6 +789,386 @@
         "risk_score_max": 3
       },
       "mock_statutes": []
+    },
+    {
+      "id": "tc31",
+      "description": "Tenant responsible for vital services (heat/hydro) — void under RTA s.29",
+      "clause_text": "The Tenant is solely responsible for ensuring that all utilities including heat, hydro, and water remain connected and active at all times during the tenancy. The Landlord shall not be liable if services are disconnected due to non-payment by the Tenant.",
+      "clause_type": "utilities",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s29",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "29",
+          "section_title": "Vital services",
+          "text": "29(1) A landlord shall not cause the supply of a vital service, care service or food to a tenant to be withheld or interrupted. (2) In this section, 'vital service' means hot or cold water, fuel, electricity, natural gas or heat. A landlord cannot transfer the duty to maintain vital services to the tenant. Any clause purporting to do so is void.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK34",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-27"
+        },
+        {
+          "id": "stat-s30",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "30",
+          "section_title": "Order re vital services",
+          "text": "30(1) If a landlord withholds or interrupts the supply of a vital service contrary to section 29, a tenant may apply to the Board for an order. (2) The Board may issue an order requiring the landlord to restore the vital service immediately. The landlord's obligation is ongoing and non-delegable.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK35",
+          "relevance_score": 0.84,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc32",
+      "description": "Heat and water included in rent — compliant vital services [FALSE POSITIVE GUARD]",
+      "clause_text": "The following utilities are included in the monthly rent: heat, hot and cold water, and sewage. The Tenant is responsible for hydro and internet, payable directly to the service providers.",
+      "clause_type": "utilities",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s29-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "29",
+          "section_title": "Vital services",
+          "text": "29(1) A landlord shall not cause the supply of a vital service to be withheld or interrupted. A clause specifying that certain utilities are included in rent and others are paid separately by the tenant to utility providers is compliant — it clarifies responsibility without shifting the landlord's core obligation.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK34",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc33",
+      "description": "Monthly inspection clause — substantial interference with quiet enjoyment",
+      "clause_text": "The Landlord reserves the right to conduct monthly inspections of the rental unit at any time during normal business hours with 24 hours notice.",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s22",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "22",
+          "section_title": "Landlord not to interfere with reasonable enjoyment",
+          "text": "22 A landlord shall not at any time during a tenant's occupancy of a rental unit and before the day on which an order evicting the tenant is executed substantially interfere with the reasonable enjoyment of the rental unit or the residential complex in which it is located for all usual purposes by the tenant or members of the tenant's household. Regular monthly inspections beyond what is reasonably necessary substantially interfere with the tenant's quiet enjoyment.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK27",
+          "relevance_score": 0.89,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc34",
+      "description": "Annual inspection with 24h written notice — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "The Landlord may conduct one annual inspection of the rental unit for maintenance purposes. The Landlord will provide at least 24 hours written notice specifying the date and time of the inspection (between 8 a.m. and 8 p.m.).",
+      "clause_type": "entry_rights",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s27-ann",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "27",
+          "section_title": "Entry with notice",
+          "text": "27(1) A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry between 8 a.m. and 8 p.m. An occasional annual inspection with proper 24-hour written notice is compliant with this section.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK32",
+          "relevance_score": 0.86,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc35",
+      "description": "Complete ban on subletting with no consent pathway — void under RTA s.95",
+      "clause_text": "Subletting and assignment of this tenancy is strictly prohibited under all circumstances. The Tenant may not transfer, sublet, or assign the rental unit or any rights under this agreement to any other person.",
+      "clause_type": "early_termination",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s95",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "95",
+          "section_title": "Assignment of tenancy",
+          "text": "95(1) A tenant may assign a rental unit to another person with the consent of the landlord. (5) A landlord shall not arbitrarily or unreasonably withhold consent to an assignment. A complete prohibition on subletting or assignment with no consent pathway is void under this section — the landlord may require consent but cannot ban the process entirely.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK93",
+          "relevance_score": 0.90,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc36",
+      "description": "Subletting requires written consent — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "The Tenant may sublet the rental unit or assign the tenancy only with the prior written consent of the Landlord. The Landlord shall not arbitrarily or unreasonably withhold such consent, in accordance with the Residential Tenancies Act, 2006.",
+      "clause_type": "early_termination",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s95-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "95",
+          "section_title": "Assignment of tenancy",
+          "text": "95(1) A tenant may assign a rental unit to another person with the consent of the landlord. A clause requiring consent that shall not be unreasonably withheld is fully compliant with this section.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK93",
+          "relevance_score": 0.87,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc37",
+      "description": "Auto-renew for new fixed term unless 60 days notice — unlawful renewal obligation",
+      "clause_text": "This tenancy will automatically renew for a further one-year fixed term at the end of the initial term unless the Tenant provides 60 days written notice of intention not to renew.",
+      "clause_type": "standard_boilerplate",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s38",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "38",
+          "section_title": "Deemed renewal where no notice",
+          "text": "38(1) If a tenancy agreement for a fixed term expires and is not renewed and the tenant continues to occupy the rental unit, the tenancy shall be deemed to be renewed as a monthly tenancy on the same terms and conditions that are in the expired tenancy agreement and at the same rent that is in effect at the end of the fixed term. A fixed-term auto-renewal clause is void — the tenancy continues month-to-month, not as a new fixed term.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK44",
+          "relevance_score": 0.91,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc38",
+      "description": "Explicit month-to-month continuation at end of fixed term — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "At the end of the fixed term, this tenancy will continue on a month-to-month basis on the same terms and conditions, in accordance with section 38 of the Residential Tenancies Act, 2006.",
+      "clause_type": "standard_boilerplate",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s38-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "38",
+          "section_title": "Deemed renewal where no notice",
+          "text": "38(1) If a fixed-term tenancy expires and the tenant continues to occupy, the tenancy continues as a monthly tenancy. A clause that explicitly states this month-to-month continuation is compliant and provides helpful clarity.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK44",
+          "relevance_score": 0.85,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc39",
+      "description": "Quarterly rent increases tied to CPI — multiple increases per 12 months, void under s.119",
+      "clause_text": "The rent shall be adjusted quarterly in accordance with the Consumer Price Index (CPI). On January 1st, April 1st, July 1st, and October 1st each year, rent will increase by the CPI percentage for the preceding quarter.",
+      "clause_type": "rent_increase",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s119",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "119",
+          "section_title": "Lawful rent after vacancy",
+          "text": "119(1) A landlord who is lawfully entitled to increase the rent charged to a tenant for a rental unit may do so only if at least 12 months have elapsed since the day of the last rent increase for that tenant in that rental unit. Only one rent increase is permitted per 12-month period. Quarterly or more frequent rent increases are void regardless of the amount or index used.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK118",
+          "relevance_score": 0.92,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc40",
+      "description": "Annual rent increase with guideline and 90 days notice — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "The Landlord may increase rent once per year in accordance with the Ontario Rent Increase Guideline. The Landlord will provide at least 90 days written notice on Form N1 before any increase takes effect.",
+      "clause_type": "rent_increase",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 4
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s119-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "119",
+          "section_title": "Lawful rent after vacancy",
+          "text": "119(1) A landlord may increase rent only if at least 12 months have elapsed since the last increase. An annual increase complying with the guideline is fully compliant with this provision.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK118",
+          "relevance_score": 0.86,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc41",
+      "description": "Landlord may remove included parking without rent reduction — void under RTA s.121/125",
+      "clause_text": "Included parking and storage are provided as a courtesy. The Landlord reserves the right to remove, reassign, or discontinue these services at any time without prior notice and without any reduction in rent.",
+      "clause_type": "parking_storage",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "high",
+        "risk_score_min": 5,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s125",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "125",
+          "section_title": "Agreement to reduce rent",
+          "text": "125(1) A landlord and tenant may agree to a reduction in rent at any time. If a landlord reduces or discontinues a service or facility that was included in rent (such as parking or laundry), the tenant may apply to the Board for a rent reduction. A clause purporting to let the landlord remove included services without reducing rent is void under the Act.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK124",
+          "relevance_score": 0.88,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc42",
+      "description": "Included parking with explicit rent-reduction obligation — compliant [FALSE POSITIVE GUARD]",
+      "clause_text": "One underground parking space (P1-45) is included in the monthly rent. If the Landlord discontinues this service, the Landlord will reduce the monthly rent by $150 or the amount determined by the Landlord and Tenant Board.",
+      "clause_type": "parking_storage",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s125-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "125",
+          "section_title": "Agreement to reduce rent",
+          "text": "125 A landlord and tenant may agree to a reduction in rent at any time. A clause that explicitly provides for a rent reduction if included services are removed is compliant with the RTA.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK124",
+          "relevance_score": 0.83,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc43",
+      "description": "Waiver of right to file LTB application — retaliation/coercion, void under RTA s.139/s.3",
+      "clause_text": "By signing this agreement, the Tenant waives any right to file a complaint, application, or claim against the Landlord with the Landlord and Tenant Board or any government authority for any reason whatsoever.",
+      "clause_type": "dispute_resolution",
+      "expected": {
+        "is_potentially_unenforceable": true,
+        "risk_level": "critical",
+        "risk_score_min": 7,
+        "risk_score_max": 10
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s139",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "139",
+          "section_title": "Coercion, etc., prohibited",
+          "text": "139 No person shall knowingly attempt, directly or indirectly, to coerce, compel or intimidate a tenant to waive their rights under this Act. Any waiver of the right to apply to the Landlord and Tenant Board is void under this section and under section 3(1) which provides that the Act applies despite any agreement to the contrary.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK139",
+          "relevance_score": 0.92,
+          "last_verified": "2026-05-27"
+        },
+        {
+          "id": "stat-s3-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "3",
+          "section_title": "Act prevails",
+          "text": "3(1) This Act applies despite any agreement or waiver to the contrary. A clause waiving the tenant's right to access the LTB is void under this provision.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK7",
+          "relevance_score": 0.89,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc44",
+      "description": "Both-party LTB access confirmed — compliant dispute resolution [FALSE POSITIVE GUARD]",
+      "clause_text": "Any disputes arising from this tenancy agreement shall be resolved in accordance with the Residential Tenancies Act, 2006. Both parties retain their full right to apply to the Landlord and Tenant Board.",
+      "clause_type": "dispute_resolution",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s139-c",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "139",
+          "section_title": "Coercion, etc., prohibited",
+          "text": "139 No person shall coerce or intimidate a tenant to waive their rights under this Act. A clause explicitly confirming both parties' right to access the LTB is compliant and model language.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK139",
+          "relevance_score": 0.84,
+          "last_verified": "2026-05-27"
+        }
+      ]
+    },
+    {
+      "id": "tc45",
+      "description": "Edge case: tenant pays hydro directly to utility — compliant, not vital services cutoff",
+      "clause_text": "The Tenant shall pay for hydro consumed in the rental unit directly to Toronto Hydro. Heat and water are included in the rent and provided by the Landlord.",
+      "clause_type": "utilities",
+      "expected": {
+        "is_potentially_unenforceable": false,
+        "risk_level": "low",
+        "risk_score_min": 0,
+        "risk_score_max": 3
+      },
+      "mock_statutes": [
+        {
+          "id": "stat-s29-edge",
+          "act_name": "Residential Tenancies Act, 2006",
+          "section_number": "29",
+          "section_title": "Vital services",
+          "text": "29(1) A landlord shall not cause the supply of a vital service to be withheld or interrupted. It is permissible for a tenant to pay a utility bill directly to the provider — the key is that the landlord cannot cause the service to be cut off. Heat and water remaining landlord-provided satisfies the Act.",
+          "url": "https://www.ontario.ca/laws/statute/06r17#BK34",
+          "relevance_score": 0.83,
+          "last_verified": "2026-05-27"
+        }
+      ]
     }
   ]
 }
