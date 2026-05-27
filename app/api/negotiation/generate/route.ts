@@ -1,37 +1,70 @@
+/**
+ * app/api/negotiation/generate/route.ts — Negotiation Copilot proposal generator.
+ *
+ * POST /api/negotiation/generate
+ * Body: { leaseId, tenantName, landlordName, tone, selectedClauseIds }
+ *
+ * Architecture:
+ *   1. Validate inputs
+ *   2. Fetch lease + clause + negotiation_points from Supabase
+ *   3. Call Groq (llama-3.3-70b-versatile) with JSON mode to generate proposal
+ *   4. Validate the returned JSON shape
+ *   5. Fall back to template generator if Groq fails for any reason
+ *
+ * Why Groq instead of Anthropic:
+ *   - Free tier: 14,400 RPD / 30 RPM (Anthropic requires paid key for tool_use)
+ *   - OpenAI-compatible JSON mode (response_format: { type: "json_object" }) is
+ *     simpler than Anthropic tool_choice for structured output
+ *   - Template fallback means zero downtime if Groq is unavailable
+ *
+ * PERMANENT GOTCHA: Do NOT use @anthropic-ai/sdk here. The Anthropic API key
+ * is an OAuth token (sk-ant-o...) which cannot be used for direct messages.create()
+ * calls. Groq handles this route; Anthropic is only used in lib/agent.ts via
+ * lib/anthropic.ts which handles OAuth tokens internally.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getAnthropicClient } from "@/lib/anthropic";
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface ProposalItem {
+  number:                 string;
+  heading:                string;
+  original_text:          string;
+  ask:                    string;
+  counter_language:       string;
+  legal_argument:         string;
+  landlord_likely_response: string;
+  tenant_rebuttal:        string;
+  statutory_violations:   Array<{ statute_section: string; violation_description: string }>;
+}
+
+interface ProposalResult {
+  email_subject:    string;
+  email_body:       string;
+  addendum_title:   string;
+  addendum_intro:   string;
+  addendum_clauses: Array<{ original_number: string; heading: string; proposed_text: string }>;
+}
 
 // ── Template fallback ─────────────────────────────────────────────────────────
-// Used when the Anthropic API key is not configured or the API call fails.
+// Used when Groq is unavailable or returns malformed JSON.
 // Generates a complete, professional proposal from the structured data already
 // in the database (counter_language, legal_argument, statutory_violations, etc.).
 
-interface ProposalItem {
-  number: string;
-  heading: string;
-  original_text: string;
-  ask: string;
-  counter_language: string;
-  legal_argument: string;
-  landlord_likely_response: string;
-  tenant_rebuttal: string;
-  statutory_violations: Array<{ statute_section: string; violation_description: string }>;
-}
-
 function generateTemplateProposal(params: {
-  tenantName: string;
-  landlordName: string;
+  tenantName:      string;
+  landlordName:    string;
   propertyAddress: string;
-  tone: string;
-  items: ProposalItem[];
-}): {
-  email_subject: string;
-  email_body: string;
-  addendum_title: string;
-  addendum_intro: string;
-  addendum_clauses: Array<{ original_number: string; heading: string; proposed_text: string }>;
-} {
+  tone:            string;
+  items:           ProposalItem[];
+}): ProposalResult {
   const { tenantName, landlordName, propertyAddress, tone, items } = params;
 
   const openings: Record<string, string> = {
@@ -76,8 +109,6 @@ function generateTemplateProposal(params: {
     return `${idx + 1}. Clause ${item.number} — ${item.heading}: ${item.ask}${rtaRef}`;
   });
 
-  const email_subject = `Proposed Lease Amendments — ${propertyAddress}`;
-
   const email_body =
     `Dear ${landlordName},\n\n` +
     `Re: Proposed Amendments to Lease Agreement — ${propertyAddress}\n\n` +
@@ -87,10 +118,7 @@ function generateTemplateProposal(params: {
     `\n\n` +
     (tone === "assertive"
       ? items
-          .map(
-            (item) =>
-              `Regarding Clause ${item.number} (${item.heading}): ${item.legal_argument}`
-          )
+          .map((item) => `Regarding Clause ${item.number} (${item.heading}): ${item.legal_argument}`)
           .join("\n\n") + "\n\n"
       : "") +
     `${closings[tone] ?? closings.formal},\n${tenantName}`;
@@ -103,22 +131,156 @@ function generateTemplateProposal(params: {
     `of any conflict between this Addendum and the Agreement, this Addendum shall prevail. ` +
     `All other terms and conditions of the Agreement remain in full force and effect.`;
 
-  const addendum_clauses = items.map((item) => ({
-    original_number: item.number,
-    heading: item.heading,
-    proposed_text:
-      item.counter_language?.trim() ||
-      `This clause is amended to comply with the Ontario Residential Tenancies Act. ` +
-        item.ask,
-  }));
-
   return {
-    email_subject,
+    email_subject:   `Proposed Lease Amendments — ${propertyAddress}`,
     email_body,
-    addendum_title: `Lease Amendment Addendum — ${propertyAddress}`,
+    addendum_title:  `Lease Amendment Addendum — ${propertyAddress}`,
     addendum_intro,
-    addendum_clauses,
+    addendum_clauses: items.map((item) => ({
+      original_number: item.number,
+      heading:         item.heading,
+      proposed_text:
+        item.counter_language?.trim() ||
+        `This clause is amended to comply with the Ontario Residential Tenancies Act. ${item.ask}`,
+    })),
   };
+}
+
+// ── Groq JSON generation ──────────────────────────────────────────────────────
+
+async function generateWithGroq(params: {
+  tenantName:      string;
+  landlordName:    string;
+  propertyAddress: string;
+  tone:            string;
+  items:           ProposalItem[];
+}): Promise<ProposalResult | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    console.warn("[negotiation/generate] GROQ_API_KEY not set — using template fallback");
+    return null;
+  }
+
+  const { tenantName, landlordName, propertyAddress, tone, items } = params;
+
+  const clausesList = items
+    .map((item, idx) => {
+      const violationsStr = item.statutory_violations
+        .map((v) => `    • ${v.statute_section}: ${v.violation_description}`)
+        .join("\n");
+      return (
+        `[Clause ${idx + 1}]\n` +
+        `  Original number in lease: ${item.number}\n` +
+        `  Heading: ${item.heading}\n` +
+        `  Original text: "${item.original_text}"\n` +
+        `  Statutory violations:\n${violationsStr || "    (none noted)"}\n` +
+        `  Suggested ask: ${item.ask}\n` +
+        `  Legal argument: ${item.legal_argument}\n` +
+        `  RTA-compliant counter language: "${item.counter_language}"`
+      );
+    })
+    .join("\n---\n");
+
+  const systemPrompt =
+    `You are an expert Ontario residential tenancy lawyer helping a tenant negotiate their lease.\n\n` +
+    `Generate a negotiation proposal based on the inputs below. Output ONLY valid JSON matching ` +
+    `this exact schema — no prose, no markdown, no extra keys:\n\n` +
+    `{\n` +
+    `  "email_subject": string,\n` +
+    `  "email_body": string,          // full email body text, newlines as \\n\n` +
+    `  "addendum_title": string,\n` +
+    `  "addendum_intro": string,      // legal addendum introduction paragraph\n` +
+    `  "addendum_clauses": [          // one entry per clause\n` +
+    `    {\n` +
+    `      "original_number": string, // clause number from lease\n` +
+    `      "heading": string,\n` +
+    `      "proposed_text": string    // RTA-compliant replacement clause text, ready to sign\n` +
+    `    }\n` +
+    `  ]\n` +
+    `}\n\n` +
+    `INPUTS:\n` +
+    `  Tenant name: ${tenantName}\n` +
+    `  Landlord name: ${landlordName}\n` +
+    `  Property address: ${propertyAddress}\n` +
+    `  Tone: ${tone}\n\n` +
+    `TONE GUIDE:\n` +
+    `  cooperative — Friendly, collaborative, emphasises a positive landlord-tenant relationship.\n` +
+    `  formal      — Standard professional business letter, objective and polite.\n` +
+    `  assertive   — Direct and legally precise. Cite specific RTA sections. State that conflicting ` +
+    `clauses are void under RTA s.3(1).\n\n` +
+    `CRITICAL RULES:\n` +
+    `  1. Never call a clause "illegal" — use "potentially unenforceable" or "void under the RTA".\n` +
+    `  2. Every addendum clause must cite the relevant RTA section and be legally ready to sign.\n` +
+    `  3. Addendum intro must name both parties and the property address.\n` +
+    `  4. Email body must open with a greeting and close with the tenant's name.\n\n` +
+    `CLAUSES TO ADDRESS:\n${clausesList}`;
+
+  try {
+    const resp = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        Authorization:   `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model:           GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user",   content: "Generate the negotiation proposal JSON now." },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens:      4000,
+        temperature:     0.1,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      console.warn(`[negotiation/generate] Groq returned ${resp.status}:`, body);
+      return null;
+    }
+
+    const data = await resp.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      console.warn("[negotiation/generate] Groq returned empty content");
+      return null;
+    }
+
+    const parsed = JSON.parse(content) as Partial<ProposalResult>;
+
+    // Validate all required fields are present and non-empty
+    if (
+      typeof parsed.email_subject    !== "string" || !parsed.email_subject.trim() ||
+      typeof parsed.email_body       !== "string" || !parsed.email_body.trim() ||
+      typeof parsed.addendum_title   !== "string" || !parsed.addendum_title.trim() ||
+      typeof parsed.addendum_intro   !== "string" || !parsed.addendum_intro.trim() ||
+      !Array.isArray(parsed.addendum_clauses)     || parsed.addendum_clauses.length === 0
+    ) {
+      console.warn("[negotiation/generate] Groq JSON missing required fields — using template");
+      return null;
+    }
+
+    // Validate each addendum clause
+    for (const clause of parsed.addendum_clauses) {
+      if (
+        typeof clause.original_number !== "string" ||
+        typeof clause.heading         !== "string" ||
+        typeof clause.proposed_text   !== "string" ||
+        !clause.proposed_text.trim()
+      ) {
+        console.warn("[negotiation/generate] Groq addendum_clauses malformed — using template");
+        return null;
+      }
+    }
+
+    return parsed as ProposalResult;
+  } catch (err) {
+    console.warn("[negotiation/generate] Groq call failed:", (err as Error).message);
+    return null;
+  }
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -128,7 +290,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { leaseId, tenantName, landlordName, tone, selectedClauseIds } = body;
 
-    // Validate inputs
+    // ── Input validation ─────────────────────────────────────────────────────
     if (!leaseId || !/^[0-9a-f-]{36}$/.test(leaseId)) {
       return NextResponse.json(
         { error: "invalid_lease_id", message: "Lease ID is required and must be a valid UUID." },
@@ -168,7 +330,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 1. Fetch lease property details
+    // ── 1. Fetch lease property details ──────────────────────────────────────
     const { data: lease, error: leaseErr } = await supabase
       .from("leases")
       .select("id, property_address, property_unit, property_city, jurisdiction")
@@ -182,7 +344,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Fetch clauses & negotiation_points (full fields for template fallback)
+    // ── 2. Fetch clauses + negotiation_points in parallel ────────────────────
     const [clausesRes, negPointsRes] = await Promise.all([
       supabase
         .from("clauses")
@@ -210,9 +372,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const clauses = clausesRes.data ?? [];
+    const clauses   = clausesRes.data ?? [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const negPoints: any[] = (negPointsRes.data as any[]) ?? [];
+    const negPoints = (negPointsRes.data as any[]) ?? [];
 
     if (clauses.length === 0) {
       return NextResponse.json(
@@ -221,19 +383,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Map clauses to their negotiation details
+    // ── 3. Map clauses → ProposalItem ────────────────────────────────────────
     const formattedItems: ProposalItem[] = clauses.map((c) => {
       const np = negPoints.find((n) => n.clause_id === c.id);
       return {
-        number: c.clause_number ?? "",
-        heading: c.heading || "Unnamed Clause",
-        original_text: c.raw_text ?? "",
-        ask: np?.ask || "Align with RTA standards.",
-        counter_language: np?.counter_language || "",
-        legal_argument: np?.legal_argument || "",
+        number:                   c.clause_number ?? "",
+        heading:                  c.heading || "Unnamed Clause",
+        original_text:            c.raw_text ?? "",
+        ask:                      np?.ask || "Align with RTA standards.",
+        counter_language:         np?.counter_language || "",
+        legal_argument:           np?.legal_argument || "",
         landlord_likely_response: np?.landlord_likely_response || "",
-        tenant_rebuttal: np?.tenant_rebuttal || "",
-        statutory_violations: (c.statutory_violations as any[]) || [],
+        tenant_rebuttal:          np?.tenant_rebuttal || "",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        statutory_violations:     (c.statutory_violations as any[]) || [],
       };
     });
 
@@ -242,136 +405,30 @@ export async function POST(req: NextRequest) {
       : lease.property_address || "the rental unit";
     const fullAddress = [propertyAddress, lease.property_city].filter(Boolean).join(", ");
 
-    // 4. Try Anthropic API — fall back to template if key is missing or invalid
-    const formattedClausesList = formattedItems
-      .map((item, idx) => {
-        const violationsStr = item.statutory_violations
-          .map((v) => `• ${v.statute_section}: ${v.violation_description}`)
-          .join("\n");
-        return (
-          `[Clause ${idx + 1}]\n` +
-          `- Original Clause Number in Lease: ${item.number}\n` +
-          `- Heading: ${item.heading}\n` +
-          `- Original Text: "${item.original_text}"\n` +
-          `- Issue/Violation details:\n${violationsStr}\n` +
-          `- Suggested Tenant Ask: ${item.ask}\n` +
-          `- Legal Argument: ${item.legal_argument}\n` +
-          `- Reference compliant counter language: "${item.counter_language}"`
-        );
-      })
-      .join("\n---\n");
+    const generationParams = {
+      tenantName,
+      landlordName,
+      propertyAddress: fullAddress,
+      tone,
+      items: formattedItems,
+    };
 
-    const systemPrompt =
-      `You are an expert Ontario residential tenancy lawyer assisting a tenant in writing ` +
-      `a negotiation proposal to their landlord.\n\n` +
-      `Generate an email proposal and lease addendum based on the following metadata:\n` +
-      `Tenant Name: ${tenantName}\n` +
-      `Landlord Name: ${landlordName}\n` +
-      `Property Address: ${fullAddress}\n` +
-      `Tone: ${tone} (cooperative / assertive / formal)\n\n` +
-      `Selected Lease Clauses & Issues to Address:\n${formattedClausesList}\n\n` +
-      `Guidelines:\n` +
-      `1. Tone Tuning:\n` +
-      `   - "cooperative": Highly collaborative, friendly, emphasizes building a great landlord-tenant relationship.\n` +
-      `   - "assertive": Direct, firm, legally precise. Cites specific RTA sections. States void clauses are unenforceable under RTA s.3.\n` +
-      `   - "formal": Business professional letter styling. Objective, polite, standard.\n` +
-      `2. Never refer to clauses as "illegal" — use "potentially unenforceable" or "inconsistent with the standard form of lease".\n` +
-      `3. Incorporate RTA-compliant counter-language. Addendum clauses must be legally ready to sign.\n` +
-      `4. Force output structure using the 'output_negotiation_proposal' tool.`;
+    // ── 4. Try Groq — fall back to template if unavailable or malformed ──────
+    const groqResult = await generateWithGroq(generationParams);
+    const result     = groqResult ?? generateTemplateProposal(generationParams);
 
-    let apiResult: Record<string, unknown> | null = null;
-
-    try {
-      const client = getAnthropicClient();
-      const response = await client.messages.create({
-        model: "claude-3-5-haiku-20241022",
-        max_tokens: 4000,
-        temperature: 0.1,
-        system: systemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: "Please generate the proposal email and lease amendment addendum.",
-          },
-        ],
-        tools: [
-          {
-            name: "output_negotiation_proposal",
-            description: "Output the generated negotiation email and lease addendum.",
-            input_schema: {
-              type: "object" as const,
-              properties: {
-                email_subject: { type: "string" },
-                email_body: {
-                  type: "string",
-                  description: "Email body matching the selected tone.",
-                },
-                addendum_title: { type: "string" },
-                addendum_intro: {
-                  type: "string",
-                  description:
-                    "Legal introduction for a lease amendment naming both parties and property address.",
-                },
-                addendum_clauses: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      original_number: { type: "string" },
-                      heading: { type: "string" },
-                      proposed_text: {
-                        type: "string",
-                        description: "RTA-compliant replacement clause text.",
-                      },
-                    },
-                    required: ["original_number", "heading", "proposed_text"],
-                  },
-                },
-              },
-              required: [
-                "email_subject",
-                "email_body",
-                "addendum_title",
-                "addendum_intro",
-                "addendum_clauses",
-              ],
-            },
-          },
-        ],
-        tool_choice: { type: "tool", name: "output_negotiation_proposal" },
-      });
-
-      const toolCall = response.content.find((c) => c.type === "tool_use");
-      if (toolCall && toolCall.type === "tool_use" && toolCall.name === "output_negotiation_proposal") {
-        apiResult = toolCall.input as Record<string, unknown>;
-      }
-    } catch (apiErr: any) {
-      // Log but don't throw — template fallback runs below
-      console.warn(
-        "[negotiation/generate] Anthropic API unavailable, using template fallback:",
-        apiErr?.message ?? apiErr
-      );
+    if (groqResult) {
+      console.log("[negotiation/generate] Groq proposal generated successfully");
+    } else {
+      console.log("[negotiation/generate] Using template fallback");
     }
 
-    // 5. Use API result if valid, otherwise generate from template
-    const result =
-      apiResult ??
-      generateTemplateProposal({
-        tenantName,
-        landlordName,
-        propertyAddress: fullAddress,
-        tone,
-        items: formattedItems,
-      });
-
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Negotiation copilot generation failed:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+    console.error("[negotiation/generate] Unhandled error:", message);
     return NextResponse.json(
-      {
-        error: "internal_server_error",
-        message: error.message || "An unexpected error occurred.",
-      },
+      { error: "internal_server_error", message },
       { status: 500 }
     );
   }
