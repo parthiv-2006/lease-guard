@@ -160,17 +160,23 @@ try {
     await clickPanel(page, 'Negotiation Guide');
     await smoothScroll(page, 280, 20, 30);
     await sleep(1200);
-    // Open copilot modal
-    const copilotBtn = page.locator('button:has-text("Negotiation Copilot"), button:has-text("Copilot")').first();
+    // Open copilot modal — button text is "Open Negotiation Copilot"
+    const copilotBtn = page.locator('button:has-text("Open Negotiation Copilot")').first();
     if (await copilotBtn.count() > 0) {
+      await smoothScroll(page, 0, 15, 20);
+      await sleep(300);
       await copilotBtn.click({ force: true });
       await sleep(2000);
-      // Close: Escape → close button → click backdrop
+      // Optionally click Generate Proposal to show it working
+      const genBtn = page.locator('button:has-text("Generate Proposal")').first();
+      if (await genBtn.count() > 0) {
+        await genBtn.click({ force: true });
+        await sleep(3000);
+      }
+      // Close modal
       await page.keyboard.press('Escape');
-      await sleep(300);
-      await page.locator('[aria-label="Close"], button:has-text("Close"), button:has-text("✕")').first().click({ force: true }).catch(() => {});
-      await sleep(300);
-      await page.mouse.click(50, 50);
+      await sleep(400);
+      await page.mouse.click(50, 50).catch(() => {});
       await sleep(400);
     }
     await smoothScroll(page, 0, 15, 25);
@@ -218,6 +224,40 @@ try {
     await smoothScroll(page, 200, 15, 30);
     await sleep(1200);
     await smoothScroll(page, 0, 15, 25);
+    await sleep(800);
+  });
+
+  await scene('13 – Ask Your Lease chat', async () => {
+    // Navigate fresh to clear any overlays
+    await page.goto(KNOWN_REPORT_URL, { waitUntil: 'networkidle' });
+    await page.waitForSelector('text=OVERALL RISK', { timeout: 12000 }).catch(() => {});
+    await sleep(900);
+    // Chat trigger is a floating button bottom-right with text "Ask your lease"
+    const chatBtn = page.locator('#lg-chat-trigger, button:has-text("Ask your lease")').first();
+    if (await chatBtn.count() > 0) {
+      await chatBtn.click({ force: true });
+      await sleep(1000);
+      // Type a natural question
+      const question = 'Is the late fee clause enforceable under Ontario law?';
+      const input = page.locator('textarea[placeholder], input[type="text"]').last();
+      if (await input.count() > 0) {
+        await input.click();
+        for (const char of question) {
+          await input.type(char);
+          await sleep(30 + Math.floor(Math.random() * 25));
+        }
+        await sleep(700);
+        await page.keyboard.press('Enter');
+        // Wait for streaming response
+        await sleep(5000);
+        // Scroll down in chat to show the response
+        await page.evaluate(() => {
+          const chat = document.querySelector('#lg-chat-messages, [class*="messages"]');
+          if (chat) chat.scrollTop = chat.scrollHeight;
+        });
+        await sleep(1500);
+      }
+    }
     await sleep(800);
   });
 
