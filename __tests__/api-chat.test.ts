@@ -1,8 +1,10 @@
 /**
  * Tests for POST /api/chat/[leaseId]
  *
- * Supabase, Gemini fetch (both embed + generate), auth client, and the
- * DB-backed chat rate limiter are all mocked. No real credentials required.
+ * - Supabase, Gemini embed fetch, Groq chat fetch, auth client, and the
+ *   DB-backed chat rate limiter are all mocked. No real credentials required.
+ * - Gemini embed → global.fetch for URLs containing "embedContent"
+ * - Groq streaming → global.fetch for URLs containing "groq.com"
  */
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -33,7 +35,7 @@ jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({ from: mockFrom, rpc: mockRpc })),
 }));
 
-// Global fetch mock — handles Gemini embed + generate calls
+// Global fetch mock — handles Gemini embed + Groq streaming chat
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
@@ -74,21 +76,25 @@ function makeParams(leaseId: string) {
 }
 
 /**
- * Build a ReadableStream that emits Gemini SSE chunks for the given tokens.
+ * Build a ReadableStream that emits Groq SSE chunks for the given tokens.
+ * Groq streaming format: data: {"choices":[{"delta":{"content":"..."}}]}
  */
-function makeGeminiStreamResponse(tokens: string[] = ["Based ", "on ", "your ", "lease..."]) {
+function makeGroqStreamResponse(tokens: string[] = ["Based ", "on ", "your ", "lease..."]) {
   const encoder = new TextEncoder();
-  const sseChunks = tokens.map(
-    (text) =>
-      `data: ${JSON.stringify({
-        candidates: [{ content: { parts: [{ text }], role: "model" } }],
-      })}\n\n`
-  );
+  const chunks = [
+    ...tokens.map(
+      (text) =>
+        `data: ${JSON.stringify({
+          choices: [{ delta: { content: text }, finish_reason: null }],
+        })}\n\n`
+    ),
+    "data: [DONE]\n\n",
+  ];
   let idx = 0;
   const body = new ReadableStream({
     pull(controller) {
-      if (idx < sseChunks.length) {
-        controller.enqueue(encoder.encode(sseChunks[idx++]));
+      if (idx < chunks.length) {
+        controller.enqueue(encoder.encode(chunks[idx++]));
       } else {
         controller.close();
       }
@@ -98,9 +104,11 @@ function makeGeminiStreamResponse(tokens: string[] = ["Based ", "on ", "your ", 
 }
 
 /**
- * Set up global fetch for embed + generate calls.
+ * Set up global fetch for:
+ *   - Gemini embed calls  (URL contains "embedContent")
+ *   - Groq streaming chat (URL contains "groq.com")
  */
-function setupGeminiMocks(tokens?: string[]) {
+function setupMocks(tokens?: string[]) {
   mockFetch.mockImplementation((url: string) => {
     if (url.includes("embedContent")) {
       return Promise.resolve({
@@ -109,7 +117,8 @@ function setupGeminiMocks(tokens?: string[]) {
         text: async () => "",
       });
     }
-    return Promise.resolve(makeGeminiStreamResponse(tokens));
+    // Groq endpoint
+    return Promise.resolve(makeGroqStreamResponse(tokens));
   });
 }
 
@@ -198,7 +207,8 @@ describe("POST /api/chat/[leaseId]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.GEMINI_API_KEY = "test-gemini-key";
-    process.env.SUPABASE_URL = "https://test.supabase.co";
+    process.env.GROQ_API_KEY   = "test-groq-key";
+    process.env.SUPABASE_URL   = "https://test.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
     delete process.env.ANTHROPIC_API_KEY;
 
@@ -359,7 +369,7 @@ describe("POST /api/chat/[leaseId]", () => {
 
   it("passes userId to rate limiter when authenticated", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-abc" } } });
-    setupGeminiMocks();
+    setupMocks();
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -374,7 +384,7 @@ describe("POST /api/chat/[leaseId]", () => {
   });
 
   it("passes null userId to rate limiter for guest", async () => {
-    setupGeminiMocks();
+    setupMocks();
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -388,10 +398,10 @@ describe("POST /api/chat/[leaseId]", () => {
     );
   });
 
-  // ── Gemini integration ──────────────────────────────────────────────────────
+  // ── Fetch endpoint verification ─────────────────────────────────────────────
 
   it("calls Gemini embed endpoint for the user question", async () => {
-    setupGeminiMocks();
+    setupMocks();
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -407,8 +417,8 @@ describe("POST /api/chat/[leaseId]", () => {
     expect(embedCall).toBeDefined();
   });
 
-  it("calls Gemini streamGenerateContent endpoint for chat", async () => {
-    setupGeminiMocks();
+  it("calls Groq completions endpoint for chat", async () => {
+    setupMocks();
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -418,17 +428,17 @@ describe("POST /api/chat/[leaseId]", () => {
     );
     await res.text();
 
-    const generateCall = (mockFetch as jest.Mock).mock.calls.find(([url]: [string]) =>
-      url.includes("streamGenerateContent")
+    const groqCall = (mockFetch as jest.Mock).mock.calls.find(([url]: [string]) =>
+      url.includes("groq.com")
     );
-    expect(generateCall).toBeDefined();
-    expect(generateCall[0]).toContain("alt=sse");
+    expect(groqCall).toBeDefined();
+    expect(groqCall[0]).toContain("chat/completions");
   });
 
   // ── Successful streaming ────────────────────────────────────────────────────
 
   it("returns text/event-stream content-type on valid request", async () => {
-    setupGeminiMocks();
+    setupMocks();
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -441,7 +451,7 @@ describe("POST /api/chat/[leaseId]", () => {
   });
 
   it("streams token events followed by sources and done", async () => {
-    setupGeminiMocks(["Hello ", "world"]);
+    setupMocks(["Hello ", "world"]);
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -464,8 +474,8 @@ describe("POST /api/chat/[leaseId]", () => {
     expect(sourcesIdx).toBeLessThan(doneIdx);
   });
 
-  it("reassembles token text correctly from multiple Gemini chunks", async () => {
-    setupGeminiMocks(["Based ", "on ", "your ", "lease..."]);
+  it("reassembles token text correctly from multiple Groq chunks", async () => {
+    setupMocks(["Based ", "on ", "your ", "lease..."]);
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
 
@@ -484,7 +494,8 @@ describe("POST /api/chat/[leaseId]", () => {
       if (url.includes("embedContent")) {
         return Promise.resolve({ ok: false, status: 503, text: async () => "Service unavailable" });
       }
-      return Promise.resolve(makeGeminiStreamResponse(["Fallback answer"]));
+      // Groq still works
+      return Promise.resolve(makeGroqStreamResponse(["Fallback answer"]));
     });
     mockFrom.mockImplementation(buildSupabaseMock());
     mockRpc.mockResolvedValue({ data: [], error: null });
