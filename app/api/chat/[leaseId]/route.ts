@@ -30,6 +30,11 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbChatRateLimit } from "@/lib/chat-rate-limit";
+import {
+  detectPromptInjection,
+  sanitizeChatMessage,
+  CHAT_SCOPE_GUARD,
+} from "@/lib/ai-safety";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -308,7 +313,7 @@ function buildSystemPrompt(
           .join("\n\n")
       : "No LTB decisions retrieved for this question.";
 
-  return `You are LeaseGuard's AI legal assistant. You help Ontario tenants understand their specific lease document using retrieved legal sources.
+  return `${CHAT_SCOPE_GUARD}You are LeaseGuard's AI legal assistant. You help Ontario tenants understand their specific lease document using retrieved legal sources.
 
 CRITICAL RULES — follow these exactly:
 1. Only make legal claims that are directly supported by the RETRIEVED STATUTES or LTB DECISIONS below. If no retrieved source covers the question, say so clearly and recommend consulting a paralegal or the Landlord and Tenant Board.
@@ -441,6 +446,18 @@ export async function POST(
       { status: 400 }
     );
   }
+
+  // ── Prompt injection / jailbreak check ──────────────────────────────────
+  const injectionCheck = detectPromptInjection(message);
+  if (injectionCheck.blocked) {
+    return Response.json(
+      { error: "invalid_message", message: injectionCheck.reason },
+      { status: 400 }
+    );
+  }
+
+  // ── Sanitize message before embedding in prompts or vector queries ───────
+  message = sanitizeChatMessage(message);
 
   // ── SSE stream ───────────────────────────────────────────────────────────
   const encoder = new TextEncoder();

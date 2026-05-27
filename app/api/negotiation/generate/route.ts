@@ -25,6 +25,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { sanitizeName } from "@/lib/ai-safety";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -330,6 +331,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Sanitize free-text name fields before embedding in LLM prompts ──────
+    // Strips newlines, control chars, and token delimiters that could be used
+    // to inject instructions into the system prompt.
+    const safeTenantName   = sanitizeName(tenantName);
+    const safeLandlordName = sanitizeName(landlordName);
+
     // ── 1. Fetch lease property details ──────────────────────────────────────
     const { data: lease, error: leaseErr } = await supabase
       .from("leases")
@@ -406,8 +413,8 @@ export async function POST(req: NextRequest) {
     const fullAddress = [propertyAddress, lease.property_city].filter(Boolean).join(", ");
 
     const generationParams = {
-      tenantName,
-      landlordName,
+      tenantName:      safeTenantName,
+      landlordName:    safeLandlordName,
       propertyAddress: fullAddress,
       tone,
       items: formattedItems,
