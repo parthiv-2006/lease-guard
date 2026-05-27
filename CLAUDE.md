@@ -1,5 +1,16 @@
 # LeaseGuard — Claude Code Instructions
 
+## Pre-Build Protocol
+
+**Before writing any code for a feature or fix, Claude MUST:**
+1. Ask Parthiv any clarifying questions needed to produce a complete implementation plan.
+2. Wait for answers before writing a single line of code.
+3. Only proceed once all ambiguities are resolved.
+
+This applies to every task — no exceptions. Do not start implementing while questions remain unanswered. Clarify first, build second.
+
+---
+
 ## Project Overview
 
 LeaseGuard is an AI agent that reads Ontario residential lease PDFs, retrieves real statute
