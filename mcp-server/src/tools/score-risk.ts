@@ -142,6 +142,14 @@ const MANDATORY_PROVISION_VIOLATION_TYPES = new Set([
   "surveillance_in_unit",  // RTA s.28 — landlord cannot install cameras inside rental unit
   "guest_surcharge",       // RTA s.134 — per-guest or per-night charges are prohibited
   "assignment_fee",        // RTA s.97(3) — no fee may be charged for processing assignment/sublet requests
+  // ── New: 7 additional mandatory RTA provisions (v2.0) ──────────────────────
+  "vital_services_cutoff",              // RTA s.29 — landlord cannot interrupt/cease vital services (heat/hydro/water/gas)
+  "quiet_enjoyment_violation",          // RTA s.22 — excessive inspection/entry rights substantially interfere with quiet enjoyment
+  "assignment_prohibition",             // RTA s.95 — outright ban on assignment/sublet is void; consent pathway must remain available
+  "unlawful_renewal_obligation",        // RTA s.38 — tenancy auto-continues month-to-month; tenant cannot be required to give notice to not renew
+  "multiple_rent_increases",            // RTA s.119 — only one rent increase per 12-month period is permitted
+  "service_reduction_no_rent_decrease", // RTA s.121/125 — removal of included services requires corresponding rent reduction
+  "retaliation_or_coercion",           // RTA s.137–139 — cannot evict/penalize/threaten tenant for exercising RTA rights
 ]);
 
 // ── 3.1: Quoted text extraction ───────────────────────────────────────────────
@@ -292,6 +300,75 @@ function checkStatuteCompliance(
           : `Clause does not require post-dated cheques — consistent with ${statute.act_name} s.${sNum}`,
       };
     }
+  }
+
+  // ── Quiet enjoyment (s.22): clause explicitly guarantees enjoyment ──────────
+  if (
+    (sNum === "22" || sNum.startsWith("22.")) &&
+    (lower.includes("quiet enjoyment") || lower.includes("reasonable enjoyment")) &&
+    !lower.includes("any time") &&
+    !lower.includes("at landlord's convenience")
+  ) {
+    return {
+      compliant: true,
+      reason: `Clause guarantees tenant's right to quiet enjoyment — compliant with ${statute.act_name} s.${sNum}`,
+    };
+  }
+
+  // ── Vital services (s.29-31): utilities explicitly INCLUDED in rent ─────────
+  if (
+    (sNum === "29" || sNum === "30" || sNum === "31") &&
+    (lower.includes("included") || lower.includes("landlord provides") ||
+     lower.includes("landlord shall provide") || lower.includes("is responsible for")) &&
+    (lower.includes("heat") || lower.includes("hydro") || lower.includes("water") ||
+     lower.includes("gas") || lower.includes("electricity") || lower.includes("utilities"))
+  ) {
+    return {
+      compliant: true,
+      reason: `Clause specifies landlord-provided vital services — compliant with ${statute.act_name} s.${sNum}`,
+    };
+  }
+
+  // ── Lease continuation (s.38): explicit month-to-month continuation ─────────
+  if (
+    sNum === "38" &&
+    (lower.includes("month-to-month") || lower.includes("month to month")) &&
+    (lower.includes("continue") || lower.includes("continuation") || lower.includes("convert"))
+  ) {
+    return {
+      compliant: true,
+      reason: `Clause explicitly states tenancy continues month-to-month at end of fixed term — compliant with ${statute.act_name} s.${sNum}`,
+    };
+  }
+
+  // ── Assignment with consent (s.95/97): requires consent without prohibiting ──
+  if (
+    (sNum === "95" || sNum === "97" || sNum.startsWith("95.") || sNum.startsWith("97.")) &&
+    (lower.includes("with written consent") || lower.includes("with the written consent") ||
+     lower.includes("with consent") || lower.includes("subject to landlord") ||
+     lower.includes("not to be unreasonably withheld") || lower.includes("not unreasonably withheld") ||
+     lower.includes("shall not arbitrarily")) &&
+    !lower.includes("no assignment") && !lower.includes("no subletting") &&
+    !lower.includes("not permitted") && !lower.includes("prohibited")
+  ) {
+    return {
+      compliant: true,
+      reason: `Clause requires consent for assignment/sublet without outright prohibition — compliant with ${statute.act_name} s.${sNum}`,
+    };
+  }
+
+  // ── Rent increase once per year (s.119): annual guideline ───────────────────
+  if (
+    (sNum === "119" || sNum.startsWith("119.")) &&
+    (lower.includes("once per year") || lower.includes("once a year") ||
+     lower.includes("once per 12 month") || lower.includes("annually") ||
+     lower.includes("once every 12 month")) &&
+    (lower.includes("guideline") || lower.includes("in accordance"))
+  ) {
+    return {
+      compliant: true,
+      reason: `Clause limits rent increases to once per year in line with the guideline — compliant with ${statute.act_name} s.${sNum}`,
+    };
   }
 
   return { compliant: false, reason: "" };
@@ -793,6 +870,163 @@ function detectStatutoryViolations(
       });
       continue;
     }
+
+    // ── Vital services cutoff — RTA s.29/30/31 ───────────────────────────────
+    if (
+      (statute.section_number === "29" || statute.section_number === "30" || statute.section_number === "31") &&
+      (lowerClause.includes("tenant") || lowerClause.includes("renter")) &&
+      (lowerClause.includes("responsible for") || lowerClause.includes("must ensure") ||
+       lowerClause.includes("at tenant's cost") || lowerClause.includes("at the tenant's cost") ||
+       lowerClause.includes("not liable if") || lowerClause.includes("may discontinue") ||
+       lowerClause.includes("may disconnect") || lowerClause.includes("cut off")) &&
+      (lowerClause.includes("heat") || lowerClause.includes("hydro") || lowerClause.includes("water") ||
+       lowerClause.includes("gas") || lowerClause.includes("electricity") || lowerClause.includes("utilities"))
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "vital_services_cutoff",
+        violation_description: `Clause shifts responsibility for vital services to the tenant or allows their interruption, contradicting ${sectionRef} — the landlord has a statutory duty to provide and maintain vital services (heat, hydro, water, gas) at all times`,
+        quoted_text: extractQuotedText(statute.text, ["vital service", "heat", "water", "interrupt", "landlord shall", "supply"]),
+      });
+      continue;
+    }
+
+    // ── Quiet enjoyment violation — RTA s.22 ─────────────────────────────────
+    // High-frequency inspections (monthly/quarterly) are a violation regardless of notice period.
+    // Unbounded/discretionary access is only a violation when 24h notice is absent.
+    const _isHighFreqInspection = lowerClause.includes("monthly") || lowerClause.includes("quarterly") ||
+      lowerClause.includes("regular inspection") || lowerClause.includes("periodic inspection");
+    const _isUnboundedAccess = lowerClause.includes("any time") || lowerClause.includes("at landlord's discretion") ||
+      lowerClause.includes("at landlord's convenience") || lowerClause.includes("at any time");
+    const _has24hNotice = lowerClause.includes("24 hour") || lowerClause.includes("24-hour");
+    if (
+      (statute.section_number === "22" || statute.section_number.startsWith("22.")) &&
+      (lowerClause.includes("inspect") || lowerClause.includes("inspection") ||
+       lowerClause.includes("enter") || lowerClause.includes("access")) &&
+      (_isHighFreqInspection || _isUnboundedAccess) &&
+      (_isHighFreqInspection || !_has24hNotice) &&
+      !lowerClause.includes("emergency") && !lowerClause.includes("in accordance")
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "quiet_enjoyment_violation",
+        violation_description: `Clause grants landlord unrestricted or excessively frequent inspection/entry rights that substantially interfere with the tenant's right to quiet enjoyment, contradicting ${sectionRef}`,
+        quoted_text: extractQuotedText(statute.text, ["quiet enjoyment", "reasonable", "interference", "tenant", "enjoyment"]),
+      });
+      continue;
+    }
+
+    // ── Assignment prohibition — RTA s.95/97 ─────────────────────────────────
+    if (
+      (statute.section_number === "95" || statute.section_number === "97" ||
+       statute.section_number.startsWith("95.") || statute.section_number.startsWith("97.")) &&
+      (lowerClause.includes("no assignment") || lowerClause.includes("no subletting") ||
+       lowerClause.includes("may not assign") || lowerClause.includes("may not sublet") ||
+       lowerClause.includes("not permitted to assign") || lowerClause.includes("not permitted to sublet") ||
+       lowerClause.includes("prohibited from subletting") || lowerClause.includes("prohibited from assigning") ||
+       /assignment.*(?:prohibited|forbidden|not allowed)/.test(lowerClause) ||
+       /subletting.*(?:prohibited|forbidden|not allowed)/.test(lowerClause)) &&
+      !lowerClause.includes("with consent") && !lowerClause.includes("with written consent") &&
+      !lowerClause.includes("subject to approval") && !lowerClause.includes("subject to landlord")
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "assignment_prohibition",
+        violation_description: `Clause completely prohibits assignment or subletting with no consent pathway, contradicting ${sectionRef} — a landlord may require consent but cannot outright prevent a tenant from requesting to assign or sublet`,
+        quoted_text: extractQuotedText(statute.text, ["assign", "sublet", "consent", "tenant", "request", "arbitrarily"]),
+      });
+      continue;
+    }
+
+    // ── Unlawful renewal obligation — RTA s.38 ───────────────────────────────
+    if (
+      (statute.section_number === "38" || statute.section_number.startsWith("38.")) &&
+      (((lowerClause.includes("must give") || lowerClause.includes("shall give") || lowerClause.includes("required to give")) &&
+        (lowerClause.includes("notice") || lowerClause.includes("days notice")) &&
+        (lowerClause.includes("not renew") || lowerClause.includes("intention to vacate") ||
+         lowerClause.includes("vacate at end") || lowerClause.includes("intent to vacate") ||
+         lowerClause.includes("not continue"))) ||
+       (lowerClause.includes("automatically renew") && lowerClause.includes("fixed term") &&
+        !lowerClause.includes("month-to-month")))
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "unlawful_renewal_obligation",
+        violation_description: `Clause imposes an obligation on the tenant to give advance notice of intent not to renew, or purports to auto-renew for a new fixed term — contradicting ${sectionRef} which provides that a tenancy automatically continues month-to-month at end of fixed term`,
+        quoted_text: extractQuotedText(statute.text, ["fixed term", "month-to-month", "continue", "renewal", "notice", "expire"]),
+      });
+      continue;
+    }
+
+    // ── Multiple rent increases — RTA s.119 ──────────────────────────────────
+    if (
+      (statute.section_number === "119" || statute.section_number.startsWith("119.")) &&
+      (lowerClause.includes("rent increase") || lowerClause.includes("increase rent") ||
+       /increas.*rent/.test(lowerClause) || /rent.*increas/.test(lowerClause) ||
+       lowerClause.includes("rent shall be adjusted") || lowerClause.includes("rent will be adjusted") ||
+       lowerClause.includes("rent is adjusted") || lowerClause.includes("rent adjusted")) &&
+      (lowerClause.includes("monthly") || lowerClause.includes("quarterly") ||
+       lowerClause.includes("semi-annual") || lowerClause.includes("biannual") ||
+       lowerClause.includes("every six month") || lowerClause.includes("cpi") ||
+       lowerClause.includes("consumer price") || lowerClause.includes("inflation index")) &&
+      !lowerClause.includes("once per 12 month") && !lowerClause.includes("once every 12 month") &&
+      !lowerClause.includes("once per year") && !lowerClause.includes("once a year")
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "multiple_rent_increases",
+        violation_description: `Clause permits rent increases more frequently than once per 12-month period, contradicting ${sectionRef} — only one rent increase is allowed per 12 months regardless of amount`,
+        quoted_text: extractQuotedText(statute.text, ["12 months", "once", "increase", "period", "guideline", "12-month"]),
+      });
+      continue;
+    }
+
+    // ── Service reduction without rent decrease — RTA s.121/125 ──────────────
+    if (
+      (statute.section_number === "121" || statute.section_number === "125" ||
+       statute.section_number.startsWith("121.") || statute.section_number.startsWith("125.")) &&
+      (lowerClause.includes("may remove") || lowerClause.includes("may discontinue") ||
+       lowerClause.includes("reserves the right to change") || lowerClause.includes("may change") ||
+       lowerClause.includes("subject to change") || lowerClause.includes("may modify") ||
+       lowerClause.includes("amenities may") || lowerClause.includes("services may") ||
+       lowerClause.includes("right to remove") || lowerClause.includes("right to discontinue") ||
+       lowerClause.includes("right to reassign") || lowerClause.includes("reserves the right to remove") ||
+       lowerClause.includes("reserves the right to discontinue")) &&
+      (lowerClause.includes("parking") || lowerClause.includes("laundry") || lowerClause.includes("storage") ||
+       lowerClause.includes("locker") || lowerClause.includes("amenities") || lowerClause.includes("services") ||
+       lowerClause.includes("facilities") || lowerClause.includes("cable") || lowerClause.includes("internet")) &&
+      !lowerClause.includes("rent will be reduced") && !lowerClause.includes("rent reduction") &&
+      !lowerClause.includes("rent shall be reduced")
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "service_reduction_no_rent_decrease",
+        violation_description: `Clause allows landlord to remove or reduce included services/facilities without a corresponding rent reduction, contradicting ${sectionRef} — any reduction in services included in rent requires a proportionate rent decrease`,
+        quoted_text: extractQuotedText(statute.text, ["reduction", "service", "rent", "facility", "decrease", "included"]),
+      });
+      continue;
+    }
+
+    // ── Retaliation or coercion — RTA s.137–139 ──────────────────────────────
+    if (
+      (statute.section_number === "137" || statute.section_number === "138" ||
+       statute.section_number === "139" || statute.section_number.startsWith("137.") ||
+       statute.section_number.startsWith("138.") || statute.section_number.startsWith("139.")) &&
+      (((lowerClause.includes("waive") || lowerClause.includes("forfeit") || lowerClause.includes("relinquish")) &&
+        (lowerClause.includes("right to complain") || lowerClause.includes("right to apply") ||
+         lowerClause.includes("ltb") || lowerClause.includes("board") || lowerClause.includes("tribunal"))) ||
+       ((lowerClause.includes("terminat") || lowerClause.includes("evict")) &&
+        (lowerClause.includes("any complaint") || lowerClause.includes("any request") ||
+         lowerClause.includes("any application") || lowerClause.includes("if tenant"))))
+    ) {
+      violations.push({
+        statute_section: sectionRef,
+        violation_type: "retaliation_or_coercion",
+        violation_description: `Clause contains retaliatory or coercive language — waiving the tenant's right to access the LTB or threatening consequences for exercising rights, contradicting ${sectionRef}`,
+        quoted_text: extractQuotedText(statute.text, ["retaliation", "complain", "right", "coerce", "evict", "landlord", "penalty"]),
+      });
+      continue;
+    }
   }
 
   return violations;
@@ -1094,6 +1328,98 @@ function detectCriticalTextViolations(clauseText: string): Array<{
     });
   }
 
+  // ── Vital services cutoff — RTA s.29 ─────────────────────────────────────
+  const vitalServicesCutoff =
+    (t.includes("tenant") || t.includes("renter")) &&
+    (t.includes("responsible for") || t.includes("must ensure") ||
+     t.includes("may disconnect") || t.includes("may cut off") ||
+     t.includes("not liable if") || t.includes("at tenant's expense") ||
+     t.includes("at the tenant's expense") || t.includes("tenant shall pay for")) &&
+    (t.includes("heat") || t.includes("hydro") || t.includes("water") ||
+     t.includes("gas") || t.includes("electricity")) &&
+    // Guard: "tenant pays for hydro directly to utility" is COMPLIANT — tenant bills, not landlord cutoff
+    !t.includes("directly to") && !t.includes("utility provider") && !t.includes("directly to the utility");
+
+  if (vitalServicesCutoff) {
+    found.push({
+      statute_section: "RTA s.29",
+      violation_type: "vital_services_cutoff",
+      violation_description:
+        "Clause makes tenant responsible for ensuring vital services (heat, hydro, water, or gas) remain on, or allows their interruption — void under RTA s.29. The landlord has a non-delegable statutory duty to provide and maintain vital services at all times.",
+      quoted_text:
+        "A landlord shall not cause the supply of a vital service to be withheld or interrupted (RTA s.29(1)). Vital services include heat, hot and cold water, fuel, electricity, natural gas, and refrigeration.",
+    });
+  }
+
+  // ── Assignment prohibition — RTA s.95 ────────────────────────────────────
+  const assignmentProhibition =
+    (t.includes("no assignment") || t.includes("no subletting") ||
+     t.includes("may not assign") || t.includes("may not sublet") ||
+     t.includes("not permitted to assign") || t.includes("not permitted to sublet") ||
+     /assignment.*(?:prohibited|forbidden|not allowed)/.test(t) ||
+     /subletting.*(?:prohibited|forbidden|not allowed)/.test(t) ||
+     (/(?:assignment|subletting).*not.*(?:permit|allow)/.test(t))) &&
+    !t.includes("with consent") && !t.includes("with written consent") &&
+    !t.includes("subject to") && !t.includes("with approval") &&
+    !t.includes("not unreasonably") && !t.includes("not arbitrarily");
+
+  if (assignmentProhibition) {
+    found.push({
+      statute_section: "RTA s.95",
+      violation_type: "assignment_prohibition",
+      violation_description:
+        "Clause completely prohibits assignment or subletting with no consent pathway — void under RTA s.95. A landlord may require written consent (and that consent cannot be unreasonably withheld), but cannot contractually prevent a tenant from even requesting to assign or sublet.",
+      quoted_text:
+        "A tenant may assign a tenancy agreement with the consent of the landlord (RTA s.95(1)). A landlord shall not arbitrarily or unreasonably withhold consent to an assignment.",
+    });
+  }
+
+  // ── Unlawful renewal obligation — RTA s.38 ───────────────────────────────
+  const unlawfulRenewalObligation =
+    ((t.includes("must give") || t.includes("shall give") ||
+      t.includes("required to give") || t.includes("obligated to give")) &&
+     /\b([3-9]\d|[1-9]\d{2})\s*day/.test(t) &&
+     (t.includes("not renew") || t.includes("intention to vacate") ||
+      t.includes("intent not to continue") || t.includes("will not be continuing") ||
+      t.includes("will not renew"))) ||
+    (t.includes("automatically renew") &&
+     (t.includes("fixed term") || t.includes("one year") || t.includes("1 year") || /\d+.year.term/.test(t)) &&
+     !t.includes("month-to-month"));
+
+  if (unlawfulRenewalObligation) {
+    found.push({
+      statute_section: "RTA s.38",
+      violation_type: "unlawful_renewal_obligation",
+      violation_description:
+        "Clause requires tenant to give advance notice of intent not to renew, or purports to auto-renew for a new fixed term — void under RTA s.38. At end of a fixed-term tenancy, the tenancy automatically continues month-to-month; no renewal notice is required from the tenant.",
+      quoted_text:
+        "If a tenancy agreement for a fixed term expires and is not renewed and the tenant continues to occupy the unit, the tenancy continues as a monthly tenancy on the same terms and conditions (RTA s.38(1)).",
+    });
+  }
+
+  // ── Retaliation or coercion — RTA s.137/139 ──────────────────────────────
+  const retaliationCoercion =
+    ((t.includes("waive") || t.includes("waiver") || t.includes("forfeit")) &&
+     (t.includes("right to complain") || t.includes("right to apply") ||
+      t.includes("right to contact") || t.includes("right to file") ||
+      t.includes("ltb") || t.includes("landlord and tenant board") ||
+      t.includes("any government") || t.includes("any authority"))) ||
+    ((t.includes("terminat") || t.includes("evict") || t.includes("penalt")) &&
+     (t.includes("if tenant complains") || t.includes("any complaint made") ||
+      t.includes("any application to") || t.includes("for making any request") ||
+      t.includes("for exercising")));
+
+  if (retaliationCoercion) {
+    found.push({
+      statute_section: "RTA s.139",
+      violation_type: "retaliation_or_coercion",
+      violation_description:
+        "Clause waives the tenant's right to access the Landlord and Tenant Board, or threatens consequences for exercising legal rights — void under RTA s.139 and s.3. A landlord cannot threaten, penalize, or take adverse action against a tenant for exercising any right under the RTA.",
+      quoted_text:
+        "This Act applies despite any agreement or waiver to the contrary (RTA s.3(1)). A landlord shall not evict or threaten to evict a tenant in retaliation for the tenant seeking to enforce their rights under this Act.",
+    });
+  }
+
   return found;
 }
 
@@ -1152,6 +1478,28 @@ const COMPLIANT_LANGUAGE_TEMPLATES: Record<string, string> = {
 
   assignment_fee:
     "The Tenant may request to assign the tenancy or sublet the rental unit in accordance with the Residential Tenancies Act, 2006. The Landlord shall not charge any fee or administrative charge for processing or consenting to such a request. If the Landlord refuses consent without reasonable grounds, the Tenant may terminate the tenancy by giving 30 days' written notice, in accordance with section 97 of the Act.",
+
+  // ── New: 7 additional mandatory provisions (v2.0) ──────────────────────────
+  vital_services_cutoff:
+    "The Landlord shall provide and maintain the following vital services at all times during the tenancy: [heat / hot and cold water / fuel / electricity / natural gas]. The Landlord shall not cause or permit the supply of any vital service to be withheld or interrupted, in accordance with sections 29–31 of the Residential Tenancies Act, 2006. Responsibility for vital services cannot be transferred to the Tenant by agreement.",
+
+  quiet_enjoyment_violation:
+    "The Landlord shall not substantially interfere with the Tenant's reasonable enjoyment of the rental unit or residential complex. Entry by the Landlord for any purpose (including inspections, repairs, or showing the unit) requires at least 24 hours' written notice specifying the reason and time of entry (between 8 a.m. and 8 p.m.), in accordance with sections 22, 26, and 27 of the Residential Tenancies Act, 2006. Periodic 'routine inspection' clauses that do not comply with the notice requirements of ss.26/27 are void.",
+
+  assignment_prohibition:
+    "The Tenant may request to assign this tenancy or sublet the rental unit in accordance with the Residential Tenancies Act, 2006. Such requests require the written consent of the Landlord, which shall not be arbitrarily or unreasonably withheld. A complete prohibition on assignment or subletting with no consent pathway is void under section 95 of the Act — the Landlord may require consent but cannot outright prevent the Tenant from making a request.",
+
+  unlawful_renewal_obligation:
+    "At the end of the fixed-term period, this tenancy agreement will automatically continue on a month-to-month basis on the same terms and conditions, in accordance with section 38 of the Residential Tenancies Act, 2006. Neither party is required to give notice of an intention to not renew. Either party may terminate the tenancy only through the proper notice procedures under the Act.",
+
+  multiple_rent_increases:
+    "The Landlord may increase the rent no more than once per 12-month period, in accordance with section 119 of the Residential Tenancies Act, 2006. Any increase must comply with the annual rent increase guideline established under section 120 of the Act and requires at least 90 days' written notice on the prescribed Form N1. Indexing rent to CPI, inflation, or any other measure on a more frequent basis is void.",
+
+  service_reduction_no_rent_decrease:
+    "If the Landlord reduces or eliminates any service or facility that is included in the rent (such as parking, storage, laundry, or utilities), the rent shall be reduced by a corresponding amount in accordance with section 125 of the Residential Tenancies Act, 2006. Either party may apply to the Landlord and Tenant Board to determine the appropriate reduction. Any clause allowing removal of included services without a rent reduction is void.",
+
+  retaliation_or_coercion:
+    "The Landlord shall not take any retaliatory action — including issuing a notice of termination, increasing rent, or reducing services — because the Tenant has exercised or intends to exercise any right under the Residential Tenancies Act, 2006, including the right to apply to the Landlord and Tenant Board, request repairs, or make a complaint to any government authority, in accordance with sections 83, 139, and 3(1) of the Act.",
 };
 
 // Returns a compliant language template for the first mandatory-provision
@@ -1309,6 +1657,31 @@ export async function execute(input: unknown): Promise<unknown> {
   let finalScore = Math.round(
     Math.min(10, Math.max(1, patternAdjustedScore + violationBonus + textPatternBonus))
   );
+
+  // ── Mandatory provision floor ──────────────────────────────────────────────
+  // Any clause that violates a mandatory RTA provision (cannot be contracted out
+  // of per s.3) must score at least 5 — "medium" risk at minimum.
+  // Particularly severe violations (ongoing financial harm, health/safety, rights
+  // suppression) carry a higher floor of 7 ("high").
+  const CRITICAL_FLOOR_VIOLATIONS = new Set([
+    "multiple_rent_increases",      // Quarterly/CPI increases — recurring financial harm
+    "vital_services_cutoff",        // Heat/water cutoff — immediate health/safety risk
+    "retaliation_or_coercion",      // Waiving LTB rights — suppression of tenant rights
+    "rent_increase_without_guideline", // Above-guideline increases — severe financial harm
+    "waiver_of_rights",             // Full RTA waiver — eliminates all protections
+    "rta_waiver",
+  ]);
+  const hasEnforceabilityViolationEarly = violations.some((v) =>
+    MANDATORY_PROVISION_VIOLATION_TYPES.has(v.violation_type)
+  );
+  const hasCriticalFloorViolation = violations.some((v) =>
+    CRITICAL_FLOOR_VIOLATIONS.has(v.violation_type)
+  );
+  if (hasCriticalFloorViolation) {
+    finalScore = Math.max(7, finalScore);
+  } else if (hasEnforceabilityViolationEarly) {
+    finalScore = Math.max(5, finalScore);
+  }
 
   // ── Risk level ─────────────────────────────────────────────────────────────
   let risk_level: RiskScore["risk_level"];
