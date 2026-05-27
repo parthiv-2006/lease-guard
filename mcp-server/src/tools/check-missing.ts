@@ -147,6 +147,34 @@ const ONTARIO_REQUIRED_PROTECTIONS: RequiredProtection[] = [
       "Without an alterations clause, tenant and landlord expectations about modifications, painting, or fixtures may diverge.",
     severity: "low",
   },
+  // ── New: 3 additional missing-protection checks (v2.0) ───────────────────
+  {
+    clause_type: "utilities",
+    description: "Vital services disclosure — which utilities are included in rent",
+    statute_reference: "Residential Tenancies Act, 2006",
+    statute_section: "Sections 29–31 RTA",
+    risk_if_missing:
+      "If the lease does not specify which utilities (heat, hydro, water, gas) are included in rent and which the tenant pays separately, disputes arise about who is responsible. Under RTA ss.29–31, the landlord cannot cut off vital services — clarity about who pays is critical.",
+    severity: "high",
+  },
+  {
+    clause_type: "standard_boilerplate",
+    description: "Lease renewal and continuation terms — what happens at end of fixed term",
+    statute_reference: "Residential Tenancies Act, 2006",
+    statute_section: "Section 38 RTA",
+    risk_if_missing:
+      "Without an explicit clause confirming that the tenancy continues month-to-month under RTA s.38, the landlord may incorrectly assert that the tenancy ends when the fixed term expires, creating pressure to vacate or re-sign unnecessarily.",
+    severity: "medium",
+  },
+  {
+    clause_type: "standard_boilerplate",
+    description: "Landlord emergency contact information",
+    statute_reference: "Ontario Standard Form of Lease",
+    statute_section: "Standard Form Section 3",
+    risk_if_missing:
+      "The Ontario Standard Form of Lease requires landlord contact details (name, address, phone). Without this, tenants cannot reach the landlord for urgent repairs or vital service emergencies — a practical safety gap.",
+    severity: "medium",
+  },
 ];
 
 const ONTARIO_IMPLICIT_PROTECTIONS: ImplicitProtection[] = [
