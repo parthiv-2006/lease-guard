@@ -1,6 +1,10 @@
+<div align="center">
+
 # LeaseGuard
 
-Ontario residential lease analysis grounded in 2,372 chunks of real statute law and 84 tribunal decisions, built as a final project for CSC207 (Software Design) by a team of six.
+**AI-powered Ontario lease analysis grounded in real statute law.**
+
+Upload your lease. Get a full risk report — every red flag cited to the RTA — in under 90 seconds.
 
 [![CI](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)](#testing)
@@ -8,124 +12,238 @@ Ontario residential lease analysis grounded in 2,372 chunks of real statute law 
 [![Retrieval](https://img.shields.io/badge/retrieval%20precision-7%2F7-brightgreen)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue)](#license)
+[![License](https://img.shields.io/badge/license-MIT-blue)](#)
+
+<br/>
+
+| 📊 Scoring accuracy | 🔍 Retrieval precision | 🧪 Automated tests | 📚 Legal corpus |
+|:-------------------:|:---------------------:|:-----------------:|:---------------:|
+| **30 / 30** | **7 / 7** | **161** | **2,372 chunks** |
+| 100% — zero false positives on a 30-case labelled suite covering all 17 violation types | 100% — hybrid BM25+vector on RTA + O.Reg + Standard Form at threshold 0.55 | 113 unit · 48 Playwright E2E · full CI on every push | RTA granular subsections · O.Reg 516/06 · O.Reg 517/06 · Standard Form · 84 LTB decisions |
+
+<br/>
+
+<img src=".github/assets/landing.png" alt="LeaseGuard landing page" width="100%" style="border-radius:8px;border:1px solid #e5e7eb;" />
+
+</div>
 
 ---
 
-## What It Is
+## Demo
 
-Ontario tenants commonly sign leases containing clauses that violate the Residential Tenancies Act without knowing it. Legal counsel is expensive; the RTA is dense. LeaseGuard analyzes a lease PDF in under 90 seconds, flags violations across 17 mandatory provision categories, retrieves the exact statute subsections and tribunal decisions that apply to each clause, and generates negotiation talking points grounded in those sources.
+<video src="https://github.com/parthiv-2006/lease-guard/releases/download/v1.0.0/demo.webm" controls width="100%"></video>
 
-The risk scoring engine is deterministic TypeScript, not an LLM call. Every score is reproducible and auditable. Claude Haiku 4.5 orchestrates a 14-step pipeline via the Model Context Protocol, where tool outputs are structured objects rather than raw text, eliminating the parsing ambiguity that characterises basic function-calling patterns.
-
----
-
-## Features
-
-- **Clause-level risk scoring** -- 17 `MANDATORY_PROVISION_VIOLATION` types evaluated by deterministic regex patterns in TypeScript. Same input always produces the same score. Zero false positives on the 30-case labelled eval suite covering all violation types.
-- **Hybrid retrieval** -- BM25 keyword search merged with pgvector semantic search via Reciprocal Rank Fusion, with a similarity cutoff at 0.55. 7/7 precision on the retrieval benchmark spanning RTA subsections, O.Reg 516/06, O.Reg 517/06, Ontario Standard Form of Lease, and 84 LTB decisions.
-- **Contradiction detection** -- Claude Haiku 4.5 compares conflicting clause pairs from a hardcoded `CONTRADICTION_TYPE_PAIRS` array. Requires confidence >= 0.65; falls back to regex below that threshold.
-- **Missing protections check** -- identifies Ontario RTA protections absent from the written lease; their omission weakens the tenant's position even though those protections still apply by law.
-- **Negotiation Copilot** -- Groq `llama-3.3-70b-versatile` in JSON mode drafts a tone-aware email or lease addendum (Assertive, Formal, or Cooperative). Falls back to a static template when Groq is unavailable.
-- **Ask Your Lease chat** -- floating panel on every report page. Questions are answered with streaming Groq responses grounded in the same retrieved corpus, statute citations included. Rate-limited at 50 messages/day for authenticated users and 10/day for guest IPs.
-- **Live agent trace** -- every MCP tool call rendered as a Gantt chart with parallel swim lanes and duration bars. Typically 67 tool calls for a 3-page lease.
-- **PDF annotation** -- pdfjs-dist v5 renders the original PDF with colour-coded risk highlights. A normAndMap algorithm prevents annotation drift across OCR-position variations and page turns.
-- **PIPEDA compliance** -- upload consent gate, signed URLs expiring after 1 hour, cascade DELETE across 6 tables, and PII-stripped benchmarking storage.
-- **Retry on failure** -- `POST /api/job/[id]/retry` re-enters the pipeline at the last successful step rather than restarting from scratch.
+> Shows: landing page → lease upload → processing → risk report → all panels → Negotiation Copilot → Ask Your Lease chat.
 
 ---
 
-## Tech Stack
+## What it does
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Frontend | Next.js 15 (App Router), React 19 | App Router's file-based routing maps cleanly to the API surface; Supabase SSR requires server components to manage session cookies without a network round-trip |
-| Agent | Claude Haiku 4.5 (`@anthropic-ai/sdk ^0.37`) | The only major model with native MCP support at the time of development; tool outputs are typed objects, not raw text, which removes an entire parsing layer from the pipeline |
-| Chat + Copilot | Groq `llama-3.3-70b-versatile` (OpenAI-compatible API) | Haiku's effective context degrades on multi-turn negotiation with full RTA context injected; Groq's ~40 ms/token inference latency makes SSE streaming feel synchronous |
-| Embeddings | Gemini `gemini-embedding-001` (REST, not SDK) | Free tier at 60 req/min covers dev and staging; 768-dimensional output stores efficiently in pgvector; REST-only avoids a versioned SDK dependency |
-| Vector + full-text DB | Supabase pgvector, GIN `fts_vector` index | Keeps all storage in one infrastructure layer; pgvector RLS isolates every user's data at the database level without application-layer filtering |
-| Storage | Supabase Storage | Co-located with the database; signed URL generation is a single SDK call sharing the same credentials as the DB client |
-| MCP Server | TypeScript / Node.js (12 tools, stdio transport) | stdio avoids an HTTP hop between agent and tools; same runtime as the Next.js app eliminates cross-language credential plumbing |
-| PDF Parsing | PyMuPDF + Tesseract OCR (Python subprocess) | PyMuPDF handles text-layer PDFs in milliseconds; Tesseract provides OCR fallback for scanned images |
-| PDF Viewer | pdfjs-dist v5 | Rendering and annotation support in one package; the text-layer canvas enables highlight coordinates that survive page turns |
-| PDF Export | jsPDF `^4.2.1` | Browser-side generation with no server round-trip for the copilot email or addendum PDF |
-| AI Safety | Custom injection detector (`lib/ai-safety.ts`) | 25-pattern prompt injection filter on all LLM routes, covering jailbreak patterns specific to legal-domain misuse |
-| Language | TypeScript 5.7 (strict mode) | Null-safety bugs on `user_id`, storage paths, and rate limit query shapes fail at compile time, not in production |
-| Testing | Jest 29 + Playwright 1.60 | Jest for unit/integration with mocked external services; Playwright for full browser flows against the production build |
-| CI | GitHub Actions (4-job parallel pipeline) | `typecheck` and `test` run in parallel; `build` and `e2e` gate on both passing |
+LeaseGuard reads Ontario residential lease PDFs and produces a clause-by-clause risk report backed by retrieved statute and tribunal text. **The LLM never asserts legal facts from training data alone** — every finding is grounded in real law retrieved from a 2,372-chunk pgvector corpus of the Residential Tenancies Act, O.Reg 516/06, O.Reg 517/06, the Ontario Standard Form of Lease, and 84 real LTB tribunal decisions.
+
+The result: **nine interactive panels** covering risk scoring, red flags, clause exploration, missing protections, negotiation guidance with AI copilot, contradiction detection, statute sources, PDF annotation, and a live Gantt trace of the agent's reasoning — plus a floating AI chat for follow-up questions, all grounded in the same retrieved corpus.
 
 ---
 
-## Architecture
+## Report panels
+
+<table>
+<tr>
+<td width="50%">
+
+**Overview — 9.5 Critical**
+
+Risk gauge, executive summary, and clause breakdown with per-clause risk levels. Four stat cards: Red Flags · Negotiation Points · Missing Protections · Contradictions.
+
+<img src=".github/assets/report-overview.png" alt="Report overview panel" width="100%" />
+
+</td>
+<td width="50%">
+
+**Red Flags**
+
+Every problematic clause with its risk score, violation type, and the exact RTA section it breaches. Grounding confidence badge on each card.
+
+<img src=".github/assets/report-red-flags.png" alt="Red flags panel" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Clause Explorer**
+
+Full text of every clause annotated with statute citations, enforceability status, benchmark percentiles, and suggested compliant language.
+
+<img src=".github/assets/report-clause-explorer.png" alt="Clause explorer panel" width="100%" />
+
+</td>
+<td width="50%">
+
+**Negotiation Guide**
+
+Prioritised negotiation points with counter-language and action items. One-click **Negotiation Copilot** drafts a tone-aware email or addendum (Assertive / Formal / Cooperative) via Groq Llama 3.3 70B.
+
+<img src=".github/assets/report-negotiation.png" alt="Negotiation panel" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Missing Protections**
+
+Identifies Ontario RTA protections absent from the lease. Statutory protections still apply by law — their absence from the written lease weakens the tenant's position.
+
+<img src=".github/assets/report-missing-protections.png" alt="Missing protections panel" width="100%" />
+
+</td>
+<td width="50%">
+
+**Contradictions**
+
+Conflicting clauses rendered side-by-side with LLM-detected contradictions (confidence gate ≥ 0.65, regex fallback).
+
+<img src=".github/assets/report-contradictions.png" alt="Contradictions panel" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Sources**
+
+Every RTA section, regulation, and LTB decision retrieved for this lease — 2,372-chunk corpus with full body text and citation URLs.
+
+<img src=".github/assets/report-sources.png" alt="Sources panel" width="100%" />
+
+</td>
+<td width="50%">
+
+**Agent Trace — Live Gantt**
+
+Every tool call the agent made, with duration, parallel swim lanes, and input/output summaries. 67 tool calls for a 3-page lease. Switchable Gantt / List view.
+
+<img src=".github/assets/report-agent-trace.png" alt="Agent trace Gantt" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**PDF Viewer**
+
+Full pdfjs-dist v5 rendered PDF with persistent clause highlight annotations. Highlights survive page turns and scroll without index drift.
+
+<img src=".github/assets/report-pdf-viewer.png" alt="PDF viewer with highlights" width="100%" />
+
+</td>
+<td width="50%">
+
+**Ask Your Lease — AI Chat**
+
+Floating chat panel powered by Groq Llama 3.3 70B with RAG grounding. Questions are answered with retrieved statute and LTB decision citations — the model never answers from memory alone.
+
+<img src=".github/assets/report-chat.png" alt="Ask Your Lease chat" width="100%" />
+
+</td>
+</tr>
+</table>
+
+---
+
+## How it works
 
 ```
 User uploads PDF
-       |
-       v
-Next.js API route ─── creates job ──► Supabase Storage (PDF)
-       |
-       v
-Claude Haiku 4.5 (MCP client, lib/agent.ts)
-       |  12 tools, parallel batches of 5 clauses, 3-min timeout
-       v
-MCP Server (TypeScript / Node.js, mcp-server/src/)
-  ├─ parse_document        PyMuPDF + Tesseract OCR subprocess
-  ├─ detect_jurisdiction   Haiku + regex (requires explicit "ON" confirmation)
-  ├─ segment_into_clauses  Haiku (30-50 clause objects per lease)
-  ├─ classify_clause       Haiku (one of 15 clause types)
+       │
+       ▼
+Next.js API route ── creates job ──► Supabase Storage (PDF)
+       │
+       ▼
+Claude Agent (MCP client)
+       │  calls 12 tools dynamically, in parallel batches
+       ▼
+MCP Server (TypeScript / Node.js)
+  ├─ parse_document        PyMuPDF + Tesseract OCR
+  ├─ detect_jurisdiction   LLM + regex
+  ├─ segment_into_clauses  LLM
+  ├─ classify_clause       LLM
   ├─ lookup_statute   ─┐
-  ├─ lookup_tribunal  ─┤── Supabase pgvector (Gemini embeddings, 768-dim)
-  │                    │   Hybrid BM25 + vector, RRF merge, threshold 0.55
-  ├─ score_clause_risk ─── Deterministic TypeScript regex (NOT Haiku)
-  ├─ detect_contradiction  Haiku, confidence gate >= 0.65, regex fallback
-  ├─ check_missing_clauses Supabase checklist against retrieved clause types
-  ├─ benchmark_clause      Supabase percentile lookup (50-row corpus)
-  ├─ generate_negotiation  Haiku with retrieved statutes as prompt context
-  └─ generate_report       Structured assembly (template + SQL aggregates, no LLM)
-       |
-       v
+  ├─ lookup_tribunal  ─┤── Supabase pgvector (Gemini embeddings)
+  │                    │   Hybrid BM25 + vector · RRF merge · 3 queries/clause
+  ├─ score_clause_risk ─── Deterministic TypeScript regex (NOT LLM)
+  ├─ detect_contradiction  LLM (Claude Haiku 4.5) · confidence gate ≥ 0.65
+  ├─ check_missing_clauses Supabase checklist lookup
+  ├─ benchmark_clause      Supabase PostgreSQL (50-row corpus)
+  ├─ generate_negotiation  LLM (retrieved statutes as input)
+  └─ generate_report       Structured assembly
+       │
+       ▼
 Supabase PostgreSQL  +  pgvector  +  Storage
-       |
-       v  (after report loads)
-Ask Your Lease chat  ── Groq llama-3.3-70b-versatile + same hybrid RAG corpus
-Negotiation Copilot  ── Groq llama-3.3-70b-versatile, JSON mode
+
+       │  (after report loads)
+       ▼
+Ask Your Lease chat  ── Groq Llama 3.3 70B + same RAG corpus
+Negotiation Copilot  ── Groq Llama 3.3 70B JSON mode
 ```
 
-The separation between Claude Haiku (orchestration) and Groq Llama (chat) is intentional. Haiku speaks MCP natively and manages short-lived tool calls cleanly; Llama handles multi-turn conversation where its larger effective context is the binding constraint.
+**Why grounded retrieval matters:** risk scoring is deterministic TypeScript — no LLM can hallucinate a score. Statute citations come from a pre-validated corpus (7/7 retrieval accuracy), not model memory. Clause enforceability is only flagged when a specific `MANDATORY_PROVISION_VIOLATION` is detected, not just because text sounds unusual.
 
-Risk scoring sits entirely outside the LLM loop. `score-risk.ts` applies 17 regex patterns against clause text and clause type; the result is an integer, reproducible on every run, and fully testable without API keys. This keeps the legally significant output auditable and independent of model availability.
-
----
-
-## How It Works
-
-1. **Upload** -- `POST /api/upload` validates the file (PDF magic bytes, 25 MB ceiling), creates a `leases` row with `status: "pending"`, writes the file to Supabase Storage, and returns `202 Accepted` with a `lease_id`. The analysis runs as a background task; the client polls `GET /api/stream/[id]` via Server-Sent Events for real-time progress.
-
-2. **Parse** -- The MCP server's `parse_document` tool spawns a Python subprocess running PyMuPDF. When the extracted text is under 500 words (indicating a scanned PDF), the tool re-processes through Tesseract OCR. The raw text is written back to `leases.raw_text`.
-
-3. **Validate and segment** -- `detect_jurisdiction` confirms Ontario by looking for explicit RTA signals ("Residential Tenancies Act", "LTAB"). Leases from other provinces throw `LeaseValidationError` and halt the pipeline. `segment_into_clauses` returns 30-50 clause objects with start and end byte offsets for annotation positioning.
-
-4. **Analyse in parallel batches** -- Clauses process in batches of 5 (`CLAUSE_BATCH_SIZE = 5`). Within each batch, `Promise.all()` fires classification, statute lookup, tribunal lookup, deterministic risk scoring, and contradiction detection simultaneously. Sequential batch ordering ensures contradiction detection in batch N can reference results from batches 1 through N-1. A 50-clause lease typically finishes in 30-60 seconds.
-
-5. **Retrieve** -- For each clause, `lookup_statute` and `lookup_tribunal` each issue 3 parallel pgvector queries (one per sub-corpus: RTA subsections, regulations, tribunal decisions). BM25 and vector search results merge via Reciprocal Rank Fusion before the 0.55 similarity cutoff.
-
-6. **Assemble the report** -- `violation_count` is a plain SQL `COUNT(*)` over `clauses WHERE violation_type IS NOT NULL`. `risk_score` is `AVG(risk_score)`. The summary uses a string template, not an LLM completion. After the `reports` row is inserted, `leases.status` flips to `"complete"` and the SSE stream closes.
-
-7. **Report view** -- `GET /api/report/[id]` fetches four tables in `Promise.all()` (leases, reports, clauses, tool_call_logs), generates a 1-hour signed URL for the PDF, and returns everything the nine frontend panels need in one response. Panels cover: risk overview, red flags, clause explorer, negotiation guide, missing protections, contradictions, statute sources, PDF viewer with annotations, and the live agent trace Gantt.
-
-8. **Chat** -- `POST /api/chat/[leaseId]` injects the user's clauses and retrieved corpus documents into a Groq system prompt, then streams the response via SSE. The model never answers from training memory alone; every response cites retrieved statute or decision text.
+> **Architecture deep-dive →** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) covers every major design decision: why MCP over raw function-calling, why pgvector over Pinecone, why Claude as the agent when Gemini is free, and why scoring is deterministic TypeScript instead of a second LLM call.
 
 ---
 
-## Getting Started
+## Tech stack
+
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| Frontend | Next.js 15 (App Router, React 19) | TypeScript, vanilla CSS design system |
+| Agent | Claude Haiku 4.5 via Anthropic SDK | MCP client — tool orchestration |
+| Chat & Copilot | Groq `llama-3.3-70b-versatile` | OpenAI-compatible API; 14,400 RPD free tier — no quota conflicts with embeddings |
+| Embeddings | Gemini `gemini-embedding-001` | REST only (768-dim); never the SDK |
+| Vector DB | Supabase pgvector | Hybrid BM25 + vector · RRF merging · threshold 0.55 |
+| Database | Supabase PostgreSQL | Leases, clauses, reports, jobs, chat, feedback |
+| Storage | Supabase Storage | Uploaded PDFs, signed URL refresh |
+| MCP Server | TypeScript / Node.js | 12 tools, stdio + SSE transport |
+| PDF Parsing | Python (PyMuPDF + Tesseract) | Subprocess from MCP server |
+| PDF Viewer | pdfjs-dist v5 | Canvas + text layer, persistent clause annotations |
+| AI Safety | Custom injection detector | 25-pattern prompt injection filter on all LLM routes |
+| CI | GitHub Actions | 4-job parallel pipeline: typecheck → test → build → e2e |
+
+---
+
+## Features at a glance
+
+### Grounded legal analysis
+Every risk flag is backed by a retrieved RTA section or LTB decision — not a guess. The scoring engine is deterministic TypeScript (17 `MANDATORY_PROVISION_VIOLATION` types), so scores are reproducible and explainable.
+
+### Ask Your Lease
+A floating chat panel on every report page. Ask natural-language questions ("Is this late fee legal?") and get streaming answers grounded in the same retrieved corpus — statute citations included. Rate-limited at 50 messages/day for authenticated users, 10/day for guests.
+
+### Negotiation Copilot
+One click generates a tone-aware email or lease addendum via Groq JSON mode. Choose Assertive, Formal, or Cooperative tone. Export to PDF via jsPDF. Falls back to a template if the LLM is unavailable.
+
+### Live Agent Trace
+See every tool call the agent made, how long it took, and which calls ran in parallel — rendered as a Gantt chart or a flat list. 67 tool calls for a typical 3-page lease.
+
+### PDF Viewer with clause highlights
+pdfjs-dist v5 renders the original PDF with colour-coded risk annotations that persist across page turns. Highlights use a normAndMap algorithm to survive OCR position drift.
+
+### PIPEDA compliance
+Upload consent gate, privacy policy, data retention notice, and DELETE erasure API. Benchmarked clause text is PII-stripped before storage. Signed URLs expire after 1 hour.
+
+---
+
+## Getting started
 
 ### Prerequisites
 
 - Node.js 20+
 - Python 3.10+ with `pip`
-- Tesseract OCR: `choco install tesseract` (Windows) or `brew install tesseract` (macOS)
+- Tesseract OCR — `choco install tesseract` (Windows) or `brew install tesseract` (macOS)
 
-### Installation
+### 1 — Clone and install
 
 ```bash
 git clone https://github.com/parthiv-2006/lease-guard.git
@@ -135,38 +253,46 @@ cd mcp-server && npm install && cd ..
 pip install -r scripts/requirements.txt
 ```
 
-### Configuration
+### 2 — Environment variables
 
-Create `.env.local` in the project root and a separate `.env` inside `mcp-server/` (the MCP server reads from `.env`):
+Create `.env.local` in the project root **and** `.env` (the MCP server reads `.env`):
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Claude Haiku 4.5 agent orchestration |
-| `GEMINI_API_KEY` | Gemini `gemini-embedding-001` REST calls (embeddings only) |
-| `GROQ_API_KEY` | Groq `llama-3.3-70b-versatile` for chat and Negotiation Copilot |
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Public anon key for client-side queries |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for server-side writes and cascade deletes |
-| `NEXT_PUBLIC_SUPABASE_URL` | Same as `SUPABASE_URL`, exposed to the browser |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as `SUPABASE_ANON_KEY`, exposed to the browser |
+```env
+ANTHROPIC_API_KEY=sk-ant-api03-...        # From console.anthropic.com
+GEMINI_API_KEY=AIzaSy...                  # Embeddings only (gemini-embedding-001)
+GROQ_API_KEY=gsk_...                      # Chat + Negotiation Copilot (groq.com/keys)
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
 
-### Running Locally
+### 3 — Database migrations
+
+Apply all 10 migrations in `supabase/migrations/` via the Supabase dashboard or CLI:
 
 ```bash
-# Apply all 10 database migrations
 supabase db push
+```
 
-# Build the statute corpus (both scripts; expect ~2,372 total chunks)
-python scripts/build_corpus.py
-python scripts/build_regulations.py
+### 4 — Build the statute corpus
 
-# Validate corpus retrieval accuracy (expect 7/7)
+```bash
+python scripts/build_corpus.py          # RTA granular subsections (~2,196 chunks)
+python scripts/build_regulations.py     # O.Reg 516/06, O.Reg 517/06, Standard Form
+
+# Validate retrieval accuracy (expect 7/7):
 python scripts/validate_retrieval.py
+```
 
+### 5 — Run
+
+```bash
 # Terminal 1: Next.js dev server
 npm run dev
 
-# Terminal 2: MCP server (required for lease analysis)
+# Terminal 2: MCP server (required for analysis)
 npm run mcp:dev
 ```
 
@@ -177,41 +303,41 @@ Open [http://localhost:3000](http://localhost:3000) and upload a lease PDF.
 ## Testing
 
 ```bash
-# Unit + integration tests (113 tests, all external services mocked)
+# Unit + integration tests (113 passing)
 npm test
 
 # With coverage report
 npm test -- --coverage
 
-# End-to-end tests (48 Playwright tests against production build)
-npm run e2e
+# End-to-end tests (48 Playwright tests)
+npm run test:e2e
 
-# Scoring precision/recall -- 30-case labelled suite (expect 30/30, 0 false positives)
+# Scoring accuracy eval — 30-case labelled suite (expect 30/30, 0 false positives)
 node scripts/eval-accuracy.mjs
 
-# Retrieval accuracy (expect 7/7)
+# Retrieval accuracy — validates pgvector corpus (expect 7/7)
 python scripts/validate_retrieval.py
 
-# MCP server type check
+# MCP server type check + build
 cd mcp-server && npm run build
 ```
 
-All external services (Supabase, Anthropic, Groq, Gemini) are mocked in `__tests__/setup.ts`. No credentials are required to run the unit suite.
-
 **Test breakdown (161 total):**
 
-| Suite | Tests | Coverage area |
+| Suite | Tests | What it covers |
 |-------|-------|---------------|
-| `api-upload.test.ts` | 12 | File validation, 25 MB limit, DB-backed rate limiting |
-| `api-report.test.ts` | 10 | Response shape, normalisation, DELETE cascade across 6 tables |
-| `api-job.test.ts` | 8 | SSE job status, polling state transitions |
-| `api-job-retry.test.ts` | 7 | Retry endpoint, wrong-jurisdiction error blocking |
-| `api-chat.test.ts` | 13 | Groq streaming, hybrid RAG retrieval, chat rate limiting |
-| `api-negotiation.test.ts` | 7 | Tone variants (Assertive/Formal/Cooperative), JSON mode, template fallback |
-| `lib-agent.test.ts` | 9 | Tool call sequencing, 3-minute timeout, partial-result preservation |
-| `rate-limiter.test.ts` | 20 | Token bucket behaviour, in-memory and DB-backed paths |
+| `api-upload.test.ts` | 12 | File validation, size limits, DB-backed rate limiting |
+| `api-report.test.ts` | 10 | Response shape, normalisation, DELETE cascade |
+| `api-job.test.ts` | 8 | SSE job status, polling transitions |
+| `api-job-retry.test.ts` | 7 | Retry endpoint — blocks wrong-jurisdiction errors |
+| `api-chat.test.ts` | 13 | Groq streaming, RAG retrieval, rate limiting |
+| `api-negotiation.test.ts` | 7 | Tone variants, Groq JSON mode, template fallback |
+| `lib-agent.test.ts` | 9 | Pipeline tool call sequencing, 3-min timeout |
+| `rate-limiter.test.ts` | 20 | Token bucket behaviour (in-memory + DB-backed) |
 | `trace-timeline.test.ts` | 34 | Gantt swim-lane computation helpers |
-| E2E (`e2e/*.spec.ts`) | 48 | Landing, static pages, all 9 report panels, chat flow |
+| E2E (`e2e/*.spec.ts`) | 48 | Landing, static pages, report panels, chat |
+
+All external services (Supabase, Anthropic, Groq, Gemini) are mocked in `__tests__/setup.ts` — no credentials required to run the unit suite.
 
 ---
 
@@ -221,14 +347,14 @@ Every push and pull request to `main` runs four jobs:
 
 ```
 push / PR
-    |
- +--+--+
-type  test     <- parallel
- +--+--+
-    |
-  build        <- only if both pass
-    |
-   e2e         <- Playwright against production build
+    │
+ ┌──┴──┐
+type  test     ← parallel
+ └──┬──┘
+    │
+  build        ← only if both pass
+    │
+   e2e         ← Playwright against production build
 ```
 
 | Job | What it checks |
@@ -238,104 +364,76 @@ type  test     <- parallel
 | `build` | MCP server `tsc` compile + Next.js production build |
 | `e2e` | 48 Playwright tests against the built app |
 
+See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
 ---
 
-## Project Structure
+## Project structure
 
 ```
 ├── app/
-│   ├── page.tsx                     Landing page, upload form, job polling, retry
-│   ├── dashboard/page.tsx           All leases with status (complete/failed/in-progress)
-│   ├── report/[id]/page.tsx         Report shell, normaliseApiResponse()
-│   ├── privacy/ terms/ about/       Static legal and info pages
+│   ├── page.tsx                    Landing page + upload + job polling + retry button
+│   ├── dashboard/page.tsx          All leases with job status (complete/failed/in-progress)
+│   ├── report/[id]/page.tsx        Report shell + normaliseApiResponse()
+│   ├── privacy/ · terms/ · about/  Static legal and info pages
 │   ├── components/
-│   │   ├── overview-panel.tsx       Risk gauge, stat cards, clause breakdown
-│   │   ├── panels.tsx               Red Flags, Clause Explorer, Negotiation,
-│   │   │                            Missing Protections, Contradictions, Sources
-│   │   ├── negotiation-copilot.tsx  Groq JSON mode modal (email + addendum, 3 tones)
-│   │   ├── lease-chat.tsx           Ask Your Lease floating chat (Groq + RAG)
-│   │   ├── pdf-viewer.tsx           pdfjs-dist v5, canvas + text layer, risk highlights
-│   │   ├── trace-timeline.tsx       Gantt chart (swim lanes, duration bars, list toggle)
-│   │   └── shared.tsx               RiskArc, RiskBadge, StatCard, FeedbackBar
+│   │   ├── overview-panel.tsx      Risk gauge, stats, clause breakdown
+│   │   ├── panels.tsx              Red Flags · Clause Explorer · Negotiation ·
+│   │   │                           Missing Protections · Contradictions · Sources
+│   │   ├── negotiation-copilot.tsx Groq JSON mode copilot modal (email + addendum)
+│   │   ├── lease-chat.tsx          "Ask Your Lease" floating chat (Groq + RAG)
+│   │   ├── pdf-viewer.tsx          pdfjs-dist v5, canvas + text layer, clause highlights
+│   │   ├── trace-timeline.tsx      Live Gantt chart (swim lanes, duration bars)
+│   │   └── shared.tsx              RiskArc, RiskBadge, StatCard, FeedbackBar
 │   └── api/
-│       ├── upload/route.ts          PDF intake, DB-backed rate limit (5/day auth, 3/day guest)
-│       ├── job/[id]/route.ts        SSE status stream, 3-minute timeout
-│       ├── job/[id]/retry/route.ts  POST retry for failed analyses
-│       ├── report/[id]/route.ts     GET (4 parallel fetches) + DELETE cascade
-│       ├── chat/[leaseId]/route.ts  Groq SSE streaming + hybrid RAG
-│       ├── negotiation/generate/    Groq JSON mode, email + addendum drafts
-│       ├── stream/[id]/route.ts     SSE live pipeline progress events
-│       └── feedback/route.ts        Thumbs up/down with comment
+│       ├── upload/route.ts         PDF intake, DB-backed rate limiting (5/day auth · 3/day guest)
+│       ├── job/[id]/route.ts       SSE job status stream (3-min timeout)
+│       ├── job/[id]/retry/route.ts POST retry for failed analyses
+│       ├── report/[id]/route.ts    GET (4 parallel table fetches) + DELETE cascade
+│       ├── chat/[leaseId]/route.ts Groq SSE streaming chat + hybrid RAG
+│       ├── negotiation/generate/   Groq JSON mode — email + addendum drafts
+│       ├── stream/[id]/route.ts    SSE live progress events
+│       └── feedback/route.ts       Thumbs up/down with comment
 │
 ├── lib/
-│   ├── agent.ts                     14-step pipeline, clause batch parallelism, 3-min timeout
-│   ├── mcp-client.ts                stdio/SSE transport selector
-│   ├── ai-safety.ts                 25-pattern prompt injection filter
-│   ├── upload-rate-limit.ts         DB-backed per-user/IP rate limiter
-│   └── pdf-export.ts                jsPDF report and copilot export
+│   ├── agent.ts                    14-step pipeline, parallel clause batches, 3-min timeout
+│   ├── mcp-client.ts               stdio ↔ SSE transport auto-select
+│   ├── ai-safety.ts                25-pattern prompt injection detector + sanitizers
+│   ├── upload-rate-limit.ts        DB-backed per-user/IP rate limiter
+│   └── pdf-export.ts               jsPDF report + copilot export
 │
 ├── mcp-server/src/
 │   ├── tools/
-│   │   ├── score-risk.ts            Deterministic regex scoring (17 violation types)
-│   │   ├── lookup-statute.ts        Hybrid BM25+vector, 3 queries, RRF, threshold 0.55
-│   │   ├── detect-contradiction.ts  Haiku confidence gate 0.65, regex fallback
+│   │   ├── score-risk.ts           Deterministic regex scoring (17 violation types, NOT LLM)
+│   │   ├── lookup-statute.ts       Hybrid BM25+vector · 3 queries · RRF · threshold 0.55
+│   │   ├── detect-contradiction.ts Claude Haiku 4.5 · confidence gate 0.65 · regex fallback
 │   │   └── [9 other tools]
-│   └── start.ts                     Entry point, dotenv then dynamic import
+│   └── start.ts                    Entry point — dotenv then dynamic import
 │
 ├── scripts/
-│   ├── build_corpus.py              RTA granular subsection rows (~2,196 chunks)
-│   ├── build_regulations.py         O.Reg 516/06, 517/06, Standard Form (~176 chunks)
-│   ├── seed_decisions_exa.mjs       84 LTB decisions via Exa REST API
-│   ├── validate_retrieval.py        7/7 corpus accuracy check
-│   ├── eval-accuracy.mjs            30-case scoring precision/recall harness
-│   └── capture-screenshots.mjs     README screenshot automation
+│   ├── build_corpus.py             RTA granular subsection rows
+│   ├── build_regulations.py        O.Reg 516/06 + 517/06 + Standard Form
+│   ├── seed_decisions_exa.mjs      Real CanLII decisions via Exa REST API
+│   ├── validate_retrieval.py       7/7 corpus accuracy check
+│   ├── eval-accuracy.mjs           30-case precision/recall eval harness
+│   └── capture-screenshots.mjs    README screenshot generation
 │
 ├── e2e/
-│   ├── landing.spec.ts              8 tests
-│   ├── static-pages.spec.ts         12 tests
-│   ├── report.spec.ts               15 tests
-│   └── chat.spec.ts                 13 tests
+│   ├── landing.spec.ts             8 tests
+│   ├── static-pages.spec.ts        12 tests
+│   ├── report.spec.ts              15 tests
+│   └── chat.spec.ts                13 tests
 │
-└── supabase/migrations/             10 migrations (001-010, all applied)
-    ├── 001_initial_schema.sql        Core tables: leases, reports, clauses
-    ├── 005_hybrid_search.sql         fts_vector column, GIN index, hybrid search RPC
-    ├── 009_upload_ip.sql             DB-backed upload rate limiting
-    └── 010_chat_requests.sql         Chat rate limiting table
+└── supabase/migrations/            10 migrations (001–010, all applied)
+    ├── 001_initial_schema.sql
+    ├── 005_hybrid_search.sql       fts_vector column + GIN index + hybrid search RPC
+    ├── 006_lease_address.sql       Property address extraction
+    ├── 009_upload_ip.sql           DB-backed upload rate limiting
+    └── 010_chat_requests.sql       Chat rate limiting table
 ```
 
 ---
 
-## Known Limitations
-
-- **Ontario only.** The corpus covers the Residential Tenancies Act, O.Reg 516/06, O.Reg 517/06, and 84 LTB decisions. Leases from other provinces are explicitly rejected at the `detect_jurisdiction` step. Expanding requires sourcing and embedding province-specific statute and tribunal text, and updating the 17 violation type definitions.
-- **Scanned PDFs degrade accuracy.** Tesseract OCR accuracy ranges from roughly 40% on handwritten text to 95% on clean printed text. Clause byte offsets in heavily scanned leases may drift, causing annotation misalignment in the PDF viewer.
-- **No report expiry enforcement.** `reports.expires_at` is set at analysis time (90 days out), but the background job to cascade-delete expired reports was not implemented within the course timeline. Expired reports persist until manual deletion or user-triggered erasure.
-- **Rate limits are DB-backed, not cache-backed.** Each upload check issues two extra queries against the `leases` table. At current scale this is acceptable; sustained concurrent load would require a cache layer to avoid read contention.
-- **Two-process local setup.** Running LeaseGuard locally requires both `npm run dev` and `npm run mcp:dev` simultaneously. Single-process deployment (MCP server as an in-process `worker_threads` worker) was scoped out during the course.
-- **Corpus is static.** The 84 LTB decisions were seeded at project inception via the Exa REST API. New tribunal decisions require a manual re-seed and corpus rebuild; incremental polling was not built within the course timeline.
-
----
-
-## What We Would Build Next
-
-1. **Multi-province support** -- The hybrid retrieval pipeline already supports arbitrary corpus partitions; the gap is sourcing and embedding province-specific statute and tribunal text for BC, Alberta, and Quebec. This expands the addressable user base without touching the agent architecture.
-
-2. **Corpus update automation** -- A nightly GitHub Actions job polling the CanLII API and re-embedding new LTB decisions would keep retrieval accuracy current without manual intervention. Migration `010_chat_requests.sql` already reserves a `corpus_version` column for cache invalidation.
-
-3. **Report expiry enforcement** -- A Supabase Edge Function on a daily cron that queries `reports WHERE expires_at < NOW()` and triggers the existing cascade delete logic. The cascade already exists in `DELETE /api/report/[id]`; only the background runner is missing.
-
-4. **Single-process deployment** -- Embedding the MCP server as a `worker_threads` worker eliminates the two-terminal dev setup, simplifies Vercel deployment, and cuts MCP handshake latency by roughly 80 ms per analysis.
-
-5. **Landlord-side analysis** -- Landlords uploading a draft lease before sending to tenants represent a distinct use case with different scoring weights (a missing rent increase clause is low risk for tenants, high risk for landlords). A `role` parameter on the upload endpoint and a parallel violation type taxonomy would cover this without changing the corpus or retrieval layer.
-
----
-
-## Legal Disclaimer
+## Legal disclaimer
 
 LeaseGuard provides educational information only and does not constitute legal advice. For matters requiring professional legal judgment, consult a licensed paralegal or lawyer. Analysis is grounded in the Ontario Residential Tenancies Act, 2006.
-
----
-
-## License
-
-[MIT](LICENSE)
