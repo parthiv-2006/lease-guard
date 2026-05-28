@@ -5,6 +5,18 @@
 
 import { NextRequest } from "next/server";
 
+// ── UUID constants ────────────────────────────────────────────────────────────
+
+const USER_ID         = "11111111-2222-3333-4444-555555555555";
+const OTHER_USER_ID   = "99999999-2222-3333-4444-555555555555";
+const LEASE_FAILED    = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_PROCESSING= "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_NOT_FOUND = "cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_INVALID   = "dddddddd-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_BC        = "eeeeeeee-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_TIMEOUT   = "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee";
+const LEASE_OTHER     = "12345678-bbbb-cccc-dddd-eeeeeeeeeeee";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeRetryRequest(id: string): NextRequest {
@@ -21,10 +33,11 @@ function makeMockSupabase(overrides: {
   resetError?: boolean;
 }) {
   const lease = overrides.lease ?? {
-    id: "lease-abc",
+    id: LEASE_FAILED,
     status: "failed",
     error_message: null,
     file_path: "leases/lease-abc/file.pdf",
+    user_id: USER_ID,
   };
 
   return {
@@ -69,6 +82,22 @@ jest.mock("../lib/agent", () => ({
   runLeaseAnalysis: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Rate limiter always allows in unit tests — rate-limiter.test.ts covers its own behaviour
+jest.mock("../lib/rate-limiter", () => ({
+  checkRateLimit: jest.fn().mockReturnValue({ allowed: true, remaining: 4, resetAt: Date.now() + 3600000 }),
+  rateLimitExceededResponse: jest.fn(),
+}));
+
+// Mock auth: returns authenticated user by default
+const mockGetUser = jest.fn().mockResolvedValue({
+  data: { user: { id: USER_ID } },
+});
+jest.mock("../lib/supabase-server", () => ({
+  createSupabaseServerClient: jest.fn().mockResolvedValue({
+    auth: { getUser: mockGetUser },
+  }),
+}));
+
 import { POST } from "../app/api/job/[id]/retry/route";
 import { createClient } from "@supabase/supabase-js";
 
@@ -77,26 +106,72 @@ const mockCreateClient = createClient as jest.Mock;
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("POST /api/job/[id]/retry", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Restore default: authenticated as USER_ID
+    mockGetUser.mockResolvedValue({ data: { user: { id: USER_ID } } });
+  });
+
+  it("returns 400 for an invalid lease ID format", async () => {
+    const res = await POST(makeRetryRequest("not-a-uuid"), {
+      params: Promise.resolve({ id: "not-a-uuid" }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("invalid_id");
+  });
+
+  it("returns 401 when the user is not authenticated", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockCreateClient.mockReturnValue(makeMockSupabase({}));
+
+    const res = await POST(makeRetryRequest(LEASE_FAILED), {
+      params: Promise.resolve({ id: LEASE_FAILED }),
+    });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe("unauthenticated");
+  });
+
+  it("returns 403 when the authenticated user does not own the lease", async () => {
+    mockCreateClient.mockReturnValue(
+      makeMockSupabase({
+        lease: {
+          id: LEASE_OTHER,
+          status: "failed",
+          error_message: null,
+          file_path: "leases/lease-other/file.pdf",
+          user_id: OTHER_USER_ID,
+        },
+      })
+    );
+
+    const res = await POST(makeRetryRequest(LEASE_OTHER), {
+      params: Promise.resolve({ id: LEASE_OTHER }),
+    });
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("forbidden");
+  });
 
   it("returns 202 and resets a genuinely failed lease", async () => {
     mockCreateClient.mockReturnValue(makeMockSupabase({}));
 
-    const res = await POST(makeRetryRequest("lease-abc"), {
-      params: Promise.resolve({ id: "lease-abc" }),
+    const res = await POST(makeRetryRequest(LEASE_FAILED), {
+      params: Promise.resolve({ id: LEASE_FAILED }),
     });
 
     expect(res.status).toBe(202);
     const body = await res.json();
     expect(body.status).toBe("processing");
-    expect(body.lease_id).toBe("lease-abc");
+    expect(body.lease_id).toBe(LEASE_FAILED);
   });
 
   it("returns 404 when the lease does not exist", async () => {
     mockCreateClient.mockReturnValue(makeMockSupabase({ fetchError: true }));
 
-    const res = await POST(makeRetryRequest("no-such-lease"), {
-      params: Promise.resolve({ id: "no-such-lease" }),
+    const res = await POST(makeRetryRequest(LEASE_NOT_FOUND), {
+      params: Promise.resolve({ id: LEASE_NOT_FOUND }),
     });
 
     expect(res.status).toBe(404);
@@ -108,16 +183,17 @@ describe("POST /api/job/[id]/retry", () => {
     mockCreateClient.mockReturnValue(
       makeMockSupabase({
         lease: {
-          id: "lease-processing",
+          id: LEASE_PROCESSING,
           status: "processing",
           error_message: null,
           file_path: "leases/lease-processing/file.pdf",
+          user_id: USER_ID,
         },
       })
     );
 
-    const res = await POST(makeRetryRequest("lease-processing"), {
-      params: Promise.resolve({ id: "lease-processing" }),
+    const res = await POST(makeRetryRequest(LEASE_PROCESSING), {
+      params: Promise.resolve({ id: LEASE_PROCESSING }),
     });
 
     expect(res.status).toBe(409);
@@ -129,7 +205,7 @@ describe("POST /api/job/[id]/retry", () => {
     mockCreateClient.mockReturnValue(
       makeMockSupabase({
         lease: {
-          id: "lease-invalid",
+          id: LEASE_INVALID,
           status: "failed",
           error_message: JSON.stringify({
             code: "not_a_lease",
@@ -137,12 +213,13 @@ describe("POST /api/job/[id]/retry", () => {
             detected_as: "resume",
           }),
           file_path: "leases/lease-invalid/file.pdf",
+          user_id: USER_ID,
         },
       })
     );
 
-    const res = await POST(makeRetryRequest("lease-invalid"), {
-      params: Promise.resolve({ id: "lease-invalid" }),
+    const res = await POST(makeRetryRequest(LEASE_INVALID), {
+      params: Promise.resolve({ id: LEASE_INVALID }),
     });
 
     expect(res.status).toBe(422);
@@ -155,7 +232,7 @@ describe("POST /api/job/[id]/retry", () => {
     mockCreateClient.mockReturnValue(
       makeMockSupabase({
         lease: {
-          id: "lease-bc",
+          id: LEASE_BC,
           status: "failed",
           error_message: JSON.stringify({
             code: "wrong_jurisdiction",
@@ -163,12 +240,13 @@ describe("POST /api/job/[id]/retry", () => {
             detected_as: "CA-BC",
           }),
           file_path: "leases/lease-bc/file.pdf",
+          user_id: USER_ID,
         },
       })
     );
 
-    const res = await POST(makeRetryRequest("lease-bc"), {
-      params: Promise.resolve({ id: "lease-bc" }),
+    const res = await POST(makeRetryRequest(LEASE_BC), {
+      params: Promise.resolve({ id: LEASE_BC }),
     });
 
     expect(res.status).toBe(422);
@@ -180,29 +258,27 @@ describe("POST /api/job/[id]/retry", () => {
     mockCreateClient.mockReturnValue(
       makeMockSupabase({
         lease: {
-          id: "lease-timeout",
+          id: LEASE_TIMEOUT,
           status: "failed",
-          error_message:
-            "Analysis timed out after 3 minutes. Please try again.",
+          error_message: "Analysis timed out after 3 minutes. Please try again.",
           file_path: "leases/lease-timeout/file.pdf",
+          user_id: USER_ID,
         },
       })
     );
 
-    const res = await POST(makeRetryRequest("lease-timeout"), {
-      params: Promise.resolve({ id: "lease-timeout" }),
+    const res = await POST(makeRetryRequest(LEASE_TIMEOUT), {
+      params: Promise.resolve({ id: LEASE_TIMEOUT }),
     });
 
     expect(res.status).toBe(202);
   });
 
   it("returns 500 when the DB reset fails", async () => {
-    mockCreateClient.mockReturnValue(
-      makeMockSupabase({ resetError: true })
-    );
+    mockCreateClient.mockReturnValue(makeMockSupabase({ resetError: true }));
 
-    const res = await POST(makeRetryRequest("lease-abc"), {
-      params: Promise.resolve({ id: "lease-abc" }),
+    const res = await POST(makeRetryRequest(LEASE_FAILED), {
+      params: Promise.resolve({ id: LEASE_FAILED }),
     });
 
     expect(res.status).toBe(500);

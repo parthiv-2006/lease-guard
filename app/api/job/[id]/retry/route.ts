@@ -16,16 +16,43 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
 import { runLeaseAnalysis } from "@/lib/agent";
 
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: leaseId } = await params;
 
-  if (!leaseId) {
-    return NextResponse.json({ error: "missing_id" }, { status: 400 });
+  if (!leaseId || !/^[0-9a-f-]{36}$/.test(leaseId)) {
+    return NextResponse.json({ error: "invalid_id", message: "Invalid lease ID format." }, { status: 400 });
+  }
+
+  // ── Rate limit: 5 retries/hour per IP ─────────────────────────────────────
+  const rl = checkRateLimit(getClientIp(req), { storeKey: "retry", maxRequests: 5 });
+  if (!rl.allowed) {
+    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
+  // ── Require authentication ─────────────────────────────────────────────────
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "unauthenticated", message: "Sign in to retry an analysis." },
+      { status: 401 }
+    );
   }
 
   const supabase = createClient(
@@ -36,12 +63,20 @@ export async function POST(
   // ── 1. Fetch the lease ─────────────────────────────────────────────────────
   const { data: lease, error: fetchError } = await supabase
     .from("leases")
-    .select("id, status, error_message, file_path")
+    .select("id, status, error_message, file_path, user_id")
     .eq("id", leaseId)
     .single();
 
   if (fetchError || !lease) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  // ── Verify ownership ───────────────────────────────────────────────────────
+  if (lease.user_id !== user.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "You do not own this analysis." },
+      { status: 403 }
+    );
   }
 
   // ── 2. Only retryable if status is "failed" ────────────────────────────────
