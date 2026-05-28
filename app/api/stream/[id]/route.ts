@@ -11,6 +11,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { subscribeToAnalysis, hasBufferedEvents } from "@/lib/analysis-events";
 import type { AnalysisEvent } from "@/lib/analysis-events";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,6 +20,16 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limit: 30 connections/hour per IP (SSE connections are long-lived)
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const rl = checkRateLimit(ip, { storeKey: "stream", maxRequests: 30 });
+  if (!rl.allowed) {
+    return new Response("Too many requests. Please try again later.", { status: 429 });
+  }
+
   const { id } = await params;
 
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
