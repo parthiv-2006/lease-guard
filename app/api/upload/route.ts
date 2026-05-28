@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbUploadRateLimit } from "@/lib/upload-rate-limit";
 import { runLeaseAnalysis } from "@/lib/agent";
 import { v4 as uuidv4 } from "uuid";
+
+export const maxDuration = 60;
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
@@ -144,17 +147,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Kick off analysis (fire-and-forget) ────────────────────────────────────
+  // ── Kick off analysis (fire-and-forget via waitUntil) ─────────────────────
+  // waitUntil keeps the Vercel Lambda alive after the 202 response is sent,
+  // allowing the analysis to run up to the maxDuration limit (60s on Hobby).
   // runLeaseAnalysis updates the lease row's status to "processing" → "complete"
   // or "failed". The client polls /api/job/[id] to track progress.
-  runLeaseAnalysis(leaseId, storagePath).catch((err: unknown) => {
-    // Error is already written to the DB inside runLeaseAnalysis.
-    // Log here for server-side observability.
-    console.error(
-      `[upload] Background analysis error for lease ${leaseId}:`,
-      err instanceof Error ? err.message : String(err)
-    );
-  });
+  waitUntil(
+    runLeaseAnalysis(leaseId, storagePath).catch((err: unknown) => {
+      console.error(
+        `[upload] Background analysis error for lease ${leaseId}:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    })
+  );
 
   return NextResponse.json(
     { lease_id: leaseId, status: "processing" },

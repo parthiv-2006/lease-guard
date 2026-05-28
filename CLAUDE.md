@@ -6,8 +6,9 @@
 1. Ask Parthiv any clarifying questions needed to produce a complete implementation plan.
 2. Wait for answers before writing a single line of code.
 3. Only proceed once all ambiguities are resolved.
+4. For any task touching 3+ files, a new MCP tool, the agent pipeline, or an unclear bug, use the `sequential-thinking` MCP tool to map the approach before writing a single line. Think through the causal chain, identify the riskiest assumption, and revise if new evidence changes the plan.
 
-This applies to every task — no exceptions. Do not start implementing while questions remain unanswered. Clarify first, build second.
+This applies to every task — no exceptions. Do not start implementing while questions remain unanswered. Clarify first, think second, build third.
 
 ---
 
@@ -19,6 +20,30 @@ It is explicitly not an AI wrapper — every legal claim must be backed by a ret
 
 **Key constraint:** The agent (Claude) calls MCP tools. Those tools query Supabase pgvector
 for real law. The LLM never asserts legal facts from training knowledge alone.
+
+---
+
+## External SDK Verification (Context7)
+
+Before writing code that calls any external library or SDK, use the `context7` MCP tool
+to verify the current API. LeaseGuard uses fast-moving libraries where training-data
+knowledge is often one or two major versions behind.
+
+**Always check context7 before writing code against:**
+
+| Library | Why it matters |
+|---------|---------------|
+| `@anthropic-ai/sdk` | tool_use schema, streaming API, model IDs change between releases |
+| `@supabase/supabase-js` | realtime subscriptions, storage API, pgvector query syntax |
+| `next` | App Router conventions, API route signatures, middleware config |
+| `openai` / any LLM SDK | if ever added — never assume API shape from memory |
+
+**How to invoke:** Call `context7` → `resolve-library-id` with the package name, then
+`query-docs` with the specific method or feature. Do this before writing, not after an
+error appears.
+
+**When to skip:** Pure TypeScript utilities (`zod`, `date-fns`) with stable APIs. Python
+stdlib. Anything where the method signature is already visible in the current codebase.
 
 ---
 
@@ -382,22 +407,43 @@ the loop with a browser tool.
 
 ### Tool Priority for This Project
 
-1. **Claude Preview** — default for all Next.js UI changes (fastest)
-2. **Claude in Chrome** — use when you need to inspect real API payloads or test file upload
-3. **Playwright** — use for full end-to-end flows (PDF upload → analysis → report panels)
-4. **Computer Use** — not needed for this project (web-only)
+| Scenario | Tool | Why |
+|----------|------|-----|
+| UI component or panel change | Claude Preview (`preview_*`) | Fastest — no real browser needed |
+| Real API payload / auth header inspection | Claude in Chrome (`mcp__Claude_in_Chrome__*`) | Live network tab against real server |
+| Full E2E flow (PDF upload → analysis → all panels populated) | Playwright MCP (`browser_*`) | Async waits, multi-step, screenshot at each stage |
+| Native desktop app | Computer Use | Not applicable — web-only project |
+
+Never use Computer Use for web verification. Never claim a feature done without running
+at least one of the above tools.
 
 ### Standard Verification Flow After Any UI Change
 
 ```
-1. preview_start          → ensure dev server is running (once per session)
-2. preview_screenshot /   → confirm landing page renders
-3. preview_screenshot /report/[lease-id]  → confirm report page renders
-4. preview_click          → click each panel tab that was affected
-5. preview_screenshot     → confirm panel has real data (not empty/blank)
-6. preview_console_logs   → must show zero JS errors
-7. preview_eval           → assert key data present, e.g.:
+1. preview_start                    → ensure dev server is running (once per session)
+2. preview_screenshot /             → confirm landing page renders
+3. preview_screenshot /report/[id]  → confirm report page renders
+4. preview_click                    → click each affected panel tab
+5. preview_screenshot               → confirm panel has real data (not empty/blank)
+6. preview_console_logs             → must show zero JS errors
+7. preview_eval                     → assert key data present, e.g.:
      document.querySelectorAll('[data-panel]').length > 0
+```
+
+### Full E2E Flow (Playwright MCP) — Use for PDF Upload → Report
+
+Use this when a change touches the upload API, agent pipeline, or report assembly.
+Claude Preview cannot test file upload or async job polling — Playwright can.
+
+```
+1. browser_navigate      → http://localhost:3000
+2. browser_file_upload   → upload a test PDF (use scripts/source-docs/ontario_standard_lease.pdf)
+3. browser_wait_for      → wait for job completion (poll /api/job/[id] or wait for report route)
+4. browser_navigate      → /report/[id]
+5. browser_snapshot      → assert all expected panels are present in the accessibility tree
+6. browser_take_screenshot → visual confirmation — save as evidence
+7. browser_console_messages → must be clean
+8. browser_network_requests → spot-check that API responses contain expected fields
 ```
 
 ### LeaseGuard-Specific Verification Flows

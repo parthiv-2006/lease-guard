@@ -21,6 +21,7 @@
     "@google/generative-ai": "^0.21.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.47.0",
+    "@vercel/functions": "^3.6.1",
     "dotenv": "^16.4.0",
     "formidable": "^3.5.2",
     "jspdf": "^4.2.1",

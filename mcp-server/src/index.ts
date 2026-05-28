@@ -185,6 +185,10 @@ async function main() {
 
     const sessions = new Map<string, SSEServerTransport>();
 
+    app.get("/health", (_req, res) => {
+      res.status(200).json({ status: "ok" });
+    });
+
     app.get("/sse", async (req, res) => {
       const transport = new SSEServerTransport("/messages", res);
       await server.connect(transport);
