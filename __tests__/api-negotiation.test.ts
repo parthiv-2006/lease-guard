@@ -70,7 +70,7 @@ function setupValidMocks() {
 
   mockFrom.mockImplementation((table: string) => {
     if (table === "leases")            return { select: () => ({ eq: mockEq }) };
-    if (table === "clauses")           return { select: () => ({ in: mockClausesIn }) };
+    if (table === "clauses")           return { select: () => ({ in: () => ({ eq: mockClausesIn }) }) };
     if (table === "negotiation_points") return { select: () => ({ in: mockNegPointsIn }) };
     return { select: () => ({ in: jest.fn().mockResolvedValue({ data: [], error: null }) }) };
   });

@@ -26,6 +26,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { sanitizeName } from "@/lib/ai-safety";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -287,6 +296,13 @@ async function generateWithGroq(params: {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // ── Rate limit: 10 requests/hour per IP ─────────────────────────────────
+  const rl = checkRateLimit(getClientIp(req), { storeKey: "negotiation", maxRequests: 10 });
+  if (!rl.allowed) {
+    const { body: rlBody, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(rlBody, { status, headers });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { leaseId, tenantName, landlordName, tone, selectedClauseIds } = body;
@@ -356,7 +372,8 @@ export async function POST(req: NextRequest) {
       supabase
         .from("clauses")
         .select("id, clause_number, heading, raw_text, statutory_violations")
-        .in("id", selectedClauseIds),
+        .in("id", selectedClauseIds)
+        .eq("lease_id", leaseId), // prevents fetching clauses from other leases
       supabase
         .from("negotiation_points")
         .select(
@@ -432,10 +449,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-    console.error("[negotiation/generate] Unhandled error:", message);
+    console.error("[negotiation/generate] Unhandled error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { error: "internal_server_error", message },
+      { error: "internal_server_error", message: "An unexpected error occurred. Please try again." },
       { status: 500 }
     );
   }
