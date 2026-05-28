@@ -1,6 +1,6 @@
 # LeaseGuard
 
-Ontario residential lease analysis grounded in 2,372 chunks of real statute law and 84 tribunal decisions, built at UoftHacks 2026 by a team of four.
+Ontario residential lease analysis grounded in 2,372 chunks of real statute law and 84 tribunal decisions, built as a final project for CSC207 (Software Design) by a team of six.
 
 [![CI](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)](#testing)
@@ -10,10 +10,6 @@ Ontario residential lease analysis grounded in 2,372 chunks of real statute law 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 
-<br/>
-
-![LeaseGuard full analysis walkthrough](.github/assets/demo.gif)
-
 ---
 
 ## What It Is
@@ -21,72 +17,6 @@ Ontario residential lease analysis grounded in 2,372 chunks of real statute law 
 Ontario tenants commonly sign leases containing clauses that violate the Residential Tenancies Act without knowing it. Legal counsel is expensive; the RTA is dense. LeaseGuard analyzes a lease PDF in under 90 seconds, flags violations across 17 mandatory provision categories, retrieves the exact statute subsections and tribunal decisions that apply to each clause, and generates negotiation talking points grounded in those sources.
 
 The risk scoring engine is deterministic TypeScript, not an LLM call. Every score is reproducible and auditable. Claude Haiku 4.5 orchestrates a 14-step pipeline via the Model Context Protocol, where tool outputs are structured objects rather than raw text, eliminating the parsing ambiguity that characterises basic function-calling patterns.
-
----
-
-## Screenshots
-
-### Landing Page
-![Upload form and feature overview on the LeaseGuard landing page](.github/assets/landing.png)
-The landing page presents the upload form, a plain-English explanation of the analysis steps, and trust signals before the user submits a file.
-
-### Landing Page (Mobile)
-![LeaseGuard landing page at 390px mobile viewport](.github/assets/landing-mobile.png)
-Responsive layout at 390x844; the upload form and call-to-action remain usable without horizontal scrolling.
-
-### Analysis in Progress
-> **Screenshot needed:** after submitting a lease PDF, capture the landing page showing the live SSE progress bar and streaming status messages (e.g., "Parsing document...", "Analysing clause 12 of 34..."). The file is at `.github/assets/screenshots/analysis-in-progress.png`.
-
-### Dashboard
-![Lease history dashboard with job status and risk score per row](.github/assets/dashboard.png)
-The dashboard lists every previously uploaded lease with its status (`complete`, `failed`, `pending`), aggregate risk score, and a link to the full report.
-
-### Report Overview
-![Risk gauge, violation counts, and clause breakdown on the report overview panel](.github/assets/report-overview.png)
-The overview panel shows the aggregate risk score on an arc gauge, per-category violation counts as stat cards, and a stacked bar of clause risk distribution.
-
-### Red Flags
-![Red flags panel listing illegal clauses with RTA statute citations](.github/assets/report-red-flags.png)
-Each flagged clause shows the violation type, the retrieved statute chunk that triggered the match, and a quoted snippet from the RTA text.
-
-### Clause Explorer
-![Clause explorer panel with enforceability status, benchmark percentile, and compliant rewrite](.github/assets/report-clause-explorer.png)
-Every segmented clause lists its risk score, enforceability verdict, a percentile comparison against the benchmarked corpus, and a suggested compliant rewrite from `COMPLIANT_LANGUAGE_TEMPLATES`.
-
-### Negotiation Guide
-![Negotiation guide panel with prioritised amendment talking points](.github/assets/report-negotiation.png)
-The negotiation guide surfaces clauses worth pushing back on, ranked by risk weight and LTB precedent strength, with suggested tenant-side language for each.
-
-### Negotiation Copilot
-![Negotiation Copilot modal with tone selector and generated email draft](.github/assets/report-negotiation-copilot.png)
-One click generates a tone-aware email or lease addendum (Assertive, Formal, or Cooperative) via Groq Llama 3.3 70B in JSON mode; the modal includes a jsPDF export button.
-
-### Missing Protections
-![Missing protections panel listing RTA rights absent from the lease](.github/assets/report-missing-protections.png)
-Required RTA provisions the landlord omitted entirely from the written lease are listed here; their absence weakens the tenant's position even though the protections still apply by statute.
-
-### Contradictions
-![Contradictions panel showing conflicting clause pairs with confidence scores](.github/assets/report-contradictions.png)
-Clause pairs from the seven predefined `CONTRADICTION_TYPE_PAIRS` that conflict with each other are surfaced with the governing statute and Claude Haiku 4.5's confidence score.
-
-### Statute Sources
-![Statute sources panel listing retrieved RTA chunks with relevance scores](.github/assets/report-sources.png)
-Every statute chunk retrieved during analysis is listed with its relevance score, section reference, and full text, so the user can verify the grounding for any risk flag.
-
-### PDF Viewer with Clause Highlights
-![PDF viewer rendering the original lease with colour-coded risk annotations](.github/assets/report-pdf-viewer.png)
-The original lease renders via pdfjs-dist v5 with persistent colour-coded highlights anchored to each clause's character offset via the `normAndMap` position algorithm.
-
-### Ask Your Lease Chat
-![Floating chat panel with statute-grounded answers and RTA section citations](.github/assets/report-chat.png)
-The floating chat panel answers natural-language questions by running hybrid RAG retrieval against the statute corpus before calling Groq, so every response cites specific RTA sections rather than drawing from model training alone.
-
-### Live Agent Trace
-![Gantt chart showing parallel MCP tool call execution timeline with swim lanes](.github/assets/report-agent-trace.png)
-The trace panel renders every MCP tool call as a Gantt chart with parallel swim lanes, sequence numbers, durations, and PII-safe input/output summaries; a flat-list toggle is available for copy-pasting.
-
-### Wrong-Jurisdiction Error
-> **Screenshot needed:** upload a non-Ontario lease (or a non-lease PDF such as a resume) and capture the error state shown on the landing page after `detect_jurisdiction` fires a `LeaseValidationError`. The file is at `.github/assets/screenshots/error-wrong-jurisdiction.png`.
 
 ---
 
