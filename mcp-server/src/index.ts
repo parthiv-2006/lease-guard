@@ -88,17 +88,17 @@ const ALL_TOOLS = [
   generateReportDef,
 ];
 
-async function main() {
+/**
+ * Creates a fresh MCP Server instance with all tool handlers registered.
+ * Must be called per-connection for SSE mode — reusing a single Server
+ * instance across connections causes the second connect() call to fail
+ * (the SDK does not support reconnecting a closed server), which makes
+ * Railway's reverse proxy return 502.
+ */
+function createServer(): Server {
   const server = new Server(
-    {
-      name: "leaseguard-mcp",
-      version: "0.1.0",
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
+    { name: "leaseguard-mcp", version: "0.1.0" },
+    { capabilities: { tools: {} } }
   );
 
   // List tools handler
@@ -156,8 +156,7 @@ async function main() {
       // A single tool failure must not crash the server
       const errorMessage =
         err instanceof Error ? err.message : "Unknown error occurred";
-      const errorStack =
-        err instanceof Error ? err.stack : undefined;
+      const errorStack = err instanceof Error ? err.stack : undefined;
 
       console.error(`[LeaseGuard MCP] Tool '${name}' threw an error:`, err);
 
@@ -178,6 +177,10 @@ async function main() {
     }
   });
 
+  return server;
+}
+
+async function main() {
   if (process.env.PORT) {
     const app = express();
     app.use(cors());
@@ -190,6 +193,13 @@ async function main() {
     });
 
     app.get("/sse", async (req, res) => {
+      // Disable proxy buffering so Railway/nginx forwards SSE chunks immediately
+      res.setHeader("X-Accel-Buffering", "no");
+
+      // Fresh Server instance per connection — reusing one instance causes
+      // server.connect() to throw on the second call after a session closes,
+      // resulting in a 502 Bad Gateway from Railway's reverse proxy.
+      const server = createServer();
       const transport = new SSEServerTransport("/messages", res);
       await server.connect(transport);
       sessions.set(transport.sessionId, transport);
@@ -210,9 +220,12 @@ async function main() {
 
     const port = parseInt(process.env.PORT, 10);
     app.listen(port, () => {
-      console.error(`[LeaseGuard MCP] SSE Server started and listening on port ${port}`);
+      console.error(
+        `[LeaseGuard MCP] SSE Server started and listening on port ${port}`
+      );
     });
   } else {
+    const server = createServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("[LeaseGuard MCP] Server started and listening on stdio");
