@@ -12,7 +12,7 @@ import { dirname, resolve } from "path";
 // First executable line after static imports — appears in Railway Deploy Logs
 // immediately on startup. If this line is missing from logs, the Docker CMD
 // itself failed (wrong path, missing file, etc.).
-process.stderr.write(
+process.stdout.write(
   `[LeaseGuard MCP] start.ts: process started (Node ${process.version})\n`
 );
 
@@ -20,7 +20,7 @@ const _dir = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(_dir, "../../.env.local") }); // preferred
 config({ path: resolve(_dir, "../../.env") });        // fallback
 
-process.stderr.write(
+process.stdout.write(
   `[LeaseGuard MCP] start.ts: env loaded — PORT=${process.env.PORT ?? "(not set)"}, ` +
     `SUPABASE_URL=${process.env.SUPABASE_URL ? "set" : "MISSING"}, ` +
     `SUPABASE_SERVICE_ROLE_KEY=${process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING"}, ` +

@@ -1,6 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -57,7 +57,6 @@ import {
   execute as generateReportExec,
 } from "./tools/generate-report.js";
 
-// Registry: maps tool name → execute function
 const TOOL_REGISTRY = new Map<string, (input: unknown) => Promise<unknown>>([
   [parseDocumentDef.name, parseDocumentExec],
   [detectJurisdictionDef.name, detectJurisdictionExec],
@@ -88,90 +87,45 @@ const ALL_TOOLS = [
   generateReportDef,
 ];
 
-/**
- * Creates a fresh MCP Server instance with all tool handlers registered.
- * Must be called per-connection for SSE mode — reusing a single Server
- * instance across connections causes the second connect() call to fail
- * (the SDK does not support reconnecting a closed server), which makes
- * Railway's reverse proxy return 502.
- */
 function createServer(): Server {
   const server = new Server(
     { name: "leaseguard-mcp", version: "0.1.0" },
     { capabilities: { tools: {} } }
   );
 
-  // List tools handler
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: ALL_TOOLS.map((t) => ({
-        name: t.name,
-        description: t.description,
-        inputSchema: t.inputSchema,
-      })),
-    };
-  });
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: ALL_TOOLS.map((t) => ({
+      name: t.name,
+      description: t.description,
+      inputSchema: t.inputSchema,
+    })),
+  }));
 
-  // Call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-
     const executor = TOOL_REGISTRY.get(name);
 
     if (!executor) {
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              error: `Unknown tool: ${name}`,
-              available_tools: [...TOOL_REGISTRY.keys()],
-            }),
-          },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown tool: ${name}`, available_tools: [...TOOL_REGISTRY.keys()] }) }],
         isError: true,
       };
     }
 
     try {
       const result = await executor(args);
-
-      // Check if the result itself signals an error
       const resultObj = result as Record<string, unknown>;
-      const isToolError =
-        typeof resultObj === "object" &&
-        resultObj !== null &&
-        typeof resultObj["error"] === "string";
-
+      const isToolError = typeof resultObj === "object" && resultObj !== null && typeof resultObj["error"] === "string";
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         isError: isToolError,
       };
     } catch (err) {
-      // A single tool failure must not crash the server
-      const errorMessage =
-        err instanceof Error ? err.message : "Unknown error occurred";
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       const errorStack = err instanceof Error ? err.stack : undefined;
-
       console.error(`[LeaseGuard MCP] Tool '${name}' threw an error:`, err);
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              error: `Tool execution failed: ${errorMessage}`,
-              tool: name,
-              stack:
-                process.env.NODE_ENV === "development" ? errorStack : undefined,
-            }),
-          },
-        ],
+        content: [{ type: "text" as const, text: JSON.stringify({ error: `Tool execution failed: ${errorMessage}`, tool: name, stack: process.env.NODE_ENV === "development" ? errorStack : undefined }) }],
         isError: true,
       };
     }
@@ -181,18 +135,11 @@ function createServer(): Server {
 }
 
 async function main() {
-  // ── Process-level guards — prevent silent crashes ─────────────────────────
-  // Without these, unhandled rejections or uncaught exceptions kill the Node
-  // process, which makes Railway's proxy return 502 for subsequent requests
-  // until the process restarts.
   process.on("uncaughtException", (err) => {
     console.error("[LeaseGuard MCP] Uncaught exception:", err.message, err.stack);
   });
   process.on("unhandledRejection", (reason) => {
-    console.error(
-      "[LeaseGuard MCP] Unhandled rejection:",
-      reason instanceof Error ? reason.message : reason
-    );
+    console.error("[LeaseGuard MCP] Unhandled rejection:", reason instanceof Error ? reason.message : reason);
   });
 
   if (process.env.PORT) {
@@ -200,70 +147,41 @@ async function main() {
     app.use(cors());
     app.use(express.json());
 
-    const sessions = new Map<string, SSEServerTransport>();
-
     app.get("/health", (_req, res) => {
-      res.status(200).json({ status: "ok", sessions: sessions.size });
+      res.status(200).json({ status: "ok" });
     });
 
-    app.get("/sse", async (req, res) => {
-      // Disable proxy buffering so Railway/nginx forwards SSE chunks immediately
-      res.setHeader("X-Accel-Buffering", "no");
-      res.setHeader("Cache-Control", "no-cache, no-transform");
-      res.setHeader("Connection", "keep-alive");
+    // Single MCP server + stateless transport shared across all requests.
+    // Stateless mode: no session IDs, no state between requests.
+    // enableJsonResponse: server returns plain JSON instead of SSE streams,
+    // which works reliably through Railway's proxy without buffering issues.
+    const mcpServer = createServer();
+    mcpServer.onerror = (err) => {
+      console.error("[LeaseGuard MCP] MCP server error:", err instanceof Error ? err.message : err);
+    };
 
-      console.error(`[LeaseGuard MCP] New SSE connection from ${req.ip ?? "unknown"}`);
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // stateless
+      enableJsonResponse: true,
+    });
 
+    await mcpServer.connect(transport);
+    console.log("[LeaseGuard MCP] MCP server connected to transport");
+
+    app.post("/mcp", async (req, res) => {
       try {
-        // Fresh Server instance per connection — reusing one instance causes
-        // server.connect() to throw on the second call after a session closes.
-        const server = createServer();
-
-        // Surface MCP-level errors to logs instead of swallowing them silently
-        server.onerror = (err) => {
-          console.error("[LeaseGuard MCP] MCP server error:", err instanceof Error ? err.message : err);
-        };
-
-        const transport = new SSEServerTransport("/messages", res);
-        await server.connect(transport);
-
-        console.error(`[LeaseGuard MCP] SSE session established: ${transport.sessionId}`);
-        sessions.set(transport.sessionId, transport);
-
-        transport.onclose = () => {
-          console.error(`[LeaseGuard MCP] SSE session closed: ${transport.sessionId}`);
-          sessions.delete(transport.sessionId);
-        };
+        await transport.handleRequest(req, res, req.body);
       } catch (err) {
-        console.error("[LeaseGuard MCP] SSE handler error:", err instanceof Error ? err.message : err);
+        console.error("[LeaseGuard MCP] handleRequest error:", err instanceof Error ? err.message : err);
         if (!res.headersSent) {
-          res.status(500).json({ error: "SSE setup failed" });
+          res.status(500).json({ error: "MCP request failed" });
         }
       }
     });
 
-    app.post("/messages", async (req, res) => {
-      const sessionId = req.query.sessionId as string;
-      const transport = sessions.get(sessionId);
-      if (!transport) {
-        res.status(404).send("Session not found");
-        return;
-      }
-      try {
-        await transport.handlePostMessage(req, res, req.body);
-      } catch (err) {
-        console.error("[LeaseGuard MCP] handlePostMessage error:", err instanceof Error ? err.message : err);
-        if (!res.headersSent) {
-          res.status(500).send("Message handling failed");
-        }
-      }
-    });
-
-    const port = parseInt(process.env.PORT, 10);
+    const port = parseInt(process.env.PORT, 10) || 8080;
     app.listen(port, () => {
-      console.error(
-        `[LeaseGuard MCP] SSE Server started and listening on port ${port}`
-      );
+      console.log(`[LeaseGuard MCP] HTTP server listening on port ${port}`);
     });
   } else {
     const server = createServer();
