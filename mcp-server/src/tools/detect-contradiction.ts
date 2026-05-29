@@ -9,6 +9,11 @@
  * degrades to the original regex approach so no functionality is lost.
  */
 
+import Anthropic from "@anthropic-ai/sdk";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
 import { z } from "zod";
 import type { ClauseType } from "../types.js";
 
@@ -201,11 +206,6 @@ function regexDetect(
 }
 
 // ─── LLM detection (Anthropic SDK with credential fallback) ─────────────────
-
-import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
-import os from "os";
-import path from "path";
 
 const LLM_MODEL = "claude-haiku-4-5-20251001";
 const LLM_TIMEOUT_MS = 12_000;
