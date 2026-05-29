@@ -45,8 +45,8 @@ WORKDIR /app
 
 EXPOSE 8080
 
-# Health check — Railway uses this to verify the app is actually responding
+# Health check — uses $PORT (Railway-injected) so it matches whatever port the app listens on
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
 CMD ["node", "mcp-server/dist/start.js"]
