@@ -42,7 +42,6 @@ COPY --from=builder /app/mcp-server/dist ./dist
 
 WORKDIR /app
 
-EXPOSE 3001
-ENV PORT=3001
+EXPOSE 8080
 
 CMD ["node", "mcp-server/dist/start.js"]
