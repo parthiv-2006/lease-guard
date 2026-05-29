@@ -179,6 +179,14 @@ async function main() {
     const port = parseInt(process.env.PORT, 10) || 8080;
     app.listen(port, () => {
       console.log(`[LeaseGuard MCP] HTTP server listening on port ${port}`);
+      // Heartbeat — confirms process stays alive after startup
+      let tick = 0;
+      const hb = setInterval(() => {
+        tick++;
+        console.log(`[LeaseGuard MCP] heartbeat ${tick} — alive at ${new Date().toISOString()}`);
+        if (tick >= 3) clearInterval(hb); // stop after 3 × 10s = 30s
+      }, 10_000);
+      hb.unref(); // don't keep the process alive for the heartbeat alone
     });
   } else {
     const server = createServer();

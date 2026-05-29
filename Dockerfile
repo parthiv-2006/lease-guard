@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-eng \
     libgl1 \
     libglib2.0-0 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps in a venv (avoids PEP 668 system-package restrictions)
@@ -43,5 +44,9 @@ COPY --from=builder /app/mcp-server/dist ./dist
 WORKDIR /app
 
 EXPOSE 8080
+
+# Health check — Railway uses this to verify the app is actually responding
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
 
 CMD ["node", "mcp-server/dist/start.js"]
