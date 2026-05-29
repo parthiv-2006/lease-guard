@@ -181,6 +181,20 @@ function createServer(): Server {
 }
 
 async function main() {
+  // ── Process-level guards — prevent silent crashes ─────────────────────────
+  // Without these, unhandled rejections or uncaught exceptions kill the Node
+  // process, which makes Railway's proxy return 502 for subsequent requests
+  // until the process restarts.
+  process.on("uncaughtException", (err) => {
+    console.error("[LeaseGuard MCP] Uncaught exception:", err.message, err.stack);
+  });
+  process.on("unhandledRejection", (reason) => {
+    console.error(
+      "[LeaseGuard MCP] Unhandled rejection:",
+      reason instanceof Error ? reason.message : reason
+    );
+  });
+
   if (process.env.PORT) {
     const app = express();
     app.use(cors());
@@ -189,23 +203,43 @@ async function main() {
     const sessions = new Map<string, SSEServerTransport>();
 
     app.get("/health", (_req, res) => {
-      res.status(200).json({ status: "ok" });
+      res.status(200).json({ status: "ok", sessions: sessions.size });
     });
 
     app.get("/sse", async (req, res) => {
       // Disable proxy buffering so Railway/nginx forwards SSE chunks immediately
       res.setHeader("X-Accel-Buffering", "no");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
 
-      // Fresh Server instance per connection — reusing one instance causes
-      // server.connect() to throw on the second call after a session closes,
-      // resulting in a 502 Bad Gateway from Railway's reverse proxy.
-      const server = createServer();
-      const transport = new SSEServerTransport("/messages", res);
-      await server.connect(transport);
-      sessions.set(transport.sessionId, transport);
-      transport.onclose = () => {
-        sessions.delete(transport.sessionId);
-      };
+      console.error(`[LeaseGuard MCP] New SSE connection from ${req.ip ?? "unknown"}`);
+
+      try {
+        // Fresh Server instance per connection — reusing one instance causes
+        // server.connect() to throw on the second call after a session closes.
+        const server = createServer();
+
+        // Surface MCP-level errors to logs instead of swallowing them silently
+        server.onerror = (err) => {
+          console.error("[LeaseGuard MCP] MCP server error:", err instanceof Error ? err.message : err);
+        };
+
+        const transport = new SSEServerTransport("/messages", res);
+        await server.connect(transport);
+
+        console.error(`[LeaseGuard MCP] SSE session established: ${transport.sessionId}`);
+        sessions.set(transport.sessionId, transport);
+
+        transport.onclose = () => {
+          console.error(`[LeaseGuard MCP] SSE session closed: ${transport.sessionId}`);
+          sessions.delete(transport.sessionId);
+        };
+      } catch (err) {
+        console.error("[LeaseGuard MCP] SSE handler error:", err instanceof Error ? err.message : err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "SSE setup failed" });
+        }
+      }
     });
 
     app.post("/messages", async (req, res) => {
@@ -215,7 +249,14 @@ async function main() {
         res.status(404).send("Session not found");
         return;
       }
-      await transport.handlePostMessage(req, res, req.body);
+      try {
+        await transport.handlePostMessage(req, res, req.body);
+      } catch (err) {
+        console.error("[LeaseGuard MCP] handlePostMessage error:", err instanceof Error ? err.message : err);
+        if (!res.headersSent) {
+          res.status(500).send("Message handling failed");
+        }
+      }
     });
 
     const port = parseInt(process.env.PORT, 10);
