@@ -1,5 +1,5 @@
 # ── Stage 1: Build TypeScript ─────────────────────────────────────────────────
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 WORKDIR /app/mcp-server
 COPY mcp-server/package*.json ./
 RUN npm ci
@@ -8,7 +8,7 @@ COPY mcp-server/tsconfig.json ./
 RUN npm run build
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM node:20-slim
+FROM node:22-slim
 
 # Python + Tesseract for parse_document tool
 RUN apt-get update && apt-get install -y \
