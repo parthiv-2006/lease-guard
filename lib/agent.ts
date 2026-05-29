@@ -854,31 +854,60 @@ async function _runLeaseAnalysisPipeline(
     });
 
     // ── 8. Contradiction detection ─────────────────────────────────────────
-    // Index analyzed clauses by type (first occurrence wins for contradictions)
-    const byType = new Map<string, AnalyzedClause>();
+    // Group ALL clauses by type so same-type pairs (e.g. two "utilities" clauses
+    // that directly contradict each other) are also checked.
+    const byType = new Map<string, AnalyzedClause[]>();
     for (const ac of analyzedClauses) {
-      if (!byType.has(ac.clause_type)) byType.set(ac.clause_type, ac);
+      if (!byType.has(ac.clause_type)) byType.set(ac.clause_type, []);
+      byType.get(ac.clause_type)!.push(ac);
+    }
+
+    // Build the full set of pairs to check:
+    //  a) Intra-type: all pairs within each clause type group (catches §4 vs §5 utilities)
+    //  b) Cross-type: the pre-defined CONTRADICTION_TYPE_PAIRS (catches §2 term vs §13 termination)
+    const pairsToCheck: Array<[AnalyzedClause, AnalyzedClause]> = [];
+    const seenPairIds = new Set<string>();
+
+    function addPair(a: AnalyzedClause, b: AnalyzedClause): void {
+      const key = [a.clause_id, b.clause_id].sort().join("|");
+      if (!seenPairIds.has(key)) {
+        seenPairIds.add(key);
+        pairsToCheck.push([a, b]);
+      }
+    }
+
+    // Intra-type pairs
+    for (const clauses of byType.values()) {
+      for (let i = 0; i < clauses.length - 1; i++) {
+        for (let j = i + 1; j < clauses.length; j++) {
+          addPair(clauses[i], clauses[j]);
+        }
+      }
+    }
+
+    // Cross-type pairs
+    for (const [typeA, typeB] of CONTRADICTION_TYPE_PAIRS) {
+      const groupA = byType.get(typeA);
+      const groupB = byType.get(typeB);
+      if (groupA && groupB) {
+        addPair(groupA[0], groupB[0]);
+      }
     }
 
     const contradictionResults: ContradictionResult[] = [];
 
-    {
-      const pairCount = CONTRADICTION_TYPE_PAIRS.filter(([a, b]) => byType.has(a) && byType.has(b)).length;
-      if (pairCount > 0) {
-        emitAnalysisEvent(leaseId, {
-          type: "log",
-          message: `Checking ${pairCount} clause pair${pairCount !== 1 ? "s" : ""} for contradictions...`,
-          severity: "info",
-        });
-      }
+    if (pairsToCheck.length > 0) {
+      emitAnalysisEvent(leaseId, {
+        type: "log",
+        message: `Checking ${pairsToCheck.length} clause pair${pairsToCheck.length !== 1 ? "s" : ""} for contradictions...`,
+        severity: "info",
+      });
     }
 
     await Promise.allSettled(
-      CONTRADICTION_TYPE_PAIRS.filter(
-        ([a, b]) => byType.has(a) && byType.has(b)
-      ).map(async ([typeA, typeB]) => {
-        const acA = byType.get(typeA)!;
-        const acB = byType.get(typeB)!;
+      pairsToCheck.map(async ([acA, acB]) => {
+        const typeA = acA.clause_type;
+        const typeB = acB.clause_type;
         try {
           // ROADMAP 4.1: pass retrieved statutes so the LLM can cite specific law
           const formatStatutes = (statutes: Statute[]) =>
