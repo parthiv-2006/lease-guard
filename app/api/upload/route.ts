@@ -6,7 +6,7 @@ import { checkDbUploadRateLimit } from "@/lib/upload-rate-limit";
 import { runLeaseAnalysis } from "@/lib/agent";
 import { v4 as uuidv4 } from "uuid";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
