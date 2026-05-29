@@ -172,7 +172,10 @@ export class McpClient {
     try {
       const response = await fetch(this.mcpUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json, text/event-stream",
+        },
         body: JSON.stringify(msg),
         signal: controller.signal,
       });
