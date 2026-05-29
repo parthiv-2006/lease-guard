@@ -151,25 +151,22 @@ async function main() {
       res.status(200).json({ status: "ok" });
     });
 
-    // Single MCP server + stateless transport shared across all requests.
-    // Stateless mode: no session IDs, no state between requests.
-    // enableJsonResponse: server returns plain JSON instead of SSE streams,
-    // which works reliably through Railway's proxy without buffering issues.
-    const mcpServer = createServer();
-    mcpServer.onerror = (err) => {
-      console.error("[LeaseGuard MCP] MCP server error:", err instanceof Error ? err.message : err);
-    };
-
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined, // stateless
-      enableJsonResponse: true,
-    });
-
-    await mcpServer.connect(transport);
-    console.log("[LeaseGuard MCP] MCP server connected to transport");
-
+    // Create a fresh server+transport per POST request.
+    // StreamableHTTPServerTransport stores a single _requestContext, so reusing
+    // one instance across concurrent requests causes a race where the second
+    // request overwrites the context and the first response is never sent.
+    // Per-request creation is the correct stateless pattern per SDK docs.
     app.post("/mcp", async (req, res) => {
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // stateless — no session tracking
+        enableJsonResponse: true,      // plain JSON response, no SSE streams
+      });
+      const mcpServer = createServer();
+      mcpServer.onerror = (err) => {
+        console.error("[LeaseGuard MCP] MCP error:", err instanceof Error ? err.message : err);
+      };
       try {
+        await mcpServer.connect(transport);
         await transport.handleRequest(req, res, req.body);
       } catch (err) {
         console.error("[LeaseGuard MCP] handleRequest error:", err instanceof Error ? err.message : err);
