@@ -2,6 +2,10 @@ import { z } from "zod";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
+import os from "os";
+import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../lib/supabase.js";
 
 export const toolDefinition = {
   name: "parse_document",
@@ -12,7 +16,11 @@ export const toolDefinition = {
     properties: {
       file_path: {
         type: "string",
-        description: "Absolute path to the PDF file to parse",
+        description: "Absolute local path to the PDF file (stdio/local mode only)",
+      },
+      storage_path: {
+        type: "string",
+        description: "Supabase Storage path within the 'leases' bucket (used when MCP server is remote)",
       },
       ocr_fallback: {
         type: "boolean",
@@ -20,12 +28,13 @@ export const toolDefinition = {
           "Whether to use OCR if direct text extraction fails or yields low confidence",
       },
     },
-    required: ["file_path", "ocr_fallback"],
+    required: ["ocr_fallback"],
   },
 };
 
 const InputSchema = z.object({
-  file_path: z.string().min(1, "file_path must not be empty"),
+  file_path: z.string().min(1).optional(),
+  storage_path: z.string().min(1).optional(),
   ocr_fallback: z.boolean(),
 });
 
@@ -87,7 +96,25 @@ export async function execute(input: unknown): Promise<unknown> {
     };
   }
 
-  const { file_path, ocr_fallback } = parsed.data;
+  const { file_path, storage_path, ocr_fallback } = parsed.data;
+
+  if (!file_path && !storage_path) {
+    return { error: "Invalid input", details: "Either file_path or storage_path must be provided" };
+  }
+
+  // If storage_path is given, download from Supabase Storage to a local temp file
+  let localFilePath = file_path ?? "";
+  let tempPath: string | null = null;
+
+  if (storage_path) {
+    const { data, error: dlError } = await supabase.storage.from("leases").download(storage_path);
+    if (dlError || !data) {
+      return { error: "Storage download failed", details: dlError?.message ?? "No data returned" };
+    }
+    tempPath = path.join(os.tmpdir(), `leaseguard-parse-${uuidv4()}.pdf`);
+    fs.writeFileSync(tempPath, Buffer.from(await data.arrayBuffer()));
+    localFilePath = tempPath;
+  }
 
   // Resolve the script path relative to the mcp-server directory
   const scriptPath = path.resolve(
@@ -97,7 +124,7 @@ export async function execute(input: unknown): Promise<unknown> {
     "parse_pdf.py"
   );
 
-  const args: string[] = [file_path];
+  const args: string[] = [localFilePath];
   if (ocr_fallback) {
     args.push("--ocr");
   }
@@ -184,7 +211,7 @@ export async function execute(input: unknown): Promise<unknown> {
           ? Math.min(1, Math.max(0, jsonData.confidence))
           : 0.5,
       metadata: {
-        file_path,
+        file_path: storage_path ?? file_path ?? localFilePath,
         file_size_bytes:
           typeof jsonData.metadata?.file_size_bytes === "number"
             ? jsonData.metadata.file_size_bytes
@@ -225,5 +252,8 @@ export async function execute(input: unknown): Promise<unknown> {
     };
   }
 
+  if (tempPath) {
+    try { fs.unlinkSync(tempPath); } catch { /* ephemeral — ignore */ }
+  }
   return result;
 }

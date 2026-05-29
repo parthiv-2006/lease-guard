@@ -17,9 +17,6 @@ import { createClient } from "@supabase/supabase-js";
 import { McpClient } from "./mcp-client";
 import { MCP_SERVER_PATH } from "./anthropic";
 import { emitAnalysisEvent } from "./analysis-events";
-import os from "os";
-import path from "path";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 // ─── Local type mirrors (avoid importing from mcp-server ESM package) ───────
@@ -587,39 +584,26 @@ async function _runLeaseAnalysisPipeline(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  let tempFilePath: string | null = null;
   let mcp: McpClient | null = null;
 
   try {
-    // ── 1. Download PDF from Supabase Storage ──────────────────────────────
-    const { data: fileBlob, error: downloadError } = await supabase.storage
-      .from("leases")
-      .download(storagePath);
-
-    if (downloadError || !fileBlob) {
-      throw new Error(
-        `Storage download failed: ${downloadError?.message ?? "no data returned"}`
-      );
-    }
-
-    // parse_document requires a local absolute path (spawns Python subprocess)
-    tempFilePath = path.join(os.tmpdir(), `leaseguard-${uuidv4()}.pdf`);
-    fs.writeFileSync(tempFilePath, Buffer.from(await fileBlob.arrayBuffer()));
-
-    // ── 2. Start MCP server ────────────────────────────────────────────────
+    // ── 1. Start MCP server ────────────────────────────────────────────────
     mcp = await McpClient.create(MCP_SERVER_PATH);
     const logger = new ToolCallLogger(supabase, leaseId);
 
     emitAnalysisEvent(leaseId, { type: "log", message: "Parsing PDF...", severity: "info" });
 
-    // ── 3. Parse document ──────────────────────────────────────────────────
+    // ── 2. Parse document ──────────────────────────────────────────────────
+    // Pass storage_path so the MCP server downloads the file directly from
+    // Supabase Storage onto its own filesystem (Railway). Passing a local
+    // Vercel /tmp/ path would fail because the MCP server runs remotely.
     const parseResult = await logger.call<{
       raw_text: string;
       page_count: number;
       extraction_method: "text" | "ocr" | "unknown";
       confidence: number;
     }>(mcp, "parse_document", {
-      file_path: tempFilePath,
+      storage_path: storagePath,
       ocr_fallback: true,
     });
 
@@ -638,10 +622,6 @@ async function _runLeaseAnalysisPipeline(
         "Document contains insufficient text — it may be a scanned image that OCR could not read, or not a lease document."
       );
     }
-
-    // Temp file no longer needed after parse_document has read it
-    fs.unlinkSync(tempFilePath);
-    tempFilePath = null;
 
     // ── 3b. Validate document type (fast heuristics — runs before any MCP calls) ──
     validateDocumentType(rawText);
@@ -1192,14 +1172,6 @@ async function _runLeaseAnalysisPipeline(
 
     throw err;
   } finally {
-    // Always clean up temp file and MCP process, regardless of success/failure
-    if (tempFilePath) {
-      try {
-        fs.unlinkSync(tempFilePath);
-      } catch {
-        /* File may not exist if we failed before writing it */
-      }
-    }
     mcp?.close();
   }
 }
