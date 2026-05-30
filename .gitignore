@@ -44,8 +44,12 @@ screenshots/
 # Editor
 .vscode/
 
-# Playwright test artefacts
+# Playwright test artefacts and browser session recordings
 test-results/
+page@*.webm
+
+# Local LTB decision source docs (used by seeder scripts, not needed in repo)
+scripts/source-docs/ltb_decisions/
 
 # Temp screenshots captured during dev/demo work
 firefox_screenshot.png
