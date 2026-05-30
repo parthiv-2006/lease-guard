@@ -29,6 +29,17 @@ function toToolLabel(name: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/**
+ * Strip internal DB section identifiers from stored risk_reasoning strings.
+ * Old analyses were stored with raw keys like "s.form_15_additional_terms" —
+ * this removes them so the human-readable title in parentheses is all that shows.
+ * Also removes raw clause_type prefixes like "maintenance repairs clause assessed…".
+ */
+function cleanRiskReasoning(text: string): string {
+  // "s.form_15_additional_terms", "s.form_17_signatures.9", etc.
+  return text.replace(/ s\.form_[a-z0-9_.]+/g, "");
+}
+
 // ── Shared empty state ────────────────────────────────────────────────────────
 
 function PanelEmptyState({
@@ -341,7 +352,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   lineHeight: 1.65,
                 }}
               >
-                {clause.risk_reasoning}
+                {cleanRiskReasoning(clause.risk_reasoning)}
               </p>
             </div>
           )}

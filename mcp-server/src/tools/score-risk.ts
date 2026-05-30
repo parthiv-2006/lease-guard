@@ -1716,8 +1716,8 @@ export async function execute(input: unknown): Promise<unknown> {
   }
 
   // ── Plain English explanation ──────────────────────────────────────────────
-  const clauseTypeLabel = clause_type.replace(/_/g, " ");
-  let plainEnglish = `This ${clauseTypeLabel} clause scores ${finalScore}/10 risk`;
+  // Do not expose the internal clause_type key — just score + plain outcome.
+  let plainEnglish = `This clause scores ${finalScore}/10 risk`;
 
   if (finalScore <= 3) {
     plainEnglish += ". It appears to be standard language that aligns with tenant protections.";
@@ -1770,7 +1770,14 @@ export async function execute(input: unknown): Promise<unknown> {
 
   if (highRelevanceStatutes.length > 0) {
     const statuteRefs = highRelevanceStatutes
-      .map((s) => `${s.act_name} s.${s.section_number} (${s.section_title})`)
+      .map((s) => {
+        // Standard Form sections have raw DB keys as section_number (e.g. "form_15_additional_terms").
+        // Only display the human-readable title, not the internal identifier.
+        if (s.section_number.startsWith("form_")) {
+          return s.section_title ? `${s.act_name} — ${s.section_title}` : s.act_name;
+        }
+        return `${s.act_name} s.${s.section_number}${s.section_title ? ` (${s.section_title})` : ""}`;
+      })
       .join(", ");
     reasoningParts.push(`Assessed against: ${statuteRefs}`);
   } else if (!hasStatutes) {
@@ -1782,7 +1789,7 @@ export async function execute(input: unknown): Promise<unknown> {
   const risk_reasoning =
     reasoningParts.length > 0
       ? reasoningParts.join(". ")
-      : `${clauseTypeLabel} clause assessed on language patterns. Score: ${finalScore}/10.`;
+      : `Clause assessed on language patterns. Score: ${finalScore}/10.`;
 
   // Suppress unused variable warning for clause_id (kept in schema for logging)
   void clause_id;
