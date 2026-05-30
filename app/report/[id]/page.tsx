@@ -252,12 +252,20 @@ function ReportSidebar({
 }) {
   const { lease, overall } = report;
 
+  const riskAccent =
+    overall.risk_level === "critical" ? "#f87171"
+    : overall.risk_level === "high"   ? "#fb923c"
+    : overall.risk_level === "medium" ? "#fbbf24"
+    : "#4ade80";
+
+  const filledSegments = Math.round((overall.risk_score / 10) * 5);
+
   return (
     <div
       style={{
         width: "300px",
         minWidth: "300px",
-        background: "#131110",
+        background: "#0f0e0d",
         display: "flex",
         flexDirection: "column",
         height: "100vh",
@@ -265,164 +273,131 @@ function ReportSidebar({
         top: 0,
         left: isMobile ? (sidebarOpen ? 0 : -300) : undefined,
         overflow: "auto",
-        borderRight: "1px solid #252220",
+        borderRight: "1px solid #1a1816",
         flexShrink: 0,
         zIndex: isMobile ? 100 : undefined,
         transition: isMobile ? "left 0.25s ease" : undefined,
-        boxShadow: isMobile && sidebarOpen ? "4px 0 24px rgba(0,0,0,0.4)" : undefined,
+        boxShadow: isMobile && sidebarOpen ? "4px 0 32px rgba(0,0,0,0.6)" : undefined,
       }}
     >
       {/* Brand */}
-      <div
-        style={{
-          padding: "20px 20px 16px",
-          borderBottom: "1px solid #252220",
-        }}
-      >
+      <div style={{ padding: "20px 24px 18px" }}>
         <div
           style={{
             fontFamily: "'Cormorant Garamond', serif",
             fontWeight: 600,
-            fontSize: "17px",
+            fontSize: "16px",
             color: "#ebe8e2",
-            letterSpacing: "0.02em",
+            letterSpacing: "0.04em",
           }}
         >
           LeaseGuard
         </div>
       </div>
 
-      {/* Lease info + risk score */}
-      <div
-        style={{ padding: "16px 20px", borderBottom: "1px solid #252220" }}
-      >
-        <div
-          style={{
-            fontSize: "13px",
-            fontWeight: 500,
-            color: "#ebe8e2",
-            lineHeight: 1.4,
-            marginBottom: "2px",
-          }}
-        >
+      {/* Property + Risk hero */}
+      <div style={{ padding: "0 24px 22px", borderBottom: "1px solid #1a1816" }}>
+        {/* Property label */}
+        <div style={{
+          fontSize: "9px",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "#2a2725",
+          fontWeight: 700,
+          marginBottom: "5px",
+        }}>
+          Property
+        </div>
+        <div style={{
+          fontSize: "13px",
+          fontWeight: 500,
+          color: "#c8c3ba",
+          lineHeight: 1.4,
+          marginBottom: "2px",
+        }}>
           {lease.address}
         </div>
-        <div
-          style={{
-            fontSize: "12px",
-            color: "#7a7570",
-            lineHeight: 1.4,
-            marginBottom: "14px",
-          }}
-        >
+        <div style={{
+          fontSize: "11px",
+          color: "#353230",
+          marginBottom: "24px",
+          letterSpacing: "0.02em",
+        }}>
           {lease.city}
         </div>
 
-        {/* Risk score block */}
-        <div
-          style={{
-            borderLeft: `3px solid ${
-              overall.risk_level === "critical" ? "#f87171"
-              : overall.risk_level === "high" ? "#fb923c"
-              : overall.risk_level === "medium" ? "#fbbf24"
-              : "#4ade80"
-            }`,
-            paddingLeft: "12px",
-            marginBottom: "14px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "10px",
-              letterSpacing: "0.08em",
+        {/* Risk score — typographic hero, no border */}
+        <div style={{
+          fontSize: "9px",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "#2a2725",
+          fontWeight: 700,
+          marginBottom: "10px",
+        }}>
+          Overall Risk
+        </div>
+
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", marginBottom: "16px" }}>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "56px",
+            fontWeight: 700,
+            lineHeight: 0.85,
+            color: riskAccent,
+            letterSpacing: "-0.03em",
+          }}>
+            {overall.risk_score.toFixed(1)}
+          </span>
+          <div style={{ paddingBottom: "5px" }}>
+            <div style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
               textTransform: "uppercase",
-              color: "#6b6560",
-              fontWeight: 500,
-              marginBottom: "5px",
-            }}
-          >
-            Overall Risk
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "7px" }}>
-            <span
-              style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize: "32px",
-                fontWeight: 600,
-                lineHeight: 1,
-                color: overall.risk_level === "critical" ? "#f87171"
-                  : overall.risk_level === "high" ? "#fb923c"
-                  : overall.risk_level === "medium" ? "#fbbf24"
-                  : "#4ade80",
-              }}
-            >
-              {overall.risk_score.toFixed(1)}
-            </span>
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: overall.risk_level === "critical" ? "#f87171"
-                  : overall.risk_level === "high" ? "#fb923c"
-                  : overall.risk_level === "medium" ? "#fbbf24"
-                  : "#4ade80",
-                opacity: 0.8,
-              }}
-            >
+              color: riskAccent,
+              marginBottom: "2px",
+            }}>
               {overall.risk_level}
-            </span>
-          </div>
-          <div
-            style={{
-              marginTop: "8px",
-              height: "2px",
-              background: "#252220",
-              borderRadius: "1px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${(overall.risk_score / 10) * 100}%`,
-                borderRadius: "1px",
-                background: overall.risk_level === "critical" ? "#f87171"
-                  : overall.risk_level === "high" ? "#fb923c"
-                  : overall.risk_level === "medium" ? "#fbbf24"
-                  : "#4ade80",
-                transition: "width 0.8s cubic-bezier(0.34, 1.0, 0.64, 1)",
-              }}
-            />
+            </div>
+            <div style={{
+              fontSize: "9px",
+              color: "#2a2725",
+              letterSpacing: "0.04em",
+            }}>
+              out of 10
+            </div>
           </div>
         </div>
 
-        <div style={{ fontSize: "11px", color: "#4a4744" }}>
-          {lease.page_count > 0 && (
-            `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `
-          )}
+        {/* 5-segment discrete bar */}
+        <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
+          {[1, 2, 3, 4, 5].map((seg) => (
+            <div
+              key={seg}
+              style={{
+                flex: 1,
+                height: "3px",
+                borderRadius: "2px",
+                background: seg <= filledSegments ? riskAccent : "#1a1816",
+                opacity: seg <= filledSegments ? (0.35 + (seg / 5) * 0.65) : 1,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Metadata */}
+        <div style={{ fontSize: "10px", color: "#2a2725", letterSpacing: "0.03em" }}>
+          {lease.page_count > 0 && `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `}
           {lease.extraction_method === "ocr" ? "Scanned PDF" : "Digital PDF"}
         </div>
       </div>
 
       {/* Nav */}
       <nav
-        style={{ flex: 1, padding: "12px 0", overflow: "auto" }}
+        style={{ flex: 1, paddingTop: "10px", overflow: "auto" }}
         aria-label="Report sections"
       >
-        <div
-          style={{
-            padding: "0 20px 8px",
-            fontSize: "10px",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "#4a4744",
-            fontWeight: 500,
-          }}
-        >
-          Analysis
-        </div>
         {NAV_ITEMS.map((item) => {
           const active = activePanel === item.id;
           const count =
@@ -437,38 +412,49 @@ function ReportSidebar({
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "8px 20px",
-                background: active ? "#252220" : "transparent",
+                gap: "9px",
+                padding: "8px 24px",
+                background: active ? "rgba(235,232,226,0.05)" : "transparent",
                 border: "none",
                 cursor: "pointer",
                 textAlign: "left",
-                borderLeft: active
-                  ? "2px solid #ebe8e2"
-                  : "2px solid transparent",
-                transition: "all 0.12s",
+                position: "relative",
+                transition: "background 0.12s",
               }}
               onMouseEnter={(e) => {
-                if (!active)
-                  e.currentTarget.style.background = "#1a1816";
+                if (!active) e.currentTarget.style.background = "rgba(235,232,226,0.03)";
               }}
               onMouseLeave={(e) => {
-                if (!active)
-                  e.currentTarget.style.background = "transparent";
+                if (!active) e.currentTarget.style.background = "transparent";
               }}
             >
+              {/* Right-edge active indicator */}
+              {active && (
+                <span style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: "2px",
+                  height: "18px",
+                  borderRadius: "2px 0 0 2px",
+                  background: "#ebe8e2",
+                }} />
+              )}
               <Icon
                 name={item.icon}
-                size={15}
-                color={active ? "#ebe8e2" : "#7a7570"}
+                size={14}
+                color={active ? "#ebe8e2" : "#2a2725"}
               />
               <span
                 style={{
                   fontSize: "13px",
-                  color: active ? "#ebe8e2" : "#7a7570",
+                  color: active ? "#ebe8e2" : "#4a4744",
                   fontFamily: "'DM Sans', sans-serif",
                   flex: 1,
                   fontWeight: active ? 500 : 400,
+                  letterSpacing: "0.01em",
+                  transition: "color 0.12s",
                 }}
               >
                 {item.label}
@@ -476,13 +462,18 @@ function ReportSidebar({
               {count != null && count > 0 && (
                 <span
                   style={{
-                    fontSize: "11px",
-                    padding: "1px 7px",
-                    borderRadius: "100px",
-                    background: active ? "#3a3532" : "#252220",
-                    color: item.color ?? "#7a7570",
-                    fontWeight: 500,
-                    border: "1px solid #3a3532",
+                    fontSize: "10px",
+                    minWidth: "20px",
+                    height: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "4px",
+                    background: "#181614",
+                    color: item.color ?? "#3a3532",
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                    padding: "0 5px",
                   }}
                 >
                   {count}
@@ -496,69 +487,71 @@ function ReportSidebar({
       {/* Actions */}
       <div
         style={{
-          padding: "12px",
-          borderTop: "1px solid #252220",
+          padding: "14px 16px",
+          borderTop: "1px solid #1a1816",
           display: "flex",
           flexDirection: "column",
           gap: "6px",
         }}
       >
+        {/* Share — inverted primary */}
         <button
           onClick={onShare}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "8px 12px",
+            justifyContent: "center",
+            gap: "7px",
+            padding: "9px 12px",
             borderRadius: "6px",
             cursor: "pointer",
-            background: "transparent",
-            border: "1px solid #3a3532",
-            color: "#ebe8e2",
+            background: "#ebe8e2",
+            border: "none",
+            color: "#0f0e0d",
             fontSize: "12px",
             fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 500,
+            fontWeight: 600,
             width: "100%",
-            justifyContent: "center",
-            transition: "all 0.15s",
+            letterSpacing: "0.02em",
+            transition: "background 0.15s",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "#1a1816")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#d5d1ca")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#ebe8e2")}
         >
-          <Icon name="share" size={14} color="#ebe8e2" />
+          <Icon name="share" size={13} color="#0f0e0d" />
           Share Report
         </button>
+        {/* Export — subtle ghost secondary */}
         <button
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
+            justifyContent: "center",
+            gap: "7px",
             padding: "8px 12px",
             borderRadius: "6px",
             cursor: "pointer",
             background: "transparent",
-            border: "1px solid #3a3532",
-            color: "#7a7570",
+            border: "1px solid #1e1c1a",
+            color: "#3a3532",
             fontSize: "12px",
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 400,
             width: "100%",
-            justifyContent: "center",
+            letterSpacing: "0.02em",
             transition: "all 0.15s",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "#1a1816")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "#2e2b29";
+            e.currentTarget.style.color = "#7a7570";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#1e1c1a";
+            e.currentTarget.style.color = "#3a3532";
+          }}
           onClick={() => exportReportPDF(report)}
         >
-          <Icon name="export" size={14} color="#7a7570" />
+          <Icon name="export" size={13} color="#3a3532" />
           Export PDF
         </button>
       </div>
