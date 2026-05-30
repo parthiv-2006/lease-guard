@@ -1371,6 +1371,14 @@ export function MissingPanel({ report }: { report: Report }) {
 
 // ── Contradictions Panel ──────────────────────────────────────────────────────
 
+/** "pet_prohibition_vs_statutory_void" → "Pet Prohibition vs. Statutory Void" */
+function formatContraType(s: string): string {
+  return s
+    .replace(/_vs_/g, " vs. ")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function ContradictionsPanel({
   report,
   onClauseActivate,
@@ -1379,24 +1387,28 @@ export function ContradictionsPanel({
   onClauseActivate?: (clauseId: string) => void;
 }) {
   const sevColor: Record<string, string> = {
+    critical: "#b91c1c",
     high: "#b91c1c",
     medium: "#b45309",
     low: "#15803d",
   };
   const sevBg: Record<string, string> = {
+    critical: "#fef2f2",
     high: "#fef2f2",
     medium: "#fffbeb",
     low: "#f0fdf4",
   };
   const sevBorder: Record<string, string> = {
+    critical: "#fecaca",
     high: "#fecaca",
     medium: "#fde68a",
     low: "#bbf7d0",
   };
-  const typeLabel: Record<string, string> = {
-    direct_conflict: "Direct Conflict",
-    ambiguity: "Ambiguity",
-    overlap: "Overlap",
+  const sevLabel: Record<string, string> = {
+    critical: "Critical",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
   };
 
   return (
@@ -1422,182 +1434,160 @@ export function ContradictionsPanel({
         />
       ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {report.contradictions.map((x) => (
-          <div
-            key={x.id}
-            style={{
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "8px",
-              overflow: "hidden",
-              borderLeft: `3px solid ${sevColor[x.severity] ?? "#6b7280"}`,
-              boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
-            }}
-          >
+        {report.contradictions.map((x) => {
+          // Look up real clause headings from report.clauses (IDs match DB UUIDs)
+          const clauseA = report.clauses.find((c) => c.id === x.clause_a_id);
+          const clauseB = report.clauses.find((c) => c.id === x.clause_b_id);
+          const labelA = clauseA
+            ? (clauseA.heading || `Clause ${clauseA.number}`)
+            : "Clause A";
+          const labelB = clauseB
+            ? (clauseB.heading || `Clause ${clauseB.number}`)
+            : "Clause B";
+
+          const sev = x.severity ?? "medium";
+          const color = sevColor[sev] ?? "#b45309";
+          const bg = sevBg[sev] ?? "#fffbeb";
+          const border = sevBorder[sev] ?? "#fde68a";
+
+          return (
             <div
-              style={{ padding: "18px 20px", borderBottom: "1px solid #f0ede6" }}
+              key={x.id}
+              style={{
+                background: "#fff",
+                border: "1px solid #e8e4dc",
+                borderRadius: "8px",
+                overflow: "hidden",
+                borderLeft: `3px solid ${color}`,
+                boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
+              }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  alignItems: "flex-start",
-                  marginBottom: "12px",
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div
+              {/* Header */}
+              <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid #f0ede6" }}>
+                {/* Title row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#181614", flex: 1, minWidth: 0 }}>
+                    {formatContraType(x.contradiction_type)}
+                  </span>
+                  <span
                     style={{
-                      display: "flex",
-                      gap: "8px",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      marginBottom: "6px",
+                      fontSize: "11px",
+                      padding: "2px 10px",
+                      borderRadius: "100px",
+                      background: bg,
+                      border: `1px solid ${border}`,
+                      color,
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#181614",
-                      }}
-                    >
-                      {typeLabel[x.contradiction_type] ?? x.contradiction_type}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        padding: "2px 8px",
-                        borderRadius: "100px",
-                        background: sevBg[x.severity] ?? "#f9fafb",
-                        border: `1px solid ${sevBorder[x.severity] ?? "#e5e7eb"}`,
-                        color: sevColor[x.severity] ?? "#6b7280",
-                        fontWeight: 500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {x.severity} severity
-                    </span>
-                  </div>
-                  {/* Conflicting clause tags — clickable to highlight in PDF */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <button
-                      onClick={() => onClauseActivate?.(x.clause_a_id)}
-                      title="Highlight in PDF"
-                      style={{
-                        fontSize: "12px",
-                        padding: "3px 10px",
-                        background: "#f6f3ee",
-                        border: "1px solid #e8e4dc",
-                        borderRadius: "4px",
-                        color: "#5c5751",
-                        cursor: "pointer",
-                        transition: "border-color 0.15s",
-                        fontFamily: "'DM Sans', sans-serif",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.borderColor = "#c5bfb5")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.borderColor = "#e8e4dc")
-                      }
-                    >
-                      {x.clause_a_label}
-                    </button>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                    >
-                      <path
-                        d="M4 8h8M10 5l3 3-3 3M6 5L3 8l3 3"
-                        stroke="#c8c3ba"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <button
-                      onClick={() => onClauseActivate?.(x.clause_b_id)}
-                      title="Highlight in PDF"
-                      style={{
-                        fontSize: "12px",
-                        padding: "3px 10px",
-                        background: "#f6f3ee",
-                        border: "1px solid #e8e4dc",
-                        borderRadius: "4px",
-                        color: "#5c5751",
-                        cursor: "pointer",
-                        transition: "border-color 0.15s",
-                        fontFamily: "'DM Sans', sans-serif",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.borderColor = "#c5bfb5")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.borderColor = "#e8e4dc")
-                      }
-                    >
-                      {x.clause_b_label}
-                    </button>
-                  </div>
+                    {sevLabel[sev] ?? sev} severity
+                  </span>
                 </div>
+
+                {/* Conflicting clause pills */}
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginBottom: "14px" }}>
+                  <button
+                    onClick={() => onClauseActivate?.(x.clause_a_id)}
+                    title="Highlight in PDF"
+                    style={{
+                      fontSize: "12px",
+                      padding: "4px 12px",
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      borderRadius: "5px",
+                      color: "#b91c1c",
+                      cursor: clauseA ? "pointer" : "default",
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontWeight: 500,
+                      transition: "background 0.12s",
+                      maxWidth: "220px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (clauseA) e.currentTarget.style.background = "#fee2e2";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#fef2f2";
+                    }}
+                  >
+                    {labelA}
+                  </button>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M4 8h8M10 5l3 3-3 3M6 5L3 8l3 3" stroke="#c8c3ba" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <button
+                    onClick={() => onClauseActivate?.(x.clause_b_id)}
+                    title="Highlight in PDF"
+                    style={{
+                      fontSize: "12px",
+                      padding: "4px 12px",
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      borderRadius: "5px",
+                      color: "#b91c1c",
+                      cursor: clauseB ? "pointer" : "default",
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontWeight: 500,
+                      transition: "background 0.12s",
+                      maxWidth: "220px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (clauseB) e.currentTarget.style.background = "#fee2e2";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#fef2f2";
+                    }}
+                  >
+                    {labelB}
+                  </button>
+                  {(clauseA || clauseB) && (
+                    <span style={{ fontSize: "11px", color: "#b0aaa4" }}>
+                      Click to highlight in PDF
+                    </span>
+                  )}
+                </div>
+
+                <p style={{ margin: 0, fontSize: "13px", color: "#5c5751", lineHeight: 1.65 }}>
+                  {x.explanation}
+                </p>
               </div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "13px",
-                  color: "#5c5751",
-                  lineHeight: 1.65,
-                }}
-              >
-                {x.explanation}
-              </p>
+
+              {/* Which governs footer */}
+              {(x.which_governs || x.legal_basis) && (
+                <div style={{ padding: "12px 20px", background: "#faf9f6", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {x.which_governs && (
+                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", paddingTop: "1px" }}>
+                        Which governs
+                      </span>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#181614", lineHeight: 1.55 }}>
+                        {x.which_governs}
+                      </p>
+                    </div>
+                  )}
+                  {x.legal_basis && (
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                        Legal basis
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#6b6560" }}>
+                        {x.legal_basis}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{ padding: "14px 20px", background: "#faf9f6" }}>
-              <div
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "#9a9590",
-                  fontWeight: 500,
-                  marginBottom: "6px",
-                }}
-              >
-                Which governs?
-              </div>
-              <p
-                style={{
-                  margin: "0 0 6px",
-                  fontSize: "12px",
-                  color: "#181614",
-                  lineHeight: 1.5,
-                }}
-              >
-                {x.which_governs}
-              </p>
-              <code
-                style={{
-                  fontSize: "11px",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: "#6b6560",
-                }}
-              >
-                Legal basis: {x.legal_basis}
-              </code>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       )}
     </div>
