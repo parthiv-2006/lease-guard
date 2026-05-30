@@ -303,7 +303,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(rr, rg, rb);
-  doc.text(`Overall Risk: ${overall.risk_score.toFixed(1)} / 10 — ${riskLabel(overall.risk_level)}`, ML + 5, w.y + 7);
+  doc.text(`Overall Risk: ${overall.risk_score.toFixed(1)} / 10 (${riskLabel(overall.risk_level)})`, ML + 5, w.y + 7);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
@@ -320,7 +320,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
 
   // ── High & Critical Clauses ──────────────────────────────────────────────────
   if (highRisk.length > 0) {
-    w.sectionHeader(`Section 1 — High-Risk Clauses (${highRisk.length})`);
+    w.sectionHeader(`Section 1: High-Risk Clauses (${highRisk.length})`);
     for (const clause of highRisk) {
       w.checkBreak(20);
       // Clause heading row
@@ -337,10 +337,10 @@ export async function exportReportPDF(report: Report): Promise<void> {
         w.body(clause.plain_english_explanation, 3);
       }
       if (clause.is_potentially_unenforceable) {
-        w.small("⚠ May be void and unenforceable under the RTA.", 3, [180, 83, 9]);
+        w.small("Note: May be void and unenforceable under the RTA.", 3, [180, 83, 9]);
       }
       for (const v of clause.statutory_violations ?? []) {
-        w.small(`• ${v.statute_section} — ${v.violation_description}`, 5, riskColor(clause.risk_level));
+        w.small(`  ${v.statute_section}: ${v.violation_description}`, 5, riskColor(clause.risk_level));
       }
       w.nl(5);
     }
@@ -348,7 +348,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
 
   // ── Medium Risk Clauses ────────────────────────────────────────────────────
   if (medRisk.length > 0) {
-    w.sectionHeader(`Section 2 — Medium-Risk Clauses (${medRisk.length})`);
+    w.sectionHeader(`Section 2: Medium-Risk Clauses (${medRisk.length})`);
     for (const clause of medRisk) {
       w.checkBreak(14);
       doc.setFont("helvetica", "bold");
@@ -394,7 +394,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
     doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
     doc.text(String(c.number), ML + 2, w.y);
     doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-    const heading = c.heading.length > 48 ? c.heading.slice(0, 46) + "…" : c.heading;
+    const heading = c.heading.length > 48 ? c.heading.slice(0, 46) + "..." : c.heading;
     doc.text(heading, ML + colWidths[0] + 2, w.y);
     const [cr, cg, cb] = riskColor(c.risk_level);
     doc.setTextColor(cr, cg, cb);
@@ -436,7 +436,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(sevColor[0], sevColor[1], sevColor[2]);
-      doc.text(`${ct.clause_a_label}  ↔  ${ct.clause_b_label}`, ML, w.y);
+      doc.text(`${ct.clause_a_label} vs. ${ct.clause_b_label}`, ML, w.y);
       w.y += 5.5;
       if (ct.explanation) w.small(ct.explanation, 3, GRAY);
       w.nl(3);
@@ -585,7 +585,7 @@ export async function exportCopilotPDF(params: CopilotPDFParams): Promise<void> 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-      doc.text(`${i + 1}.  AMENDMENT TO CLAUSE ${c.original_number} — ${c.heading.toUpperCase()}`, ML + 3, w.y);
+      doc.text(`${i + 1}.  AMENDMENT TO CLAUSE ${c.original_number}: ${c.heading.toUpperCase()}`, ML + 3, w.y);
       w.y += 7;
 
       w.italic("The original clause is deleted in its entirety and replaced with the following:", 3, GRAY);
