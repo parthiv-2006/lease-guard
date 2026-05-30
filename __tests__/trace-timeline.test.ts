@@ -297,11 +297,11 @@ describe("formatDuration", () => {
 // ─── formatOffset ─────────────────────────────────────────────────────────────
 
 describe("formatOffset", () => {
-  it("returns '—' when hasTimestamps is false", () => {
+  it("returns '-' when hasTimestamps is false", () => {
     const step = makeStep({ id: "x", sequence: 1, called_at: "" });
     // Geometry with no timestamps
     const geo = { t0: 0, tEnd: 1000, totalSpanMs: 1000, hasTimestamps: false };
-    expect(formatOffset(step, geo)).toBe("—");
+    expect(formatOffset(step, geo)).toBe("-");
   });
 
   it("returns '+Nms' for sub-second offsets", () => {

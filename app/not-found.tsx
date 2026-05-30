@@ -142,7 +142,7 @@ export default function NotFound() {
           alignItems: "center",
         }}
       >
-        <span>Educational information only — not legal advice.</span>
+        <span>Educational information only. Not legal advice.</span>
         <span style={{ color: "#ddd8cf" }}>·</span>
         <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
           Privacy Policy

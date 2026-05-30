@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service — LeaseGuard",
+  title: "Terms of Service | LeaseGuard",
   description:
     "Terms governing your use of LeaseGuard. This is an educational service, not legal advice.",
 };
@@ -328,7 +328,7 @@ export default function TermsPage() {
             To the maximum extent permitted by applicable law, Parthiv Paul
             shall not be liable for any indirect, incidental, special,
             consequential, or punitive damages arising from your use of
-            LeaseGuard — including but not limited to damages for lost profits,
+            LeaseGuard, including but not limited to damages for lost profits,
             data loss, or harm resulting from reliance on analysis output.
           </P>
           <P>
@@ -396,7 +396,7 @@ export default function TermsPage() {
         }}
       >
         <span>
-          LeaseGuard provides educational information only — not legal advice.
+          LeaseGuard provides educational information only. Not legal advice.
         </span>
         <span style={{ color: "#ddd8cf" }}>·</span>
         <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>

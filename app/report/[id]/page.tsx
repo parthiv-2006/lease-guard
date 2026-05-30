@@ -937,7 +937,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                         fontFamily: "'DM Sans', sans-serif",
                       }}
                     >
-                      Clause {c.number} — {c.heading} highlighted in PDF
+                      Clause {c.number}: {c.heading} highlighted in PDF
                     </span>
                     <button
                       onClick={() => setActiveClauseId(null)}

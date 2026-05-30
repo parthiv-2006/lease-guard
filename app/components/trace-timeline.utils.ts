@@ -244,7 +244,7 @@ export function formatDuration(ms: number): string {
 
 /** Format a step's offset from t0 as "+X.XXs". */
 export function formatOffset(step: TraceStep, geo: TimelineGeometry): string {
-  if (!geo.hasTimestamps || !step.called_at) return "—";
+  if (!geo.hasTimestamps || !step.called_at) return "-";
   const offsetMs = new Date(step.called_at).getTime() - geo.t0;
   if (offsetMs < 1000) return `+${offsetMs}ms`;
   return `+${(offsetMs / 1000).toFixed(2)}s`;

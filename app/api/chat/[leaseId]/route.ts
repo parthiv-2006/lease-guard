@@ -284,8 +284,8 @@ function buildSystemPrompt(
     .slice(0, 12) // cap to avoid token overflow
     .map(
       (c) =>
-        `Clause ${c.number} — ${c.heading} [${c.risk_level.toUpperCase()}]${
-          c.is_potentially_unenforceable ? " ⚠ potentially unenforceable" : ""
+        `Clause ${c.number}: ${c.heading} [${c.risk_level.toUpperCase()}]${
+          c.is_potentially_unenforceable ? " [potentially unenforceable]" : ""
         }: ${c.plain_english_explanation}` +
         (c.statutory_violations.length > 0
           ? ` (Violations: ${c.statutory_violations.map((v) => v.statute_section).join(", ")})`
@@ -298,7 +298,7 @@ function buildSystemPrompt(
       ? statutes
           .map(
             (s) =>
-              `${s.act_name} ${s.section_number} — ${s.section_title}:\n${s.full_text}`
+              `${s.act_name} ${s.section_number}: ${s.section_title}\n${s.full_text}`
           )
           .join("\n\n")
       : "No specific statutes retrieved for this question.";
@@ -308,19 +308,19 @@ function buildSystemPrompt(
       ? decisions
           .map(
             (d) =>
-              `Case ${d.case_number} — Principle: ${d.relevant_principle}\nSummary: ${d.ruling_summary}`
+              `Case ${d.case_number}, Principle: ${d.relevant_principle}\nSummary: ${d.ruling_summary}`
           )
           .join("\n\n")
       : "No LTB decisions retrieved for this question.";
 
   return `${CHAT_SCOPE_GUARD}You are LeaseGuard's AI legal assistant. You help Ontario tenants understand their specific lease document using retrieved legal sources.
 
-CRITICAL RULES — follow these exactly:
+CRITICAL RULES (follow these exactly):
 1. Only make legal claims that are directly supported by the RETRIEVED STATUTES or LTB DECISIONS below. If no retrieved source covers the question, say so clearly and recommend consulting a paralegal or the Landlord and Tenant Board.
-2. Never use the word "illegal" — always say "potentially unenforceable under the RTA" or "void under the Residential Tenancies Act".
+2. Never use the word "illegal" - always say "potentially unenforceable under the RTA" or "void under the Residential Tenancies Act".
 3. Always cite the specific statute section when making a legal claim (e.g., "Under RTA s.105..." or "As established in...").
 4. Keep answers concise (3-5 sentences max). Use plain language that a non-lawyer can understand.
-5. End every response with: "⚠ This is educational information, not legal advice. For your specific situation, consult a paralegal or contact the Landlord and Tenant Board at 1-888-332-3234."
+5. End every response with: "Note: This is educational information, not legal advice. For your specific situation, consult a paralegal or contact the Landlord and Tenant Board at 1-888-332-3234."
 
 LEASE CONTEXT:
 Property: ${leaseContext.address}${leaseContext.city ? `, ${leaseContext.city}` : ""}

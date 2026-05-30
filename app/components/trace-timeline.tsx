@@ -156,7 +156,7 @@ function GanttBar({ item, isExpanded, onHover, onToggle }: GanttBarProps) {
       onClick={onToggle}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => onHover(null)}
-      title={`${step.tool_name} — ${formatDuration(step.duration_ms)}`}
+      title={`${step.tool_name} (${formatDuration(step.duration_ms)})`}
       style={{
         position: "absolute",
         left: `${left}%`,
@@ -390,7 +390,7 @@ export function TraceTimeline({ steps }: TraceTimelineProps) {
             color: "#b45309",
           }}
         >
-          ⚠ Timing data unavailable for this report — showing sequential duration estimate.
+          Timing data unavailable for this report - showing sequential duration estimate.
           Parallelism is not reflected.
         </div>
       )}
