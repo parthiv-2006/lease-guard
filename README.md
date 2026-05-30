@@ -13,6 +13,7 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
+[![Live Demo](https://img.shields.io/badge/live%20demo-leaseguard--sigma.vercel.app-brightgreen?logo=vercel)](https://leaseguard-sigma.vercel.app)
 
 <br/>
 
@@ -24,6 +25,10 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 <br/>
 
 <img src=".github/assets/landing.png" alt="LeaseGuard landing page" width="100%" style="border-radius:8px;border:1px solid #e5e7eb;" />
+
+<br/>
+
+**[→ Try it live at leaseguard-sigma.vercel.app](https://leaseguard-sigma.vercel.app)**
 
 </div>
 
@@ -210,6 +215,24 @@ Negotiation Copilot  ── Groq Llama 3.3 70B JSON mode
 | PDF Viewer | pdfjs-dist v5 | Canvas + text layer, persistent clause annotations |
 | AI Safety | Custom injection detector | 25-pattern prompt injection filter on all LLM routes |
 | CI | GitHub Actions | 4-job parallel pipeline: typecheck → test → build → e2e |
+
+---
+
+## Deployment
+
+LeaseGuard is fully deployed across three free-tier services:
+
+| Service | Platform | URL |
+|---------|----------|-----|
+| Frontend + API routes | [Vercel](https://vercel.com) (free) | [leaseguard-sigma.vercel.app](https://leaseguard-sigma.vercel.app) |
+| MCP server (always-on) | [Railway](https://railway.app) (free $5/mo credit) | `leaseguard-mcp-production.up.railway.app` |
+| Database + vector store + file storage | [Supabase](https://supabase.com) (free) | Managed PostgreSQL + pgvector + Storage |
+
+**Why separate the MCP server?** Vercel serverless functions have a 10-second cold-start limit on the free tier; the MCP server runs a long-lived stdio process and must stay warm. Railway keeps it always-on with a $5/month credit that covers the free tier entirely.
+
+**Uptime monitoring:** Two UptimeRobot monitors ping both health endpoints every 5 minutes to warm Railway before a real upload arrives:
+- `GET /api/job/health` (Vercel)
+- `GET https://leaseguard-mcp-production.up.railway.app/health` (Railway)
 
 ---
 
