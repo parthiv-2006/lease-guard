@@ -820,6 +820,52 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Source URL resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Derive a reliable "View official source" URL from the source metadata.
+ *
+ * The stored `url` column is set at corpus-seed time and can go stale when
+ * ontario.ca reorganises its CMS (/page/ paths change frequently).  The
+ * e-Laws paths (/laws/statute/ and /laws/regulation/) have been stable for
+ * 15+ years and are the correct canonical references anyway.
+ *
+ * Priority:
+ *  1. Known act_name patterns → fixed e-Laws / CanLII URL
+ *  2. Stored URL as-is (e.g. RTA rows already carry correct #BK anchors;
+ *     CanLII decision URLs are stable)
+ */
+function resolveSourceUrl(source: Source): string | null {
+  const actLower = (source.act_name || "").toLowerCase();
+  const secNum  = (source.section_number || "").toLowerCase();
+
+  // Ontario Standard Form of Lease — stored URL is an unstable /page/ CMS path.
+  // The parent statute (RTA) is the correct authoritative reference and is stable.
+  if (
+    actLower.includes("standard form") ||
+    actLower.includes("standard lease") ||
+    secNum.startsWith("form_")
+  ) {
+    return "https://www.ontario.ca/laws/statute/06r17";
+  }
+
+  // O. Reg. 516/06 — Maintenance Standards
+  if (actLower.includes("516/06") || actLower.includes("reg. 516")) {
+    return "https://www.ontario.ca/laws/regulation/060516";
+  }
+
+  // O. Reg. 517/06 — Rent Increase
+  if (actLower.includes("517/06") || actLower.includes("reg. 517")) {
+    return "https://www.ontario.ca/laws/regulation/060517";
+  }
+
+  // All other sources (RTA sections already carry correct #BK anchors,
+  // CanLII decision URLs are stable) — use stored URL directly.
+  return source.url || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  RAG Grounding Drawer
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1024,37 +1070,31 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                 </div>
 
                 {/* Link */}
-                {source.url && (() => {
-                  // Both /page/ and /forms/ variants of the standard-lease URL 404 — remap to the working guide page.
-                  const URL_REMAPS: Record<string, string> = {
-                    "https://www.ontario.ca/forms/residential-tenancy-agreement-standard-lease":
-                      "https://www.ontario.ca/page/guide-ontarios-standard-lease",
-                    "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease":
-                      "https://www.ontario.ca/page/guide-ontarios-standard-lease",
-                  };
-                  const effectiveUrl = URL_REMAPS[source.url] ?? source.url;
+                {(() => {
+                  const effectiveUrl = resolveSourceUrl(source);
+                  if (!effectiveUrl) return null;
                   return (
-                  <a
-                    href={effectiveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: "11px",
-                      color: "#a78bfa",
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      marginTop: "2px",
-                      fontWeight: 500,
-                      alignSelf: "flex-start",
-                      transition: "color 0.15s",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "#c084fc")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "#a78bfa")}
-                  >
-                    View official source ↗
-                  </a>
+                    <a
+                      href={effectiveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: "11px",
+                        color: "#a78bfa",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        marginTop: "2px",
+                        fontWeight: 500,
+                        alignSelf: "flex-start",
+                        transition: "color 0.15s",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#c084fc")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#a78bfa")}
+                    >
+                      View official source ↗
+                    </a>
                   );
                 })()}
               </div>
