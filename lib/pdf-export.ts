@@ -365,7 +365,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
   }
 
   // ── All Clauses Summary Table ──────────────────────────────────────────────
-  w.sectionHeader("Section 3 — All Clauses Summary");
+  w.sectionHeader("Section 3 - All Clauses Summary");
   const colWidths = [14, CW - 14 - 24, 24];
   const rowH = 7;
 
@@ -407,7 +407,7 @@ export async function exportReportPDF(report: Report): Promise<void> {
 
   // ── Missing Protections ────────────────────────────────────────────────────
   if (missing_protections.length > 0) {
-    w.sectionHeader(`Section 4 — Missing Protections (${missing_protections.length})`);
+    w.sectionHeader(`Section 4 - Missing Protections (${missing_protections.length})`);
     for (const mp of missing_protections) {
       w.checkBreak(14);
       const sevColor: RGB = mp.severity === "critical" ? riskColor("critical")
@@ -429,16 +429,25 @@ export async function exportReportPDF(report: Report): Promise<void> {
 
   // ── Contradictions ────────────────────────────────────────────────────────
   if (contradictions.length > 0) {
-    w.sectionHeader(`Section 5 — Contradictions (${contradictions.length})`);
+    w.sectionHeader(`Section 5 - Contradictions (${contradictions.length})`);
     for (const ct of contradictions) {
       w.checkBreak(12);
       const sevColor = riskColor(ct.severity);
+      // Resolve human-readable labels from clause list (same logic as the web UI)
+      const clauseA = clauses.find((c) => c.id === ct.clause_a_id);
+      const clauseB = clauses.find((c) => c.id === ct.clause_b_id);
+      const labelA = clauseA ? (clauseA.heading || `Clause ${clauseA.number}`) : (ct.clause_a_label || "Clause A");
+      const labelB = clauseB ? (clauseB.heading || `Clause ${clauseB.number}`) : (ct.clause_b_label || "Clause B");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(sevColor[0], sevColor[1], sevColor[2]);
-      doc.text(`${ct.clause_a_label} vs. ${ct.clause_b_label}`, ML, w.y);
-      w.y += 5.5;
-      if (ct.explanation) w.small(ct.explanation, 3, GRAY);
+      const vsLine = doc.splitTextToSize(`${labelA} vs. ${labelB}`, CW);
+      for (const line of vsLine) {
+        w.checkBreak(6);
+        doc.text(line, ML, w.y);
+        w.y += 5.5;
+      }
+      if (ct.explanation) w.small(ct.explanation.replace(/—/g, "-"), 3, GRAY);
       w.nl(3);
     }
   }
