@@ -1025,10 +1025,12 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
 
                 {/* Link */}
                 {source.url && (() => {
-                  // Some DB entries have the old /forms/ path which 404s; remap to the working /page/ URL.
+                  // Both /page/ and /forms/ variants of the standard-lease URL 404 — remap to the working guide page.
                   const URL_REMAPS: Record<string, string> = {
                     "https://www.ontario.ca/forms/residential-tenancy-agreement-standard-lease":
-                      "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease",
+                      "https://www.ontario.ca/page/guide-ontarios-standard-lease",
+                    "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease":
+                      "https://www.ontario.ca/page/guide-ontarios-standard-lease",
                   };
                   const effectiveUrl = URL_REMAPS[source.url] ?? source.url;
                   return (

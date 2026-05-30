@@ -1692,8 +1692,9 @@ export function SourcesPanel({
               >
                 <a
                   href={
-                    s.url === "https://www.ontario.ca/forms/residential-tenancy-agreement-standard-lease"
-                      ? "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease"
+                    (s.url === "https://www.ontario.ca/forms/residential-tenancy-agreement-standard-lease" ||
+                     s.url === "https://www.ontario.ca/page/residential-tenancy-agreement-standard-lease")
+                      ? "https://www.ontario.ca/page/guide-ontarios-standard-lease"
                       : s.url
                   }
                   target="_blank"
