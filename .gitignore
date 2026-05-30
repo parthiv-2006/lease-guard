@@ -40,3 +40,15 @@ npm-debug.log*
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 screenshots/
+
+# Editor
+.vscode/
+
+# Playwright test artefacts
+test-results/
+
+# Temp screenshots captured during dev/demo work
+firefox_screenshot.png
+scratch_screenshot.png
+
+.vercel

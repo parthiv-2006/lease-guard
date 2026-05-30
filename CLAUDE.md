@@ -324,7 +324,27 @@ without asking for confirmation:
    with the resolution date and commit hash.
 7. If any new `[PERMANENT]` gotcha was discovered this session, append it to
    `memory/gotchas_permanent.md` and add a pointer line to `memory/MEMORY.md`.
-8. Confirm to the user: "Session closed. HANDOFF.md updated. X commits pushed. Handoff backed up to `handoff-backup` branch."
+   Set its `last_verified:` to today's date.
+8. **Memory sweep** — for each item below, only write if something actually changed; never
+   pad with no-op updates:
+   - **`memory/project_state.md`** — if the phase advanced, a launch blocker was resolved
+     or added, an AI service was swapped, or the "what works end-to-end" list changed,
+     rewrite the file in full. Hard cap: 40 lines of body (excluding frontmatter). Bump
+     `last_verified:` to today.
+   - **`memory/session_log.md`** — if anything notable happened this session, prepend a
+     new dated section at the top (above all prior sessions) in the existing format:
+     `## Session N — YYYY-MM-DD — short title`, then bullet list with commit hashes.
+   - **`memory/references.md`** — if a new stable ID, URL, package name, or fixture
+     appeared, add it under the right category. Bump `last_verified:` to today.
+   - **`memory/design_system.md`** — if a non-obvious UI convention changed (font stack,
+     token, panel accent), update in place and bump `last_verified:`.
+   - **`memory/feedback_commit_style.md`** — if the user corrected a working-rule
+     violation or stated a new preference, append a rule using the existing
+     Rule/Why/How-to-apply format. Bump `last_verified:`.
+   - **Stale-date sweep** — if you re-verified an existing memory fact against current
+     code this session, bump that file's `last_verified:` to today.
+9. Confirm to the user: "Session closed. HANDOFF.md updated. X commits pushed. Memory files
+   touched: <list, or 'none'>. Handoff backed up to `handoff-backup` branch."
 
 Do NOT ask "should I update the handoff?" — just do it when "end session" is typed.
 
