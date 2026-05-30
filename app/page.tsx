@@ -1140,8 +1140,23 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
   useEffect(() => {
     if (!usePollingFallback) return;
     let cancelled = false;
+    let lastLoggedStep = -1;
 
-    // Intentionally no log message — the step timeline still updates via polling
+    const STEP_START_MESSAGES = [
+      "Reading your document and extracting text…",
+      "Document parsed — confirming Ontario jurisdiction…",
+      "Jurisdiction confirmed — identifying lease clauses…",
+      "Clauses found — looking up relevant RTA statutes…",
+      "Research complete — writing your risk report…",
+    ];
+
+    function addLog(message: string, severity: LogLine["severity"]) {
+      if (cancelled) return;
+      setLogLines((prev) => [
+        ...prev,
+        { id: ++lineIdRef.current, message, severity, timestamp: Date.now() },
+      ]);
+    }
 
     async function poll() {
       if (cancelled) return;
@@ -1156,6 +1171,10 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
         };
         if (cancelled) return;
         if (job.status === "complete") {
+          if (lastLoggedStep >= 0 && lastLoggedStep < PROCESSING_STEPS.length) {
+            addLog(`✓ ${PROCESSING_STEPS[lastLoggedStep].label}`, "success");
+          }
+          addLog("✓ Analysis complete — your report is ready", "success");
           setCompletedSteps([0, 1, 2, 3, 4]);
           setCurrentStep(5);
           setTimeout(() => router.push(`/report/${leaseId}`), 600);
@@ -1169,6 +1188,18 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
           return;
         }
         const step = pctToStep(job.progress_pct ?? 0);
+
+        if (step !== lastLoggedStep) {
+          // Mark the previous step done before announcing the next
+          if (lastLoggedStep >= 0 && lastLoggedStep < PROCESSING_STEPS.length) {
+            addLog(`✓ ${PROCESSING_STEPS[lastLoggedStep].label}`, "success");
+          }
+          if (step < STEP_START_MESSAGES.length) {
+            addLog(STEP_START_MESSAGES[step], "info");
+          }
+          lastLoggedStep = step;
+        }
+
         setCurrentStep(step);
         setCompletedSteps(Array.from({ length: step }, (_, i) => i));
       } catch { /* Network hiccup — keep polling */ }
