@@ -217,7 +217,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "40px 24px 56px",
+          padding: "24px 24px 32px",
         }}
       >
         {/* Jurisdiction tag */}
@@ -273,7 +273,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             textAlign: "center",
             maxWidth: "480px",
             lineHeight: 1.6,
-            margin: "0 0 48px",
+            margin: "0 0 28px",
           }}
         >
           Upload your Ontario lease. LeaseGuard reads every clause against real
@@ -286,7 +286,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           style={{
             width: "100%",
             maxWidth: "720px",
-            marginBottom: "36px",
+            marginBottom: "20px",
             display: "flex",
             flexDirection: "column",
             gap: "8px",
@@ -400,7 +400,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
               border: `1.5px dashed ${borderColor}`,
               borderRadius: "10px",
               background: bgColor,
-              padding: "36px 32px",
+              padding: "24px 32px",
               textAlign: "center",
               cursor: file ? "default" : "pointer",
               transition: "all 0.2s",
@@ -502,7 +502,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 >
                   {dragOver ? "Release to upload" : "Drop your lease PDF here"}
                 </p>
-                <p style={{ margin: 0, fontSize: "13px", color: "#9a9590" }}>
+                <p style={{ margin: "0 0 18px", fontSize: "13px", color: "#9a9590" }}>
                   or{" "}
                   <span
                     style={{
@@ -515,6 +515,81 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     click to browse
                   </span>
                 </p>
+
+                {/* Demo CTA — inline so it's always above the fold */}
+                <div
+                  style={{
+                    borderTop: "1px solid #e8e4dc",
+                    paddingTop: "14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#b0aaa4",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      fontWeight: 500,
+                    }}
+                  >
+                    or try a sample
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/report/${DEMO_LEASE_ID}`);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 16px",
+                      borderRadius: "7px",
+                      border: "1px solid #ddd8cf",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      color: "#181614",
+                      transition: "border-color 0.15s, box-shadow 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#181614";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(24,22,20,0.10)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#ddd8cf";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <span>Try with a sample lease</span>
+                    <span
+                      style={{
+                        padding: "2px 6px",
+                        borderRadius: "3px",
+                        background: "#fef2f2",
+                        border: "1px solid #fecaca",
+                        color: "#b91c1c",
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      9.5 Critical
+                    </span>
+                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="#181614" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <p style={{ margin: 0, fontSize: "11px", color: "#b0aaa4", lineHeight: 1.4 }}>
+                    See a highly flawed Ontario lease — analysed instantly
+                  </p>
+                </div>
               </>
             ) : (
               /* File selected state */
@@ -754,96 +829,6 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             )}
           </div>
 
-          {/* Demo CTA */}
-          <div style={{ textAlign: "center", marginTop: "22px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "14px",
-              }}
-            >
-              <div style={{ flex: 1, height: "1px", background: "#e8e4dc" }} />
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "#b0aaa4",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                or try a sample
-              </span>
-              <div style={{ flex: 1, height: "1px", background: "#e8e4dc" }} />
-            </div>
-
-            <button
-              onClick={() => router.push(`/report/${DEMO_LEASE_ID}`)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "10px 20px",
-                borderRadius: "7px",
-                border: "1px solid #ddd8cf",
-                background: "#fff",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#181614",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-                boxShadow: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#181614";
-                e.currentTarget.style.boxShadow =
-                  "0 2px 8px rgba(24,22,20,0.10)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#ddd8cf";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              <span>Try with a sample lease</span>
-              <span
-                style={{
-                  padding: "2px 7px",
-                  borderRadius: "3px",
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  color: "#b91c1c",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                9.5 Critical
-              </span>
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="#181614"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            <p
-              style={{
-                marginTop: "8px",
-                fontSize: "11px",
-                color: "#b0aaa4",
-                lineHeight: 1.5,
-              }}
-            >
-              See a highly flawed Ontario lease — analysed instantly
-            </p>
-          </div>
         </div>
 
         {/* Stats bar */}
