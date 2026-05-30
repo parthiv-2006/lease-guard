@@ -1141,16 +1141,7 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
     if (!usePollingFallback) return;
     let cancelled = false;
 
-    // Let the user know we switched modes — terminal won't be blank
-    setLogLines((prev) => [
-      ...prev,
-      {
-        id: ++lineIdRef.current,
-        message: "Live stream unavailable — checking status every 2 seconds…",
-        severity: "warning" as const,
-        timestamp: Date.now(),
-      },
-    ]);
+    // Intentionally no log message — the step timeline still updates via polling
 
     async function poll() {
       if (cancelled) return;

@@ -72,6 +72,7 @@ export default async function DashboardPage() {
       "id, status, uploaded_at, overall_risk_score, overall_risk_level, file_path, property_address, property_city, error_message"
     )
     .eq("user_id", user.id)
+    .neq("status", "failed")
     .order("uploaded_at", { ascending: false });
 
   const rows = (leases ?? []) as LeaseRow[];
