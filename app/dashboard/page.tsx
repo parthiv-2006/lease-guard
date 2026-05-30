@@ -325,8 +325,7 @@ export default async function DashboardPage() {
                     <div
                       style={{
                         flexShrink: 0,
-                        width: "44px",
-                        height: "44px",
+                        width: "60px",
                         borderRadius: "8px",
                         background: rs.bg,
                         border: `1px solid ${rs.border}`,
@@ -334,13 +333,29 @@ export default async function DashboardPage() {
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
+                        padding: "7px 4px 6px",
+                        gap: "1px",
                       }}
                     >
-                      <span style={{ fontSize: "15px", fontWeight: 600, color: rs.text, lineHeight: 1 }}>
-                        {lease.overall_risk_score?.toFixed(1) ?? "—"}
+                      <span style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontSize: "22px",
+                        fontWeight: 600,
+                        color: rs.text,
+                        lineHeight: 1,
+                        letterSpacing: "-0.01em",
+                      }}>
+                        {lease.overall_risk_score?.toFixed(1) ?? "-"}
                       </span>
-                      <span style={{ fontSize: "9px", color: rs.text, letterSpacing: "0.04em", textTransform: "uppercase", marginTop: "2px" }}>
-                        {lease.overall_risk_level ?? "—"}
+                      <span style={{
+                        fontSize: "8px",
+                        color: rs.text,
+                        letterSpacing: "0.07em",
+                        textTransform: "uppercase",
+                        fontWeight: 600,
+                        opacity: 0.85,
+                      }}>
+                        {lease.overall_risk_level ?? "-"}
                       </span>
                     </div>
                   )}
