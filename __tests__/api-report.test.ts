@@ -12,9 +12,22 @@ const mockGt = jest.fn();
 const mockUpdate = jest.fn();
 const mockFrom = jest.fn();
 
+jest.mock("../lib/supabase-server", () => ({
+  createSupabaseServerClient: jest.fn().mockResolvedValue({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+  }),
+}));
+
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({
     from: mockFrom,
+    storage: {
+      from: jest.fn(() => ({
+        createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: null }, error: null }),
+      })),
+    },
   })),
 }));
 

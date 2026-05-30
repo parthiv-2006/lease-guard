@@ -10,20 +10,9 @@
 
 // ─── Mocks (declared before imports) ─────────────────────────────────────────
 
-// Mock fs so we don't touch the real file system
-jest.mock("fs", () => ({
-  writeFileSync: jest.fn(),
-  unlinkSync: jest.fn(),
-  existsSync: jest.fn().mockReturnValue(false),
-  readFileSync: jest.fn(),
-}));
-
 // Mock uuid so IDs are predictable
 jest.mock("uuid", () => ({
-  v4: jest
-    .fn()
-    .mockReturnValueOnce("temp-file-uuid")    // tempFilePath
-    .mockReturnValue("db-clause-uuid"),        // dbClauseId for every clause
+  v4: jest.fn().mockReturnValue("db-clause-uuid"),
 }));
 
 // Mock anthropic.ts so MCP_SERVER_PATH is defined without credentials check
@@ -56,14 +45,12 @@ const mockUpdateEq = jest.fn().mockReturnValue(
   Object.assign(Promise.resolve({ error: null }), { neq: mockUpdateNeq })
 );
 const mockUpdate = jest.fn().mockReturnValue({ eq: mockUpdateEq });
-const mockStorageDownload = jest.fn();
 const mockStorageRemove = jest.fn().mockResolvedValue({ error: null });
 
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({
     storage: {
       from: jest.fn(() => ({
-        download: mockStorageDownload,
         remove: mockStorageRemove,
       })),
     },
@@ -93,18 +80,6 @@ const MOCK_CLAUSE = {
   char_end: 80,
   cross_references: [],
 };
-
-/** A fake PDF blob that arrayBuffer() resolves to an empty buffer. */
-function makeFakeBlob(): Blob {
-  return {
-    arrayBuffer: async () => new ArrayBuffer(8),
-    size: 8,
-    type: "application/pdf",
-    text: async () => "",
-    slice: () => makeFakeBlob(),
-    stream: () => new ReadableStream(),
-  } as unknown as Blob;
-}
 
 /** Wire up the McpClient mock to return sensible results for every tool. */
 function setupHappyPathMcp() {
@@ -239,7 +214,6 @@ function setupHappyPathMcp() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockStorageDownload.mockResolvedValue({ data: makeFakeBlob(), error: null });
   setupHappyPathMcp();
 });
 
@@ -250,10 +224,10 @@ describe("runLeaseAnalysis — happy path", () => {
     await expect(runLeaseAnalysis(LEASE_ID, STORAGE_PATH)).resolves.toBeUndefined();
   });
 
-  it("calls parse_document with the temp file path and ocr_fallback=true", async () => {
+  it("calls parse_document with the storage path and ocr_fallback=true", async () => {
     await runLeaseAnalysis(LEASE_ID, STORAGE_PATH);
     expect(mockCallTool).toHaveBeenCalledWith("parse_document", {
-      file_path: expect.stringContaining("leaseguard-"),
+      storage_path: STORAGE_PATH,
       ocr_fallback: true,
     });
   });
@@ -321,24 +295,16 @@ describe("runLeaseAnalysis — happy path", () => {
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 
-  it("deletes the temp file after parse_document completes", async () => {
-    const fs = await import("fs");
-    await runLeaseAnalysis(LEASE_ID, STORAGE_PATH);
-    expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining("leaseguard-"));
-  });
 });
 
 // ─── Error handling ───────────────────────────────────────────────────────────
 
 describe("runLeaseAnalysis — error handling", () => {
-  it("throws and marks lease as failed when storage download fails", async () => {
-    mockStorageDownload.mockResolvedValueOnce({
-      data: null,
-      error: { message: "Bucket not found" },
-    });
+  it("throws and marks lease as failed when MCP server fails to start", async () => {
+    mockMcpCreate.mockRejectedValueOnce(new Error("MCP connection refused"));
 
     await expect(runLeaseAnalysis(LEASE_ID, STORAGE_PATH)).rejects.toThrow(
-      /storage download failed/i
+      "MCP connection refused"
     );
 
     expect(mockUpdate).toHaveBeenCalledWith(
@@ -396,14 +362,10 @@ describe("runLeaseAnalysis — error handling", () => {
     );
   });
 
-  it("closes the MCP client even when the pipeline fails mid-way", async () => {
-    mockStorageDownload.mockResolvedValueOnce({
-      data: null,
-      error: { message: "connection error" },
-    });
+  it("does NOT close MCP when the pipeline fails before MCP starts", async () => {
+    mockMcpCreate.mockRejectedValueOnce(new Error("startup error"));
 
     await expect(runLeaseAnalysis(LEASE_ID, STORAGE_PATH)).rejects.toThrow();
-    // MCP was never started in this case — close should NOT have been called
     expect(mockClose).not.toHaveBeenCalled();
   });
 

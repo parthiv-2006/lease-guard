@@ -531,6 +531,8 @@ export async function runLeaseAnalysis(
         ),
       ANALYSIS_TIMEOUT_MS
     );
+    // Allow the process/test runner to exit without waiting for this timer
+    timeoutHandle.unref?.();
   });
 
   try {

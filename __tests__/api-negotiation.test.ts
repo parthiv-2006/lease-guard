@@ -3,6 +3,19 @@ const mockIn = jest.fn();
 const mockEq = jest.fn();
 const mockFrom = jest.fn();
 
+jest.mock("../lib/rate-limiter-db", () => ({
+  checkDbRateLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 9, resetAt: new Date() }),
+  dbRateLimitExceededResponse: jest.fn(),
+}));
+
+jest.mock("../lib/supabase-server", () => ({
+  createSupabaseServerClient: jest.fn().mockResolvedValue({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+  }),
+}));
+
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     from: mockFrom,
