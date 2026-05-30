@@ -69,6 +69,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+
       - name: Run tests
         run: npm test -- --ci --coverage --coverageReporters=text --coverageReporters=lcov
 
@@ -208,13 +211,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-stub-key' }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-stub-key' }}
-          # Known-good lease IDs for report/chat tests
-          E2E_LEASE_FAULTY: ${{ secrets.E2E_LEASE_FAULTY || 'ebf8bf97-563d-4b7d-859f-8ecf76905335' }}
-          E2E_LEASE_COMPLIANT: ${{ secrets.E2E_LEASE_COMPLIANT || 'befb17c3-7753-49d4-89cb-0b79119e8322' }}
+          # Known-good lease IDs for report/chat tests.
+          # Add E2E_LEASE_FAULTY and E2E_LEASE_COMPLIANT to GitHub Secrets —
+          # the placeholder UUIDs cause DB-dependent E2E tests to skip
+          # gracefully when secrets are absent (same as E2E_SKIP_DB_TESTS=1).
+          E2E_LEASE_FAULTY: ${{ secrets.E2E_LEASE_FAULTY || '00000000-0000-0000-0000-000000000001' }}
+          E2E_LEASE_COMPLIANT: ${{ secrets.E2E_LEASE_COMPLIANT || '00000000-0000-0000-0000-000000000002' }}
           # Skip DB tests when running without real credentials
           E2E_SKIP_DB_TESTS: ${{ steps.creds.outputs.skip_db }}
-          # Disable SSL verification for Next.js dev server (matches instrumentation.ts)
-          NODE_TLS_REJECT_UNAUTHORIZED: "0"
 
       - name: Upload Playwright HTML report
         uses: actions/upload-artifact@v4
