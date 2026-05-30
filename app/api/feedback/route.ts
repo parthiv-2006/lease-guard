@@ -55,6 +55,21 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Verify the lease exists before inserting feedback — prevents spam rows
+  // for non-existent or fabricated lease IDs.
+  const { data: leaseExists } = await supabase
+    .from("leases")
+    .select("id")
+    .eq("id", lease_id)
+    .single();
+
+  if (!leaseExists) {
+    return NextResponse.json(
+      { error: "not_found", message: "Lease not found." },
+      { status: 404 }
+    );
+  }
+
   const { error } = await supabase.from("report_feedback").insert({
     lease_id,
     accurate,

@@ -14,6 +14,10 @@ function getClientIp(req: NextRequest): string {
 const DISCLAIMER =
   "This analysis is not legal advice. Consult a licensed paralegal or lawyer before making decisions about your lease. Community Legal Clinics in Ontario offer free legal help for tenants.";
 
+// PDF signed URLs expire in 15 minutes — short window limits PII exposure if a
+// URL leaks via browser history or referrer headers.
+const PDF_SIGNED_URL_TTL_SECONDS = 900;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -35,45 +39,52 @@ export async function GET(
     );
   }
 
+  // Get the authenticated user (if any) in parallel with DB fetches.
+  // We use getUser() here (server-validated) not getSession() because we make
+  // an ownership decision based on the result.
+  const authClient = await createSupabaseServerClient();
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch report + lease metadata + clauses + agent trace in parallel
-  const [reportResult, leaseResult, clausesResult, traceResult] = await Promise.all([
-    supabase
-      .from("reports")
-      .select("*")
-      .eq("lease_id", id)
-      .gt("expires_at", new Date().toISOString())
-      .single(),
-    supabase
-      .from("leases")
-      .select(
-        "id, uploaded_at, jurisdiction, jurisdiction_code, page_count, extraction_method, file_path, " +
-        "property_address, property_unit, property_city, property_postal_code"
-      )
-      .eq("id", id)
-      .single(),
-    supabase
-      .from("clauses")
-      .select(
-        "id, clause_number, heading, raw_text, primary_type, risk_score, risk_level, " +
-        "is_potentially_unenforceable, is_unusual, is_standard, " +
-        "plain_english_explanation, risk_reasoning, statutory_violations, has_negotiation_point, " +
-        "analysis_confidence"
-      )
-      .eq("lease_id", id)
-      .order("clause_number"),
-    supabase
-      .from("tool_call_logs")
-      .select(
-        "id, tool_name, sequence_num, duration_ms, success, error_message, input_summary, output_summary, called_at"
-      )
-      .eq("lease_id", id)
-      .order("sequence_num"),
-  ]);
+  // Fetch auth user + report + lease metadata + clauses + agent trace in parallel
+  const [userResult, reportResult, leaseResult, clausesResult, traceResult] =
+    await Promise.all([
+      authClient.auth.getUser(),
+      supabase
+        .from("reports")
+        .select("*")
+        .eq("lease_id", id)
+        .gt("expires_at", new Date().toISOString())
+        .single(),
+      supabase
+        .from("leases")
+        .select(
+          "id, user_id, uploaded_at, jurisdiction, jurisdiction_code, page_count, extraction_method, file_path, " +
+          "property_address, property_unit, property_city, property_postal_code"
+        )
+        .eq("id", id)
+        .single(),
+      supabase
+        .from("clauses")
+        .select(
+          "id, clause_number, heading, raw_text, primary_type, risk_score, risk_level, " +
+          "is_potentially_unenforceable, is_unusual, is_standard, " +
+          "plain_english_explanation, risk_reasoning, statutory_violations, has_negotiation_point, " +
+          "analysis_confidence"
+        )
+        .eq("lease_id", id)
+        .order("clause_number"),
+      supabase
+        .from("tool_call_logs")
+        .select(
+          "id, tool_name, sequence_num, duration_ms, success, error_message, input_summary, output_summary, called_at"
+        )
+        .eq("lease_id", id)
+        .order("sequence_num"),
+    ]);
 
   const { data, error } = reportResult;
 
@@ -84,7 +95,22 @@ export async function GET(
     );
   }
 
-  // If share_token provided, validate it
+  // Ownership guard: if an authenticated user is making this request and the
+  // lease belongs to a *different* authenticated user, deny access.
+  // Guest leases (user_id IS NULL) and guest callers are allowed through —
+  // the UUID acts as the access token for the guest flow.
+  const authUser = userResult.data?.user ?? null;
+  const leaseRow = leaseResult.data as Record<string, unknown> | null;
+  if (authUser && leaseRow?.user_id && leaseRow.user_id !== authUser.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "Access denied." },
+      { status: 403 }
+    );
+  }
+
+  // Share token is additive: if the caller provided a token, verify it matches.
+  // (The share token provides an alternative URL for sharing; the original UUID
+  // URL always works for the owner.)
   if (shareToken && data.share_token !== shareToken) {
     return NextResponse.json(
       { error: "invalid_token", message: "Invalid share token." },
@@ -92,18 +118,19 @@ export async function GET(
     );
   }
 
-  // Generate a 1-hour signed URL so the browser can render the real PDF
+  // Generate a short-lived signed URL so the browser can render the PDF.
   let pdfSignedUrl: string | null = null;
-  const leaseRow = leaseResult.data as Record<string, unknown> | null;
   if (leaseRow && typeof leaseRow.file_path === "string") {
     const { data: signedData } = await supabase.storage
       .from("leases")
-      .createSignedUrl(leaseRow.file_path, 3600);
+      .createSignedUrl(leaseRow.file_path, PDF_SIGNED_URL_TTL_SECONDS);
     pdfSignedUrl = signedData?.signedUrl ?? null;
   }
 
-  // Inject disclaimer + DB-fetched clause and lease data so the UI can render
-  // the full clause list (generate_report only stores red_flags, not all clauses)
+  // Strip user_id from the lease row before returning — it's an internal FK
+  // and should not be exposed in the API response.
+  const { user_id: _uid, ...safeLeaseRow } = (leaseRow as Record<string, unknown> & { user_id?: unknown }) ?? {};
+
   const report = {
     ...(data.full_report_json as object),
     disclaimer: DISCLAIMER,
@@ -115,7 +142,7 @@ export async function GET(
       : null,
     expires_at: data.expires_at,
     pdf_url: pdfSignedUrl,
-    _lease: leaseResult.data ?? {},
+    _lease: safeLeaseRow ?? {},
     _clauses: clausesResult.data ?? [],
     _tool_call_logs: traceResult.data ?? [],
   };
@@ -172,8 +199,9 @@ export async function POST(
     );
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   return NextResponse.json({
-    share_url: `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/report/${id}?token=${shareToken}`,
+    share_url: `${baseUrl}/report/${id}?token=${shareToken}`,
     expires_in_days: 90,
     consent_notice:
       "Anyone with this link can view your report for 90 days. The report contains excerpts from your lease.",

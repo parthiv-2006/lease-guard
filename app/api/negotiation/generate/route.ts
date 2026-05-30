@@ -25,8 +25,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sanitizeName } from "@/lib/ai-safety";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -296,10 +297,10 @@ async function generateWithGroq(params: {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // ── Rate limit: 10 requests/hour per IP ─────────────────────────────────
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "negotiation", maxRequests: 10 });
+  // ── Rate limit: 10 requests/hour per IP (DB-backed across all instances) ──
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "negotiation", maxRequests: 10 });
   if (!rl.allowed) {
-    const { body: rlBody, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body: rlBody, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(rlBody, { status, headers });
   }
 
@@ -356,7 +357,7 @@ export async function POST(req: NextRequest) {
     // ── 1. Fetch lease property details ──────────────────────────────────────
     const { data: lease, error: leaseErr } = await supabase
       .from("leases")
-      .select("id, property_address, property_unit, property_city, jurisdiction")
+      .select("id, user_id, property_address, property_unit, property_city, jurisdiction")
       .eq("id", leaseId)
       .single();
 
@@ -364,6 +365,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "lease_not_found", message: "The specified lease was not found." },
         { status: 404 }
+      );
+    }
+
+    // Ownership guard: authenticated users can only generate proposals for their
+    // own leases.  Guest leases (user_id IS NULL) are accessible via UUID.
+    const authClient = await createSupabaseServerClient();
+    const { data: { user: authUser } } = await authClient.auth.getUser();
+    if (authUser && lease.user_id && lease.user_id !== authUser.id) {
+      return NextResponse.json(
+        { error: "forbidden", message: "Access denied." },
+        { status: 403 }
       );
     }
 

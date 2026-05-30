@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
 
+// Strip file paths and truncate to 200 chars before returning error messages
+// to clients — prevents leaking internal stack traces or server paths.
+function sanitizeErrorMessage(raw: string | null): string | null {
+  if (!raw) return null;
+  return raw
+    .replace(/(?:\/[^\s,;:'"]{2,}|[A-Z]:\\[^\s,;:'"]{2,})/g, "[path]")
+    .slice(0, 200);
+}
+
 function getClientIp(req: NextRequest): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
@@ -82,7 +91,7 @@ export async function GET(
             detected_as?: string;
           };
           return {
-            error_message: parsed.message ?? raw,
+            error_message: sanitizeErrorMessage(parsed.message ?? raw),
             error_code: parsed.code ?? "analysis_failed",
             detected_as: parsed.detected_as ?? null,
           };
@@ -90,7 +99,7 @@ export async function GET(
           // fall through to plain text
         }
       }
-      return { error_message: raw, error_code: "analysis_failed", detected_as: null };
+      return { error_message: sanitizeErrorMessage(raw), error_code: "analysis_failed", detected_as: null };
     })()),
   });
 }

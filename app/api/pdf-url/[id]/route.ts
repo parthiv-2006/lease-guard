@@ -74,10 +74,11 @@ export async function GET(
     );
   }
 
-  // Generate a fresh 1-hour signed URL
+  // Generate a fresh 15-minute signed URL — shorter TTL limits PII exposure
+  // if a URL leaks via browser history or referrer headers.
   const { data: signedData, error: signedError } = await supabase.storage
     .from("leases")
-    .createSignedUrl(leaseData.file_path, 3600);
+    .createSignedUrl(leaseData.file_path, 900);
 
   if (signedError || !signedData?.signedUrl) {
     return NextResponse.json(
