@@ -936,8 +936,8 @@ async function _runLeaseAnalysisPipeline(
 
           const enriched: ContradictionResult = {
             ...result,
-            clause_a_id: acA.clause_id,
-            clause_b_id: acB.clause_id,
+            clause_a_id: acA.db_clause_id,
+            clause_b_id: acB.db_clause_id,
           };
           contradictionResults.push(enriched);
 

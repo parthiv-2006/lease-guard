@@ -1379,20 +1379,32 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
 
   // ── Contradictions — add synthetic id + labels ────────────────────────────
   const rawContradictions = (data.contradictions as Array<Record<string, unknown>>) ?? [];
-  const contradictions: Report["contradictions"] = rawContradictions.map((c, i) => ({
-    id: `contra-${i}`,
-    clause_a_id: (c.clause_a_id as string) ?? "",
-    clause_b_id: (c.clause_b_id as string) ?? "",
-    clause_a_label:
-      (c.clause_a_id as string)?.replace(/-/g, " ").slice(0, 20) ?? `Clause A`,
-    clause_b_label:
-      (c.clause_b_id as string)?.replace(/-/g, " ").slice(0, 20) ?? `Clause B`,
-    contradiction_type: (c.contradiction_type as string) ?? "direct_conflict",
-    severity: (c.severity as Report["contradictions"][0]["severity"]) ?? "medium",
-    explanation: (c.explanation as string) ?? "",
-    which_governs: (c.which_governs as string) ?? "",
-    legal_basis: (c.legal_basis as string) ?? "",
-  }));
+  const contradictions: Report["contradictions"] = rawContradictions.map((c, i) => {
+    // Try DB UUID lookup first (new analyses store db_clause_id).
+    // For older analyses that stored the internal pipeline id, fall back to
+    // a label derived from contradiction_type (e.g. "entry_vs_quiet_enjoyment"
+    // → "Entry Rights" / "Quiet Enjoyment") rather than a garbled UUID.
+    const foundA = clauses.find((cl) => cl.id === (c.clause_a_id as string));
+    const foundB = clauses.find((cl) => cl.id === (c.clause_b_id as string));
+    const ctType = (c.contradiction_type as string) ?? "";
+    const [typeA, typeB] = ctType.includes("_vs_")
+      ? ctType.split("_vs_").map((t: string) =>
+          t.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase())
+        )
+      : ["Clause A", "Clause B"];
+    return {
+      id: `contra-${i}`,
+      clause_a_id: (c.clause_a_id as string) ?? "",
+      clause_b_id: (c.clause_b_id as string) ?? "",
+      clause_a_label: foundA ? (foundA.heading || `Clause ${foundA.number}`) : typeA,
+      clause_b_label: foundB ? (foundB.heading || `Clause ${foundB.number}`) : typeB,
+      contradiction_type: ctType || "direct_conflict",
+      severity: (c.severity as Report["contradictions"][0]["severity"]) ?? "medium",
+      explanation: (c.explanation as string) ?? "",
+      which_governs: (c.which_governs as string) ?? "",
+      legal_basis: (c.legal_basis as string) ?? "",
+    };
+  });
 
   // ── Sources — parse reference string → Source shape ───────────────────────
   const rawSources = (data.sources as Array<Record<string, unknown>>) ?? [];
