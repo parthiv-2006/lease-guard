@@ -425,7 +425,27 @@ export async function POST(
   try {
     const body = await req.json();
     message = typeof body.message === "string" ? body.message.trim() : "";
-    history = Array.isArray(body.history) ? body.history : [];
+    // Validate history: only keep entries with the correct shape, cap content
+    // at 2000 chars per entry, strip user messages that trigger the injection
+    // detector, and keep only the last 6 entries.
+    history = (Array.isArray(body.history) ? body.history : [])
+      .filter(
+        (e: unknown): e is ChatHistory =>
+          e !== null &&
+          typeof e === "object" &&
+          ((e as ChatHistory).role === "user" || (e as ChatHistory).role === "assistant") &&
+          typeof (e as ChatHistory).content === "string" &&
+          (e as ChatHistory).content.length > 0
+      )
+      .map((e: ChatHistory): ChatHistory => ({
+        role: e.role,
+        content: e.content.slice(0, 2000),
+      }))
+      .filter((e: ChatHistory) => {
+        if (e.role !== "user") return true;
+        return !detectPromptInjection(e.content).blocked;
+      })
+      .slice(-6);
   } catch {
     return Response.json(
       { error: "invalid_body", message: "Request body must be valid JSON." },

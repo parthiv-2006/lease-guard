@@ -25,11 +25,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Use getSession() in middleware to avoid an outbound HTTPS call to Supabase.
-  // Edge Runtime on Windows dev can't verify Supabase's TLS cert; getSession()
-  // reads the JWT from cookies without a network round-trip, which is sufficient
-  // for routing decisions. The dashboard page does a server-side getUser() check
-  // for actual auth enforcement.
+  // Security model: middleware uses getSession() (JWT from cookie, no network
+  // call) for routing decisions only.  getSession() is NOT used for authorization
+  // — it cannot verify token revocation.  Actual auth enforcement (ownership
+  // checks, identity verification) is done server-side with getUser() inside
+  // each API route and server component that needs it (e.g. upload, delete,
+  // report GET, dashboard page).  This two-layer approach follows Supabase's
+  // recommended pattern for Next.js middleware.
   const {
     data: { session },
   } = await supabase.auth.getSession();

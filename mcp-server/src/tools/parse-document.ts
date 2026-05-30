@@ -33,7 +33,14 @@ export const toolDefinition = {
 };
 
 const InputSchema = z.object({
-  file_path: z.string().min(1).optional(),
+  file_path: z
+    .string()
+    .min(1)
+    .optional()
+    .refine(
+      (p) => !p || (!p.includes("..") && !p.includes("\0")),
+      { message: "Invalid file_path: path traversal sequences are not permitted" }
+    ),
   storage_path: z.string().min(1).optional(),
   ocr_fallback: z.boolean(),
 });
