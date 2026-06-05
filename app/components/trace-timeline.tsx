@@ -11,13 +11,13 @@
  *  - RAG step colour coding + badge
  *  - Time ruler with nice tick intervals
  *  - Hover tooltip with offset, duration, and output summary
- *  - Click-to-expand inline Input/Output drawer
+ *  - Click-to-expand inline Input/Output drawer with RAG source grounding
  *  - Responsive: falls back to list view at <680px
  *  - Graceful fallback when called_at is missing (sequential reconstruction)
  */
 
 import { useState, useRef, useCallback } from "react";
-import type { TraceStep } from "./types";
+import type { TraceStep, Source } from "./types";
 import {
   computeGeometry,
   buildRows,
@@ -215,9 +215,40 @@ function GanttBar({ item, isExpanded, onHover, onToggle }: GanttBarProps) {
 
 // ─── Detail drawer (shown below the chart for the selected step) ──────────────
 
-function DetailDrawer({ step }: { step: TraceStep }) {
+const RAG_TOOLS = new Set(["lookup_statute", "lookup_tribunal"]);
+
+function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] }) {
   const cat = toolCategory(step.tool_name);
   const col = CATEGORY_COLOR[cat];
+  const isRag = RAG_TOOLS.has(step.tool_name);
+  const [showExplainer, setShowExplainer] = useState(false);
+
+  // Source matching for RAG steps
+  const matchedSources: Source[] = isRag
+    ? (() => {
+        const clauseType = step.input_summary?.clause_type as string | undefined;
+        const clauseId = step.input_summary?.clause_id as string | undefined;
+        const hits = sources.filter(
+          (s) =>
+            (clauseType && s.relevant_clauses?.includes(clauseType)) ||
+            (clauseId && s.relevant_clauses?.includes(clauseId))
+        );
+        const pool =
+          hits.length > 0
+            ? hits
+            : [...sources].sort((a, b) => b.relevance_score - a.relevance_score);
+        return pool.slice(0, 3);
+      })()
+    : [];
+
+  const queryString = isRag
+    ? ((step.input_summary?.query as string) ||
+        (step.input_summary?.clause_text as string) ||
+        (step.input_summary?.clause_type as string)
+          ?.replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase()) ||
+        null)
+    : null;
 
   return (
     <div
@@ -290,6 +321,244 @@ function DetailDrawer({ step }: { step: TraceStep }) {
         </span>
       </div>
 
+      {/* RAG grounding section — lookup_statute / lookup_tribunal only */}
+      {isRag && (
+        <div
+          style={{
+            borderBottom: "1px solid #f0ede6",
+            padding: "14px 16px",
+            background: "#fffdf7",
+          }}
+        >
+          {/* Query string */}
+          {queryString && (
+            <div style={{ marginBottom: "12px" }}>
+              <span
+                style={{
+                  fontSize: "10px",
+                  letterSpacing: "0.07em",
+                  textTransform: "uppercase",
+                  color: "#9a9590",
+                  fontWeight: 500,
+                }}
+              >
+                Searched for
+              </span>
+              <div
+                style={{
+                  marginTop: "4px",
+                  padding: "8px 12px",
+                  background: "#f6f3ee",
+                  borderRadius: "5px",
+                  fontSize: "12px",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: "#5c5751",
+                  borderLeft: "3px solid #d97706",
+                }}
+              >
+                {queryString}
+              </div>
+            </div>
+          )}
+
+          {/* Section label + explainer toggle */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: matchedSources.length > 0 ? "10px" : "0",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                color: "#9a9590",
+                fontWeight: 500,
+              }}
+            >
+              Retrieved from real law
+            </span>
+            <button
+              onClick={() => setShowExplainer((v) => !v)}
+              style={{
+                background: showExplainer ? "#fef3c7" : "#f6f3ee",
+                border: "1px solid #e8e4dc",
+                borderRadius: "100px",
+                padding: "1px 8px",
+                fontSize: "10px",
+                color: "#b45309",
+                cursor: "pointer",
+                fontWeight: 500,
+                lineHeight: "18px",
+              }}
+            >
+              How this works {showExplainer ? "▴" : "▾"}
+            </button>
+          </div>
+
+          {/* Explainer */}
+          {showExplainer && (
+            <div
+              style={{
+                marginBottom: "10px",
+                padding: "10px 12px",
+                background: "#fffbeb",
+                border: "1px solid #fde68a",
+                borderRadius: "6px",
+                fontSize: "12px",
+                color: "#78350f",
+                lineHeight: "1.6",
+              }}
+            >
+              LeaseGuard embeds each lease clause with Gemini and retrieves the closest RTA
+              sections from a 2,372-section pgvector corpus — every legal claim is{" "}
+              <strong>cited to a retrieved source</strong>, not asserted from training
+              knowledge. Match strength shows how closely the section matched the clause query.
+            </div>
+          )}
+
+          {/* Matched source cards */}
+          {matchedSources.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {matchedSources.map((src) => (
+                <div
+                  key={src.id}
+                  style={{
+                    border: "1px solid #e8e4dc",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    background: "#fff",
+                  }}
+                >
+                  {/* Source header row */}
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      background: "#f6f3ee",
+                      borderBottom: "1px solid #e8e4dc",
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <code
+                      style={{
+                        fontSize: "11px",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 700,
+                        color: "#d97706",
+                      }}
+                    >
+                      {src.act_name} · s.{src.section_number}
+                    </code>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "#5c5751",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      {src.section_title}
+                    </span>
+                    {src.url && (
+                      <a
+                        href={src.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "10px",
+                          color: "#d97706",
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        ↗ ontario.ca
+                      </a>
+                    )}
+                  </div>
+
+                  {/* 2-line text snippet */}
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      fontSize: "11px",
+                      color: "#5c5751",
+                      fontFamily: "'DM Sans', sans-serif",
+                      lineHeight: "1.5",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {src.full_text}
+                  </div>
+
+                  {/* Match strength bar */}
+                  <div
+                    style={{
+                      padding: "6px 12px 8px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "#9a9590",
+                        whiteSpace: "nowrap",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      Match strength
+                    </span>
+                    <div
+                      style={{
+                        flex: 1,
+                        height: "4px",
+                        background: "#e8e4dc",
+                        borderRadius: "2px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.round((src.relevance_score ?? 0) * 100)}%`,
+                          height: "100%",
+                          background: "#d97706",
+                          borderRadius: "2px",
+                        }}
+                      />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "#b45309",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        whiteSpace: "nowrap",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {((src.relevance_score ?? 0) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: "12px", color: "#9a9590", fontStyle: "italic" }}>
+              No matched sources — see raw output below.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Input / Output side by side */}
       <div
         style={{
@@ -351,9 +620,10 @@ function DetailDrawer({ step }: { step: TraceStep }) {
 
 interface TraceTimelineProps {
   steps: TraceStep[];
+  sources?: Source[];
 }
 
-export function TraceTimeline({ steps }: TraceTimelineProps) {
+export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -695,7 +965,7 @@ export function TraceTimeline({ steps }: TraceTimelineProps) {
       </div>
 
       {/* ── Detail drawer ── */}
-      {expandedStep && <DetailDrawer step={expandedStep} />}
+      {expandedStep && <DetailDrawer step={expandedStep} sources={sources} />}
 
       {/* ── Floating tooltip ── */}
       {tooltip && <Tooltip state={tooltip} />}
@@ -709,9 +979,12 @@ export function TraceTimeline({ steps }: TraceTimelineProps) {
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
-        Click any bar to inspect inputs &amp; outputs · Amber bars are RAG retrieval calls
-        (pgvector semantic search) · Parallel bars share the same time window
+        Click any bar to inspect inputs &amp; outputs · Amber RAG bars show retrieved statute
+        sources · Click a RAG bar to see the real Ontario law it matched
       </div>
+
+      {/* suppress unused chartHeight warning */}
+      {chartHeight > 0 && null}
     </div>
   );
 }
