@@ -61,12 +61,23 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const [uploading, setUploading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [showNav, setShowNav] = useState(true);
+  const [liveStats, setLiveStats] = useState<{
+    avg_risk_score: number;
+    total_clauses_analysed: number;
+  } | null>(null);
 
   useEffect(() => {
     function checkWidth() { setShowNav(window.innerWidth >= 640); }
     checkWidth();
     window.addEventListener("resize", checkWidth);
     return () => window.removeEventListener("resize", checkWidth);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setLiveStats(d))
+      .catch(() => {});
   }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -848,9 +859,9 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           }}
         >
           {[
-            { n: "< 90s", d: "Analysis time" },
             { n: "2,372", d: "RTA sections" },
-            { n: "100%", d: "Cited to statute" },
+            { n: liveStats ? String(liveStats.avg_risk_score) : "—", d: "Avg risk score" },
+            { n: liveStats ? liveStats.total_clauses_analysed.toLocaleString() : "—", d: "Clauses analysed" },
             { n: "Free", d: "No account needed" },
           ].map(({ n, d }, i) => (
             <div
