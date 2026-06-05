@@ -16,39 +16,65 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const { data } = await supabase
       .from("leases")
-      .select("property_address, property_city, overall_risk_level, overall_risk_score")
+      .select("overall_risk_level, overall_risk_score")
       .eq("id", id)
       .single();
 
     if (!data) throw new Error("not found");
 
-    const address = [data.property_address, data.property_city]
-      .filter(Boolean)
-      .join(", ");
-
-    const riskLabel = data.overall_risk_level
-      ? `${data.overall_risk_level.charAt(0).toUpperCase()}${data.overall_risk_level.slice(1)} risk`
+    const score = data.overall_risk_score ?? null;
+    const level = data.overall_risk_level ?? null;
+    const levelLabel = level
+      ? `${level.charAt(0).toUpperCase()}${level.slice(1)}`
       : null;
 
-    const titleParts = [address || "Lease Analysis", riskLabel].filter(Boolean);
-    const title = titleParts.join(" — ");
+    const title =
+      score != null && levelLabel
+        ? `Lease risk: ${score} ${levelLabel} — LeaseGuard`
+        : "Lease Analysis — LeaseGuard";
 
-    const score =
-      data.overall_risk_score != null
-        ? ` Score: ${data.overall_risk_score}/100.`
-        : "";
+    const description = `LeaseGuard found ${levelLabel ?? "unknown"} risk in this Ontario lease. Every finding grounded in real RTA statute and tribunal decisions.`;
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ?? "https://leaseguard-sigma.vercel.app";
+    const ogImage = `${baseUrl}/report/${id}/opengraph-image`;
 
     return {
       title,
-      description: `LeaseGuard analysis for ${address || "your lease"}.${score} Every finding grounded in Ontario RTA statute and tribunal decisions.`,
+      description,
       robots: { index: false, follow: false },
+      openGraph: {
+        title,
+        description,
+        images: [ogImage],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [ogImage],
+      },
     };
   } catch {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL ?? "https://leaseguard-sigma.vercel.app";
+    const fallbackDescription =
+      "AI-powered Ontario lease analysis grounded in real law — not AI guesswork.";
     return {
-      title: "Lease Analysis",
-      description:
-        "AI-powered Ontario lease analysis grounded in real law — not AI guesswork.",
+      title: "Lease Analysis — LeaseGuard",
+      description: fallbackDescription,
       robots: { index: false, follow: false },
+      openGraph: {
+        title: "Lease Analysis — LeaseGuard",
+        description: fallbackDescription,
+        images: [`${baseUrl}/opengraph-image`],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: "Lease Analysis — LeaseGuard",
+        description: fallbackDescription,
+        images: [`${baseUrl}/opengraph-image`],
+      },
     };
   }
 }
