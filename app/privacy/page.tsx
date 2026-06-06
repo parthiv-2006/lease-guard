@@ -6,7 +6,7 @@ export const metadata = {
     "How LeaseGuard collects, uses, and protects your personal information under PIPEDA.",
 };
 
-const LAST_UPDATED = "May 23, 2026";
+const LAST_UPDATED = "June 6, 2026";
 const CONTACT_EMAIL = "parthiv.paul5545@gmail.com";
 
 function Section({
@@ -220,14 +220,21 @@ export default function PrivacyPage() {
             items={[
               "Lease PDF files you upload — processed to identify clauses and assess risk under Ontario law. These files may contain personal information including names, addresses, unit numbers, and financial terms.",
               "Email address — collected only if you create an account, used solely to authenticate you and associate your analyses with your account.",
-              "IP address — collected automatically for rate-limiting (max 5 analyses per hour) and security purposes. Not linked to your identity.",
+              "IP address — collected automatically for rate-limiting (max 5 analyses per hour) and security purposes. An IP address may constitute personal information under PIPEDA if it can identify an individual; we do not attempt to identify individuals from IP addresses and do not link them to account records.",
             ]}
           />
           <P>
+            <strong>Cookies and session storage:</strong> We use a strictly
+            necessary session cookie issued by our authentication provider
+            (Supabase Auth) to maintain your logged-in session. We do{" "}
+            <strong>not</strong> use tracking cookies, analytics cookies,
+            advertising cookies, or any third-party cookie-based tracking.
+            The session cookie is deleted when you sign out or after a period
+            of inactivity.
+          </P>
+          <P>
             We do <strong>not</strong> collect payment information, government
             identification, or any information beyond what is described above.
-            We do <strong>not</strong> use tracking cookies, analytics scripts,
-            or advertising technologies.
           </P>
         </Section>
 
@@ -323,7 +330,32 @@ export default function PrivacyPage() {
           </P>
         </Section>
 
-        <Section number="8" title="Safeguards">
+        <Section number="8" title="Third-Party Processors">
+          <P>
+            To operate LeaseGuard, we transfer personal information (including
+            lease content) to the following third-party data processors located
+            outside Canada. Under PIPEDA, we remain accountable for information
+            transferred to these processors and require them to provide
+            comparable protection.
+          </P>
+          <Ul
+            items={[
+              "Anthropic, Inc. (United States) — your lease document text is transmitted to Anthropic's Claude API for AI analysis. Anthropic's commercial API terms prohibit using customer data to train AI models. Privacy policy: anthropic.com/privacy.",
+              "Google LLC / Gemini API (United States) — clause text is transmitted to Google's Gemini API to generate embeddings for semantic legal search. Privacy policy: policies.google.com/privacy.",
+              "Supabase, Inc. (United States) — your uploaded PDF and analysis results are stored in Supabase's database and encrypted file storage. Supabase is SOC 2 Type II certified.",
+              "Vercel, Inc. (United States) — application hosting and serverless functions. All web requests, including file uploads, are routed through Vercel's infrastructure.",
+            ]}
+          />
+          <P>
+            By using LeaseGuard, you consent to your personal information being
+            transferred to and processed in the United States by these
+            providers, subject to US federal and state law including the
+            US Cloud Act. If you do not consent to cross-border transfer, do
+            not use LeaseGuard.
+          </P>
+        </Section>
+
+        <Section number="9" title="Safeguards">
           <P>
             We use the following technical safeguards to protect your
             information:
@@ -337,16 +369,32 @@ export default function PrivacyPage() {
               "Rate limiting (5 analyses per hour per IP) reduces abuse risk.",
             ]}
           />
+        </Section>
+
+        <Section number="10" title="Data Breach Notification">
           <P>
-            <strong>Cross-border transfer:</strong> Our database and storage
-            provider, Supabase, operates servers in the United States. By using
-            LeaseGuard, you consent to your information being stored and
-            processed in the United States, subject to US law. Supabase is SOC
-            2 Type II certified.
+            In the event of a breach of security involving personal information
+            that creates a real risk of significant harm to individuals, we
+            will:
+          </P>
+          <Ul
+            items={[
+              "Notify the Office of the Privacy Commissioner of Canada as soon as feasible after determining a reportable breach has occurred.",
+              "Notify affected individuals directly as soon as feasible, with information about the breach and steps they can take to protect themselves.",
+              "Maintain a record of every breach of security safeguards for a minimum of 24 months.",
+            ]}
+          />
+          <P>
+            To report a suspected security vulnerability or data incident,
+            contact us immediately at{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+              {CONTACT_EMAIL}
+            </a>
+            .
           </P>
         </Section>
 
-        <Section number="9" title="Your Rights — Access and Erasure">
+        <Section number="11" title="Your Rights — Access and Erasure">
           <P>
             Under PIPEDA, you have the right to:
           </P>
@@ -377,7 +425,7 @@ export default function PrivacyPage() {
           </P>
         </Section>
 
-        <Section number="10" title="Challenging Compliance">
+        <Section number="12" title="Challenging Compliance">
           <P>
             If you have a complaint about our privacy practices, please contact
             us first at{" "}
@@ -401,7 +449,7 @@ export default function PrivacyPage() {
           </P>
         </Section>
 
-        <Section number="11" title="Changes to This Policy">
+        <Section number="13" title="Changes to This Policy">
           <P>
             We may update this policy from time to time. Material changes will
             be noted at the top of this page with a new &ldquo;Last
