@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { AuthButton } from "./components/auth-button";
+import { Icon } from "./components/shared";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
 
@@ -55,12 +56,14 @@ const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
 
 function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [showNav, setShowNav] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
   const [liveStats, setLiveStats] = useState<{
     avg_risk_score: number;
     total_clauses_analysed: number;
@@ -71,6 +74,12 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
     checkWidth();
     window.addEventListener("resize", checkWidth);
     return () => window.removeEventListener("resize", checkWidth);
+  }, []);
+
+  useEffect(() => {
+    function handleScroll() { setScrolled(window.scrollY > 8); }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -162,18 +171,27 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
       {/* Header */}
       <header
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           padding: showNav ? "0 48px" : "0 20px",
           height: "56px",
           borderBottom: "1px solid #e8e4dc",
-          background: "#f6f3ee",
+          background: scrolled ? "rgba(246,243,238,0.85)" : "#f6f3ee",
+          backdropFilter: scrolled ? "blur(8px)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(8px)" : "none",
           flexShrink: 0,
+          transition: "background 0.18s ease",
         }}
       >
         <span
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
             fontFamily: "'Cormorant Garamond', serif",
             fontWeight: 600,
             fontSize: "17px",
@@ -181,6 +199,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             color: "#181614",
           }}
         >
+          <Icon name="shield" size={16} color="#181614" />
           LeaseGuard
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
@@ -190,30 +209,38 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 { label: "Dashboard", href: "/dashboard" },
                 { label: "Ontario RTA", href: "https://www.ontario.ca/laws/statute/06r17", external: true },
                 { label: "Privacy", href: "/privacy" },
-              ].map(({ label, href, external }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target={external ? "_blank" : undefined}
-                  rel={external ? "noopener noreferrer" : undefined}
-                  style={{
-                    fontSize: "13px",
-                    color: "#6b6560",
-                    textDecoration: "none",
-                    fontWeight: 400,
-                    letterSpacing: "0.01em",
-                    transition: "color 0.12s ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#181614")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "#6b6560")
-                  }
-                >
-                  {label}
-                </a>
-              ))}
+              ].map(({ label, href, external }) => {
+                const isActive = !external && pathname === href;
+                return (
+                  <a
+                    key={label}
+                    href={href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
+                    style={{
+                      fontSize: "13px",
+                      color: isActive ? "#181614" : "#6b6560",
+                      textDecoration: "none",
+                      fontWeight: isActive ? 500 : 400,
+                      letterSpacing: "0.01em",
+                      transition: "color 0.12s ease, transform 0.12s ease",
+                      display: "inline-block",
+                      borderBottom: isActive ? "2px solid #181614" : "2px solid transparent",
+                      paddingBottom: "2px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#181614";
+                      e.currentTarget.style.transform = "translateY(-0.5px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = isActive ? "#181614" : "#6b6560";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    {label}
+                  </a>
+                );
+              })}
             </nav>
           )}
           <AuthButton />
