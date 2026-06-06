@@ -124,6 +124,11 @@ export default async function OgImage({
     const chipBg = RISK_BG[level] ?? "#f9fafb";
     const levelLabel = level.charAt(0).toUpperCase() + level.slice(1);
 
+    // Satori (used by ImageResponse) requires all text nodes to be strings,
+    // not raw numbers. Convert explicitly.
+    const scoreStr = String(score);
+    const redFlagsStr = `${String(redFlags)} red flag${redFlags !== 1 ? "s" : ""} found`;
+
     return new ImageResponse(
       (
         <div
@@ -188,7 +193,7 @@ export default async function OgImage({
                 letterSpacing: "-4px",
               }}
             >
-              {score}
+              {scoreStr}
             </span>
 
             {/* Level + flags */}
@@ -209,7 +214,6 @@ export default async function OgImage({
                   border: `2px solid ${accentColor}`,
                   borderRadius: 40,
                   padding: "8px 28px",
-                  width: "fit-content",
                 }}
               >
                 <span
@@ -235,7 +239,7 @@ export default async function OgImage({
                   fontWeight: 400,
                 }}
               >
-                {redFlags} red flag{redFlags !== 1 ? "s" : ""} found
+                {redFlagsStr}
               </span>
             </div>
           </div>
