@@ -4,8 +4,9 @@
 // ClauseCard, RedFlagsPanel, ClauseExplorerPanel, NegotiationPanel,
 // MissingPanel, ContradictionsPanel, SourcesPanel, AgentTracePanel
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { TraceTimeline } from "./trace-timeline";
+import { toolCategory, CATEGORY_COLOR } from "./trace-timeline.utils";
 import {
   RiskBadge,
   ClauseTypeTag,
@@ -2018,12 +2019,65 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
 
 export function AgentTracePanel({ report }: { report: Report }) {
   const [view, setView] = useState<"gantt" | "list">("gantt");
+  const [replayState, setReplayState] = useState<"idle" | "playing" | "done">("idle");
+  const [visibleCount, setVisibleCount] = useState(0);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const logRef = useRef<HTMLDivElement>(null);
 
   const totalMs = report.agent_trace.reduce(
     (sum, t) => sum + (t.duration_ms || 0),
     0
   );
   const allSucceeded = report.agent_trace.every((t) => t.success);
+
+  // Steps sorted by sequence; benchmark_clause excluded (fire-and-forget noise)
+  const replaySteps = useMemo(
+    () =>
+      [...report.agent_trace]
+        .filter((s) => s.tool_name !== "benchmark_clause")
+        .sort((a, b) => a.sequence - b.sequence),
+    [report.agent_trace]
+  );
+
+  // Auto-scroll log to bottom as new lines appear
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [visibleCount]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => () => { timeoutsRef.current.forEach(clearTimeout); }, []);
+
+  function startReplay() {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    setVisibleCount(0);
+    setReplayState("playing");
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced || totalMs === 0) {
+      setVisibleCount(replaySteps.length);
+      setReplayState("done");
+      return;
+    }
+
+    const TARGET_MS = 15000;
+    let elapsed = 0;
+    replaySteps.forEach((step, i) => {
+      const proportion = Math.max(step.duration_ms || 0, 100) / Math.max(totalMs, 1);
+      const delay = Math.max(80, Math.min(1200, proportion * TARGET_MS));
+      elapsed += delay;
+      const t = setTimeout(() => {
+        setVisibleCount(i + 1);
+        if (i === replaySteps.length - 1) setReplayState("done");
+      }, elapsed);
+      timeoutsRef.current.push(t);
+    });
+  }
 
   return (
     <div>
@@ -2052,6 +2106,197 @@ export function AgentTracePanel({ report }: { report: Report }) {
         called, in order, with its inputs and outputs. This is the evidence that the
         analysis is grounded in retrieved law, not LLM opinion.
       </div>
+
+      {/* ── Replay control ── */}
+      <style>{`
+        @keyframes replay-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes replay-fadein {
+          from { opacity: 0; transform: translateY(3px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={startReplay}
+          disabled={replayState === "playing"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+            padding: "8px 16px",
+            borderRadius: "7px",
+            border: "1px solid #2a2623",
+            background: replayState === "playing" ? "#1a1916" : "#131110",
+            color: replayState === "playing" ? "#4a4744" : "#e8e4dc",
+            fontSize: "12px",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 500,
+            cursor: replayState === "playing" ? "default" : "pointer",
+            transition: "background 0.15s, color 0.15s",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {replayState === "playing" ? (
+            <>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: "#15803d",
+                  animation: "replay-pulse 1.2s ease-in-out infinite",
+                  flexShrink: 0,
+                }}
+              />
+              Replaying…
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: "10px" }}>▶</span>
+              {replayState === "done" ? "Replay" : "Watch the agent work"}
+            </>
+          )}
+        </button>
+        {replayState === "idle" && (
+          <span
+            style={{
+              fontSize: "11px",
+              color: "#9a9590",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Animate {replaySteps.length} tool calls firing in sequence (~15s)
+          </span>
+        )}
+      </div>
+
+      {/* ── Terminal log (visible while playing or done) ── */}
+      {replayState !== "idle" && (
+        <div
+          style={{
+            marginBottom: "24px",
+            background: "#131110",
+            border: "1px solid #2a2623",
+            borderRadius: "8px",
+            overflow: "hidden",
+          }}
+        >
+          {/* Log header */}
+          <div
+            style={{
+              padding: "9px 14px",
+              borderBottom: "1px solid #2a2623",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: replayState === "done" ? "#4ade80" : "#15803d",
+                flexShrink: 0,
+                animation:
+                  replayState === "playing"
+                    ? "replay-pulse 1.2s ease-in-out infinite"
+                    : "none",
+              }}
+            />
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#4a4744",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                fontWeight: 500,
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              Agent Log
+            </span>
+            <span
+              style={{
+                marginLeft: "auto",
+                fontSize: "10px",
+                color: "#3a3532",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              {visibleCount}/{replaySteps.length} calls
+            </span>
+          </div>
+
+          {/* Log lines */}
+          <div
+            ref={logRef}
+            style={{
+              padding: "10px 14px",
+              height: "200px",
+              overflowY: "auto",
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+              fontSize: "11.5px",
+              lineHeight: 1.75,
+            }}
+          >
+            {replaySteps.slice(0, visibleCount).map((step) => {
+              const col = CATEGORY_COLOR[toolCategory(step.tool_name)];
+              return (
+                <div
+                  key={step.id}
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    animation: "replay-fadein 0.22s ease",
+                  }}
+                >
+                  <span style={{ color: "#3a3532", flexShrink: 0, userSelect: "none" }}>
+                    #{String(step.sequence).padStart(2, "0")}
+                  </span>
+                  <span style={{ color: col, fontWeight: 600 }}>
+                    {step.tool_name}
+                  </span>
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      flexShrink: 0,
+                      color: step.success ? "#4ade80" : "#f87171",
+                    }}
+                  >
+                    {step.success ? "✓" : "✗"}{" "}
+                    {(step.duration_ms / 1000).toFixed(2)}s
+                  </span>
+                </div>
+              );
+            })}
+            {replayState === "done" && (
+              <div
+                style={{
+                  marginTop: "6px",
+                  color: "#4ade80",
+                  fontSize: "11px",
+                  animation: "replay-fadein 0.22s ease",
+                }}
+              >
+                ✓ pipeline complete · {(totalMs / 1000).toFixed(1)}s total
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* View toggle */}
       <div
