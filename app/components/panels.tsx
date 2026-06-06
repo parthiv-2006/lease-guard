@@ -2111,7 +2111,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
       </div>
 
       {view === "gantt" ? (
-        <TraceTimeline steps={report.agent_trace} />
+        <TraceTimeline steps={report.agent_trace} sources={report.sources} />
       ) : (
         <TraceList steps={report.agent_trace} />
       )}
