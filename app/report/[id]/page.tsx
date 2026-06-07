@@ -114,117 +114,155 @@ function ShareModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.4)",
+        background: "rgba(0,0,0,0.55)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1000,
-        backdropFilter: "blur(2px)",
+        backdropFilter: "blur(4px)",
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         style={{
           background: "#fff",
-          borderRadius: "10px",
-          padding: "28px",
-          width: "440px",
-          maxWidth: "90vw",
+          borderRadius: "12px",
+          padding: "0",
+          width: "540px",
+          maxWidth: "94vw",
           border: "1px solid #e8e4dc",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.22)",
+          overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-          }}
-        >
-          <h3
+        {/* OG image preview */}
+        <div style={{ position: "relative", background: "#0f0e0d" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/report/${report.lease.id}/opengraph-image`}
+            alt="Report preview"
+            style={{ width: "100%", display: "block", aspectRatio: "1200/630", objectFit: "cover" }}
+          />
+          <a
+            href={displayUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              margin: 0,
-              fontSize: "18px",
-              fontFamily: "'Cormorant Garamond', serif",
+              position: "absolute",
+              bottom: "12px",
+              right: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "rgba(246,243,238,0.95)",
+              border: "1px solid rgba(0,0,0,0.12)",
+              borderRadius: "7px",
+              padding: "7px 14px",
+              fontSize: "12px",
               fontWeight: 600,
               color: "#181614",
+              textDecoration: "none",
+              backdropFilter: "blur(4px)",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
             }}
           >
-            Share this report
-          </h3>
-          <button
-            onClick={onClose}
+            View full report →
+          </a>
+        </div>
+
+        {/* Modal body */}
+        <div style={{ padding: "24px 24px 20px" }}>
+          <div
             style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
               display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
             }}
           >
-            <Icon name="close" size={16} color="#9a9590" />
-          </button>
-        </div>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: "17px",
+                fontFamily: "'Cormorant Garamond', serif",
+                fontWeight: 600,
+                color: "#181614",
+              }}
+            >
+              Share this report
+            </h3>
+            <button
+              onClick={onClose}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+              }}
+            >
+              <Icon name="close" size={16} color="#9a9590" />
+            </button>
+          </div>
 
-        <div
-          style={{
-            padding: "12px 16px",
-            background: "#f6f3ee",
-            border: "1px solid #e8e4dc",
-            borderRadius: "7px",
-            marginBottom: "14px",
-            display: "flex",
-            gap: "10px",
-            alignItems: "center",
-          }}
-        >
-          <span
+          <div
             style={{
-              flex: 1,
-              fontSize: "12px",
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "#5c5751",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              padding: "10px 14px",
+              background: "#f6f3ee",
+              border: "1px solid #e8e4dc",
+              borderRadius: "7px",
+              marginBottom: "10px",
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
             }}
           >
-            {displayUrl}
-          </span>
-          <button
-            onClick={copy}
-            disabled={generating}
-            style={{
-              padding: "5px 14px",
-              borderRadius: "5px",
-              cursor: generating ? "wait" : "pointer",
-              fontSize: "12px",
-              fontWeight: 500,
-              flexShrink: 0,
-              background: copied ? "#f0fdf4" : "#181614",
-              border: `1px solid ${copied ? "#bbf7d0" : "#181614"}`,
-              color: copied ? "#15803d" : "#fff",
-              transition: "all 0.15s",
-            }}
-          >
-            {generating ? "…" : copied ? "Copied!" : "Copy link"}
-          </button>
-        </div>
+            <span
+              style={{
+                flex: 1,
+                fontSize: "12px",
+                fontFamily: "'JetBrains Mono', monospace",
+                color: "#5c5751",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {displayUrl}
+            </span>
+            <button
+              onClick={copy}
+              disabled={generating}
+              style={{
+                padding: "5px 14px",
+                borderRadius: "5px",
+                cursor: generating ? "wait" : "pointer",
+                fontSize: "12px",
+                fontWeight: 500,
+                flexShrink: 0,
+                background: copied ? "#f0fdf4" : "#181614",
+                border: `1px solid ${copied ? "#bbf7d0" : "#181614"}`,
+                color: copied ? "#15803d" : "#fff",
+                transition: "all 0.15s",
+              }}
+            >
+              {generating ? "…" : copied ? "Copied!" : "Copy link"}
+            </button>
+          </div>
 
-        <div
-          style={{
-            padding: "12px 14px",
-            background: "#fff7ed",
-            border: "1px solid #fed7aa",
-            borderRadius: "7px",
-            fontSize: "12px",
-            color: "#6b6560",
-            lineHeight: 1.5,
-          }}
-        >
-          Anyone with this link can view your report for 90 days. The report
-          does not include your uploaded PDF. No personal information is shared.
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "#f9f6f0",
+              border: "1px solid #e8e4dc",
+              borderRadius: "7px",
+              fontSize: "11px",
+              color: "#9a9590",
+              lineHeight: 1.5,
+            }}
+          >
+            Anyone with this link can view your report for 90 days. No personal information is shared.
+          </div>
         </div>
       </div>
     </div>
