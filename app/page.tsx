@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { AuthButton } from "./components/auth-button";
-import { Icon } from "./components/shared";
+import { Icon, RiskBadge } from "./components/shared";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
 
@@ -207,7 +207,9 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             <nav style={{ display: "flex", gap: "28px" }}>
               {[
                 { label: "Dashboard", href: "/dashboard" },
+                { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
                 { label: "Ontario RTA", href: "https://www.ontario.ca/laws/statute/06r17", external: true },
+                { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
                 { label: "Privacy", href: "/privacy" },
               ].map(({ label, href, external }) => {
                 const isActive = !external && pathname === href;
@@ -319,6 +321,53 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           seconds.
         </p>
 
+        {/* How it works strip */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            marginBottom: "28px",
+            fontSize: "12px",
+            color: "#9a9590",
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          {[
+            { step: "① Agent reads every clause", sub: "via Claude + MCP tools" },
+            { step: "② Retrieves real Ontario law", sub: "2,372 RTA sections · pgvector" },
+            { step: "③ Flags what may not be enforceable", sub: "cited, never asserted" },
+          ].map(({ step, sub }, i) => (
+            <span key={step} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {i > 0 && (
+                <span style={{ color: "#c8c3ba", fontSize: "14px", lineHeight: 1 }}>›</span>
+              )}
+              <span style={{ textAlign: "center" }}>
+                <span style={{ color: "#5c5751", fontWeight: 500 }}>{step}</span>
+                <br />
+                <span style={{ fontSize: "11px" }}>{sub}</span>
+              </span>
+            </span>
+          ))}
+          <span style={{ width: "100%", textAlign: "center", marginTop: "6px" }}>
+            <a
+              href={`/report/${DEMO_LEASE_ID}`}
+              style={{
+                color: "#181614",
+                fontSize: "12px",
+                textDecoration: "underline",
+                textUnderlineOffset: "2px",
+                fontWeight: 500,
+                letterSpacing: "0.01em",
+              }}
+            >
+              See it in action →
+            </a>
+          </span>
+        </div>
+
         {/* Example findings preview */}
         <div
           style={{
@@ -344,18 +393,85 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           >
             Example findings
           </div>
+          {/* Featured clause card — shows a real clause text + statute citation */}
+          <div
+            style={{
+              padding: "14px 16px",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "8px",
+              boxShadow: "0 1px 4px rgba(185,28,28,0.06)",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "11.5px",
+                color: "#6b6560",
+                lineHeight: 1.6,
+                marginBottom: "10px",
+                padding: "10px 12px",
+                background: "rgba(255,255,255,0.6)",
+                borderRadius: "5px",
+                border: "1px solid #fecaca",
+                borderLeft: "3px solid #b91c1c",
+              }}
+            >
+              &ldquo;The tenant shall pay a late fee of $100 per day for any
+              rent payment received after the 1st of each month.&rdquo;
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                flexWrap: "wrap",
+                marginBottom: "8px",
+              }}
+            >
+              <RiskBadge level="critical" score={9.1} />
+              <span
+                style={{
+                  fontSize: "10px",
+                  padding: "2px 7px",
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "3px",
+                  color: "#b91c1c",
+                  fontWeight: 500,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                Rent Payment
+              </span>
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#5c5751",
+                fontFamily: "'DM Sans', sans-serif",
+                lineHeight: 1.4,
+                marginBottom: "4px",
+              }}
+            >
+              Late fees of any amount are potentially unenforceable — landlords cannot
+              charge rent or compensation beyond what the RTA permits.
+            </div>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#9a9590",
+                fontStyle: "italic",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Retrieved: Ontario Residential Tenancies Act, s.134 — Additional charges prohibited
+            </div>
+          </div>
+
+          {/* Compact finding rows */}
           {[
             {
-              level: "critical" as const,
-              color: "#b91c1c",
-              bg: "#fef2f2",
-              border: "#fecaca",
-              dot: "#b91c1c",
-              text: "Late fee of $100/day — unenforceable under RTA s.134",
-              tag: "Rent Payment",
-            },
-            {
-              level: "high" as const,
               color: "#c2410c",
               bg: "#fff7ed",
               border: "#fed7aa",
@@ -364,7 +480,6 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
               tag: "Entry Rights",
             },
             {
-              level: "low" as const,
               color: "#15803d",
               bg: "#f0fdf4",
               border: "#bbf7d0",
