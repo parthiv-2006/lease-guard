@@ -7,7 +7,7 @@ const SITE_URL =
 
 const OG_TITLE = "LeaseGuard — Read what you sign";
 const OG_DESCRIPTION =
-  "AI-powered Ontario lease analysis. Every risk grounded in real law — not AI guesswork.";
+  "Upload your Ontario lease. An AI agent reads every clause against 2,372 RTA sections and flags what may not be enforceable — cited, grounded, free.";
 
 export const metadata: Metadata = {
   title: {
