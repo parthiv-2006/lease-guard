@@ -7,8 +7,8 @@
 Upload your lease. Get a full risk report — every red flag cited to the RTA — in under 90 seconds.
 
 [![CI](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/parthiv-2006/lease-guard/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)](#testing)
-[![Scoring Accuracy](https://img.shields.io/badge/scoring%20accuracy-30%2F30-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-206%20passing-brightgreen)](#testing)
+[![Scoring Accuracy](https://img.shields.io/badge/scoring%20accuracy-45%2F45-brightgreen)](#testing)
 [![Retrieval](https://img.shields.io/badge/retrieval%20precision-7%2F7-brightgreen)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
@@ -19,8 +19,8 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 | 📊 Scoring accuracy | 🔍 Retrieval precision | 🧪 Automated tests | 📚 Legal corpus |
 |:-------------------:|:---------------------:|:-----------------:|:---------------:|
-| **30 / 30** | **7 / 7** | **161** | **2,372 chunks** |
-| 100% — zero false positives on a 30-case labelled suite covering all 17 violation types | 100% — hybrid BM25+vector on RTA + O.Reg + Standard Form at threshold 0.55 | 113 unit · 48 Playwright E2E · full CI on every push | RTA granular subsections · O.Reg 516/06 · O.Reg 517/06 · Standard Form · 84 LTB decisions |
+| **45 / 45** | **7 / 7** | **206** | **2,372 chunks** |
+| 100% — zero false positives on a 45-case labelled suite covering all 17 violation types | 100% — hybrid BM25+vector on RTA + O.Reg + Standard Form at threshold 0.55 | 155 unit · 51 Playwright E2E · full CI on every push | RTA granular subsections · O.Reg 516/06 · O.Reg 517/06 · Standard Form · 84 LTB decisions |
 
 <br/>
 
@@ -46,7 +46,7 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 LeaseGuard reads Ontario residential lease PDFs and produces a clause-by-clause risk report backed by retrieved statute and tribunal text. **The LLM never asserts legal facts from training data alone** — every finding is grounded in real law retrieved from a 2,372-chunk pgvector corpus of the Residential Tenancies Act, O.Reg 516/06, O.Reg 517/06, the Ontario Standard Form of Lease, and 84 real LTB tribunal decisions.
 
-The result: **nine interactive panels** covering risk scoring, red flags, clause exploration, missing protections, negotiation guidance with AI copilot, contradiction detection, statute sources, PDF annotation, and a live Gantt trace of the agent's reasoning — plus a floating AI chat for follow-up questions, all grounded in the same retrieved corpus.
+The result: **nine interactive panels** covering risk scoring, red flags, clause exploration, missing protections, negotiation guidance with AI copilot, contradiction detection, statute sources, PDF annotation, and a live Gantt trace of the agent's reasoning — plus a floating AI chat for follow-up questions, all grounded in the same retrieved corpus. The landing page shows a **live public stats bar** (real-time clause count and average risk score across all analyses). Every report has a **one-click share modal** with a generated OG preview card. The **Agent Trace** panel lets you replay the full tool-call sequence as a step-by-step animation, and clicking any RAG bar opens a **drill-down drawer** showing the exact Ontario statute text that was retrieved for that lookup.
 
 ---
 
@@ -125,11 +125,11 @@ Every RTA section, regulation, and LTB decision retrieved for this lease — 2,3
 </td>
 <td width="50%">
 
-**Agent Trace — Live Gantt**
+**Agent Trace — Live Gantt + Replay**
 
-Every tool call the agent made, with duration, parallel swim lanes, and input/output summaries. 67 tool calls for a 3-page lease. Switchable Gantt / List view.
+Every tool call the agent made, with duration, parallel swim lanes, and input/output summaries. 67 tool calls for a 3-page lease. Switchable Gantt / List view. Hit **▶ Watch the agent work** to animate all tool calls firing in sequence (~15s). Click any amber RAG bar to open a drill-down drawer showing the exact Ontario statute text retrieved for that lookup.
 
-<img src=".github/assets/report-agent-trace.png" alt="Agent trace Gantt" width="100%" />
+<img src=".github/assets/report-agent-trace.png" alt="Agent trace Gantt with replay" width="100%" />
 
 </td>
 </tr>
@@ -150,6 +150,26 @@ Full pdfjs-dist v5 rendered PDF with persistent clause highlight annotations. Hi
 Floating chat panel powered by Groq Llama 3.3 70B with RAG grounding. Questions are answered with retrieved statute and LTB decision citations — the model never answers from memory alone.
 
 <img src=".github/assets/report-chat.png" alt="Ask Your Lease chat" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Trace Drill-Down**
+
+Click any amber RAG bar in the Agent Trace Gantt to open a detail drawer. Shows the search query, retrieved statute sections with full body text, citation URLs, and match confidence — the real law the agent used, not a summary.
+
+<img src=".github/assets/report-trace-drilldown.png" alt="Trace drill-down drawer showing retrieved statute" width="100%" />
+
+</td>
+<td width="50%">
+
+**Share Modal + OG Card**
+
+One-click share button on every report opens a modal with a live-generated OpenGraph preview card (1200×630 dark card showing risk score and top clauses) and a copy-link button. Links are valid for 90 days with no personal information exposed.
+
+<img src=".github/assets/report-share-modal.png" alt="Share modal with OG preview card" width="100%" />
 
 </td>
 </tr>
@@ -247,8 +267,14 @@ A floating chat panel on every report page. Ask natural-language questions ("Is 
 ### Negotiation Copilot
 One click generates a tone-aware email or lease addendum via Groq JSON mode. Choose Assertive, Formal, or Cooperative tone. Export to PDF via jsPDF. Falls back to a template if the LLM is unavailable.
 
-### Live Agent Trace
-See every tool call the agent made, how long it took, and which calls ran in parallel — rendered as a Gantt chart or a flat list. 67 tool calls for a typical 3-page lease.
+### Live Agent Trace + Replay
+See every tool call the agent made, how long it took, and which calls ran in parallel — rendered as a Gantt chart or a flat list. 67 tool calls for a typical 3-page lease. Hit **▶ Watch the agent work** to replay the full sequence as a step-by-step terminal animation. Click any amber RAG bar to open a **drill-down drawer** with the exact retrieved statute text and citation URLs.
+
+### Live public stats
+The landing page fetches `/api/stats` on load and displays live counters: average risk score and total clauses analysed across all reports. Backed by a Supabase aggregate view — no PII exposed.
+
+### Share card
+Every report has a **Share Report** button that opens a modal with a generated 1200×630 OpenGraph preview card (dark background, risk score, top flagged clauses) and a copy-link button. Links are valid for 90 days; no personal information is included in the preview.
 
 ### PDF Viewer with clause highlights
 pdfjs-dist v5 renders the original PDF with colour-coded risk annotations that persist across page turns. Highlights use a normAndMap algorithm to survive OCR position drift.
@@ -326,16 +352,16 @@ Open [http://localhost:3000](http://localhost:3000) and upload a lease PDF.
 ## Testing
 
 ```bash
-# Unit + integration tests (113 passing)
+# Unit + integration tests (155 passing)
 npm test
 
 # With coverage report
 npm test -- --coverage
 
-# End-to-end tests (48 Playwright tests)
+# End-to-end tests (51 Playwright tests)
 npm run test:e2e
 
-# Scoring accuracy eval — 30-case labelled suite (expect 30/30, 0 false positives)
+# Scoring accuracy eval — 45-case labelled suite (expect OVERALL: PASS)
 node scripts/eval-accuracy.mjs
 
 # Retrieval accuracy — validates pgvector corpus (expect 7/7)
@@ -345,7 +371,7 @@ python scripts/validate_retrieval.py
 cd mcp-server && npm run build
 ```
 
-**Test breakdown (161 total):**
+**Test breakdown (206 total):**
 
 | Suite | Tests | What it covers |
 |-------|-------|---------------|
@@ -358,7 +384,8 @@ cd mcp-server && npm run build
 | `lib-agent.test.ts` | 9 | Pipeline tool call sequencing, 3-min timeout |
 | `rate-limiter.test.ts` | 20 | Token bucket behaviour (in-memory + DB-backed) |
 | `trace-timeline.test.ts` | 34 | Gantt swim-lane computation helpers |
-| E2E (`e2e/*.spec.ts`) | 48 | Landing, static pages, report panels, chat |
+| E2E (`e2e/landing.spec.ts` + `report.spec.ts` + `chat.spec.ts` + `static-pages.spec.ts`) | 43 | Landing, static pages, report panels, chat |
+| E2E (`e2e/wow-features.spec.ts`) | 8 | F1 live stats · F2 OG card · F3 trace drill-down · F4 replay |
 
 All external services (Supabase, Anthropic, Groq, Gemini) are mocked in `__tests__/setup.ts` — no credentials required to run the unit suite.
 
@@ -385,7 +412,7 @@ type  test     ← parallel
 | `typecheck` | `tsc --noEmit` on both the Next.js app and MCP server |
 | `test` | Jest suite (113 tests), uploads lcov coverage artifact |
 | `build` | MCP server `tsc` compile + Next.js production build |
-| `e2e` | 48 Playwright tests against the built app |
+| `e2e` | 51 Playwright tests against the built app |
 
 See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
@@ -395,18 +422,22 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ```
 ├── app/
-│   ├── page.tsx                    Landing page + upload + job polling + retry button
+│   ├── page.tsx                    Landing page + upload + job polling + live stats bar
 │   ├── dashboard/page.tsx          All leases with job status (complete/failed/in-progress)
-│   ├── report/[id]/page.tsx        Report shell + normaliseApiResponse()
+│   ├── report/[id]/page.tsx        Report shell + share modal + normaliseApiResponse()
+│   ├── report/[id]/layout.tsx      Per-report OpenGraph + Twitter metadata
+│   ├── report/[id]/opengraph-image.tsx  Edge-rendered OG card (1200×630, Satori)
 │   ├── privacy/ · terms/ · about/  Static legal and info pages
 │   ├── components/
-│   │   ├── overview-panel.tsx      Risk gauge, stats, clause breakdown
+│   │   │   ├── overview-panel.tsx      Risk gauge, stats, clause breakdown
 │   │   ├── panels.tsx              Red Flags · Clause Explorer · Negotiation ·
-│   │   │                           Missing Protections · Contradictions · Sources
+│   │   │                           Missing Protections · Contradictions · Sources ·
+│   │   │                           AgentTracePanel (Gantt + replay + drill-down drawer)
 │   │   ├── negotiation-copilot.tsx Groq JSON mode copilot modal (email + addendum)
 │   │   ├── lease-chat.tsx          "Ask Your Lease" floating chat (Groq + RAG)
 │   │   ├── pdf-viewer.tsx          pdfjs-dist v5, canvas + text layer, clause highlights
 │   │   ├── trace-timeline.tsx      Live Gantt chart (swim lanes, duration bars)
+│   │   ├── trace-timeline.utils.ts toolCategory + CATEGORY_COLOR helpers
 │   │   └── shared.tsx              RiskArc, RiskBadge, StatCard, FeedbackBar
 │   └── api/
 │       ├── upload/route.ts         PDF intake, DB-backed rate limiting (5/day auth · 3/day guest)
@@ -415,6 +446,7 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │       ├── report/[id]/route.ts    GET (4 parallel table fetches) + DELETE cascade
 │       ├── chat/[leaseId]/route.ts Groq SSE streaming chat + hybrid RAG
 │       ├── negotiation/generate/   Groq JSON mode — email + addendum drafts
+│       ├── stats/route.ts          Aggregate stats (avg risk, clause count) — no PII
 │       ├── stream/[id]/route.ts    SSE live progress events
 │       └── feedback/route.ts       Thumbs up/down with comment
 │
@@ -447,12 +479,70 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │   ├── report.spec.ts              15 tests
 │   └── chat.spec.ts                13 tests
 │
-└── supabase/migrations/            10 migrations (001–010, all applied)
+├── e2e/
+│   ├── landing.spec.ts             8 tests
+│   ├── static-pages.spec.ts        7 tests
+│   ├── report.spec.ts              15 tests
+│   ├── chat.spec.ts                13 tests
+│   └── wow-features.spec.ts        8 tests — F1 stats · F2 OG card · F3 drill-down · F4 replay
+│
+└── supabase/migrations/            13 migrations (001–013, all applied)
     ├── 001_initial_schema.sql
     ├── 005_hybrid_search.sql       fts_vector column + GIN index + hybrid search RPC
     ├── 006_lease_address.sql       Property address extraction
     ├── 009_upload_ip.sql           DB-backed upload rate limiting
-    └── 010_chat_requests.sql       Chat rate limiting table
+    ├── 010_chat_requests.sql       Chat rate limiting table
+    └── 013_public_stats_view.sql   Aggregate stats view (no PII)
+```
+
+---
+
+## Recording a demo video
+
+Target: **60–90 seconds**, no audio needed, 1920×1080, exported as MP4 (H.264) + WebM for the README embed.
+
+### Recommended tool
+
+**ShareX** (Windows, free) — record a fixed region, outputs WebM/MP4 directly, no post-processing needed. Download at [getsharex.com](https://getsharex.com).
+
+Alternative: `npx playwright test --video=on` captures WebM automatically during the `wow-features.spec.ts` run, but the viewport is fixed at 1280×720 and you can't control pacing.
+
+### Before recording
+
+1. Set browser window to 1920×1080 and zoom to 100%.
+2. Open a private/incognito window at `https://leaseguard-sigma.vercel.app` — avoids "Sign in" prompts during recording.
+3. Pre-open DevTools → Network tab, filter `XHR` — useful for showing the `/api/stats` call resolving live if you want a technical audience.
+4. Have the demo lease URL ready in a second tab: `/report/ebf8bf97-563d-4b7d-859f-8ecf76905335`.
+
+### Shot sequence (with target timestamps)
+
+| # | Action | Target time | Notes |
+|---|--------|------------|-------|
+| 1 | Land on homepage — let stats bar count up | 0:00–0:08 | Pause briefly on the live counters: **6.7 avg · 444 clauses** |
+| 2 | Drag or click to select `ontario_standard_lease.pdf` | 0:08–0:14 | Use `scripts/source-docs/ontario_standard_lease.pdf` |
+| 3 | Tick consent checkbox, click Analyse | 0:14–0:16 | |
+| 4 | Processing screen — step indicators animating | 0:16–0:30 | Let all 5 steps fill in; don't cut early |
+| 5 | Report loads — Overview panel | 0:30–0:38 | Show risk gauge + stat cards (Red Flags, Negotiation Points, etc.) |
+| 6 | Click **Red Flags** tab — expand one flag | 0:38–0:48 | Scroll to show the RTA citation below the clause text |
+| 7 | Click **Negotiation Guide** → open Copilot → choose Assertive tone | 0:48–1:00 | Wait for Groq to stream the draft; don't cut mid-stream |
+| 8 | Click **Agent Trace** → hit **▶ Watch the agent work** | 1:00–1:12 | Let ~10s of animation play; click a RAG bar mid-animation to show drill-down |
+| 9 | Click **Share Report** → show OG card in modal | 1:12–1:18 | |
+| 10 | Click **Ask your lease** chat bubble → type "Is this late fee legal?" → wait for streaming answer | 1:18–1:30 | End on the statute citation line |
+
+**Total: ~90 seconds.** Cut aggressively between steps 5–6 and 6–7 if the recording runs long.
+
+### Export settings (ShareX)
+
+- Format: MP4 (H.264, CRF 22) for the GitHub release asset
+- Also export WebM (VP9) for the `<video>` embed in the README
+- Upload MP4 to a GitHub release tagged `v1.x.0`, then update the `src` in the `## Demo` section
+
+### After recording
+
+Replace the `## Demo` video source with the new release URL:
+
+```markdown
+<video src="https://github.com/parthiv-2006/lease-guard/releases/download/v1.x.0/demo.mp4" controls width="100%"></video>
 ```
 
 ---
