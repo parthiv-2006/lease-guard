@@ -36,9 +36,9 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 ## Demo
 
-<video src="https://github.com/parthiv-2006/lease-guard/releases/download/v1.0.0/demo.webm" controls width="100%"></video>
+<video src="https://github.com/parthiv-2006/lease-guard/releases/download/v1.0.0/demo.mp4" controls width="100%"></video>
 
-> Shows: landing page → lease upload → processing → risk report → all panels → Negotiation Copilot → Ask Your Lease chat.
+> Shows: landing page → live stats bar → example findings → risk report → Red Flags with statute citations → Negotiation Copilot → Agent Trace replay + drill-down → Share modal → Ask Your Lease chat.
 
 ---
 

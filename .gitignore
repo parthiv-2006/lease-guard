@@ -48,6 +48,10 @@ screenshots/
 test-results/
 page@*.webm
 
+# Generated demo video files (uploaded to GitHub release, not committed)
+demo.mp4
+demo.webm
+
 # Local LTB decision source docs (used by seeder scripts, not needed in repo)
 scripts/source-docs/ltb_decisions/
 
