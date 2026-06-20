@@ -19,6 +19,10 @@ jest.mock("@supabase/supabase-js", () => ({
         error: null,
       }),
     })),
+    rpc: jest.fn().mockResolvedValue({
+      data: [{ is_allowed: true, current_count: 1, window_reset_at: "2099-01-01T00:00:00Z" }],
+      error: null,
+    }),
   })),
 }));
 

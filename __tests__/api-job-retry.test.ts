@@ -83,9 +83,9 @@ jest.mock("../lib/agent", () => ({
 }));
 
 // Rate limiter always allows in unit tests — rate-limiter.test.ts covers its own behaviour
-jest.mock("../lib/rate-limiter", () => ({
-  checkRateLimit: jest.fn().mockReturnValue({ allowed: true, remaining: 4, resetAt: Date.now() + 3600000 }),
-  rateLimitExceededResponse: jest.fn(),
+jest.mock("../lib/rate-limiter-db", () => ({
+  checkDbRateLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 4, resetAt: new Date(Date.now() + 3600000) }),
+  dbRateLimitExceededResponse: jest.fn(),
 }));
 
 // Mock auth: returns authenticated user by default

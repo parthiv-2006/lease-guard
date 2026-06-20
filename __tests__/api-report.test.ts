@@ -23,6 +23,10 @@ jest.mock("../lib/supabase-server", () => ({
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({
     from: mockFrom,
+    rpc: jest.fn().mockResolvedValue({
+      data: [{ is_allowed: true, current_count: 1, window_reset_at: "2099-01-01T00:00:00Z" }],
+      error: null,
+    }),
     storage: {
       from: jest.fn(() => ({
         createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: null }, error: null }),
