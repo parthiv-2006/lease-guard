@@ -48,12 +48,19 @@ screenshots/
 test-results/
 page@*.webm
 
-# Generated demo video files (uploaded to GitHub release, not committed)
+# Generated demo video/gif files (uploaded to GitHub release, not committed)
 demo.mp4
 demo.webm
+demo.gif
+.github/assets/demo.mp4
+.github/assets/demo.webm
+.github/assets/demo.gif
+
+# E2E test screenshots — uploaded as CI artifacts, not stored in git
+e2e-screenshots/
 
 # Local LTB decision source docs (used by seeder scripts, not needed in repo)
-scripts/source-docs/ltb_decisions/
+scripts/source-docs/
 
 # Temp screenshots captured during dev/demo work
 firefox_screenshot.png
