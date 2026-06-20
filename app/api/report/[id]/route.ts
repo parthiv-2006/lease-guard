@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -22,9 +22,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-get", maxRequests: 60 });
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "report-get", maxRequests: 60 });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 
@@ -154,9 +154,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-post", maxRequests: 20 });
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "report-post", maxRequests: 20 });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 
@@ -215,9 +215,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "report-delete", maxRequests: 20 });
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "report-delete", maxRequests: 20 });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 

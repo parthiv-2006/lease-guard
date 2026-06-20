@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -15,9 +15,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // Rate limit: 60 requests/hour per IP (PDF viewer auto-retries on expiry)
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "pdf-url", maxRequests: 60 });
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "pdf-url", maxRequests: 60 });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 

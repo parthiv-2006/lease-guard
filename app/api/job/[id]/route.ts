@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 
 // Strip file paths and truncate to 200 chars before returning error messages
 // to clients — prevents leaking internal stack traces or server paths.
@@ -24,12 +24,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // Polling route — allow generous limit (120/hour) to not break status polling
-  const rl = checkRateLimit(getClientIp(_req), {
+  const rl = await checkDbRateLimit(getClientIp(_req), {
     storeKey: "job",
     maxRequests: 120,
   });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 

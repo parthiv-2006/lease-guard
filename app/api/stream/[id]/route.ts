@@ -11,7 +11,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { subscribeToAnalysis, hasBufferedEvents } from "@/lib/analysis-events";
 import type { AnalysisEvent } from "@/lib/analysis-events";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { checkDbRateLimit } from "@/lib/rate-limiter-db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,7 +25,7 @@ export async function GET(
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
     "unknown";
-  const rl = checkRateLimit(ip, { storeKey: "stream", maxRequests: 30 });
+  const rl = await checkDbRateLimit(ip, { storeKey: "stream", maxRequests: 30 });
   if (!rl.allowed) {
     return new Response("Too many requests. Please try again later.", { status: 429 });
   }

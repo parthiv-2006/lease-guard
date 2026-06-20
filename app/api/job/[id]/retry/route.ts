@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limiter";
+import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 import { runLeaseAnalysis } from "@/lib/agent";
 
 function getClientIp(req: NextRequest): string {
@@ -39,9 +39,9 @@ export async function POST(
   }
 
   // ── Rate limit: 5 retries/hour per IP ─────────────────────────────────────
-  const rl = checkRateLimit(getClientIp(req), { storeKey: "retry", maxRequests: 5 });
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "retry", maxRequests: 5 });
   if (!rl.allowed) {
-    const { body, headers, status } = rateLimitExceededResponse(rl.resetAt);
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
     return NextResponse.json(body, { status, headers });
   }
 
