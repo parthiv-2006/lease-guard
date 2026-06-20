@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import Link from "next/link";
 import { AuthButton } from "./components/auth-button";
 import { Icon, RiskBadge } from "./components/shared";
 
@@ -55,7 +56,6 @@ interface LandingPageProps {
 const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
 
 function LandingPage({ onUploadSuccess }: LandingPageProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -692,11 +692,9 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                   >
                     or try a sample
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/report/${DEMO_LEASE_ID}`);
-                    }}
+                  <Link
+                    href={`/report/${DEMO_LEASE_ID}`}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -709,6 +707,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                       fontSize: "12px",
                       fontWeight: 500,
                       color: "#181614",
+                      textDecoration: "none",
                       transition: "border-color 0.15s, box-shadow 0.15s",
                     }}
                     onMouseEnter={(e) => {
@@ -738,7 +737,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                       <path d="M3 8h10M9 4l4 4-4 4" stroke="#181614" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                  </button>
+                  </Link>
                   <p style={{ margin: 0, fontSize: "11px", color: "#b0aaa4", lineHeight: 1.4 }}>
                     See a highly flawed Ontario lease — analysed instantly
                   </p>
