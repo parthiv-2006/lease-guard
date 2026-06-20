@@ -14,12 +14,18 @@ export function AuthButton() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    async function fetchUser() {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+    // Phase 1: instant local read from localStorage — clears loading with no network wait
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user ?? null);
       setLoading(false);
-    }
-    void fetchUser();
+    })();
+
+    // Phase 2: server validation in background — corrects stale/expired sessions
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user ?? null);
+    })();
 
     const { data: listenerData } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
@@ -37,7 +43,7 @@ export function AuthButton() {
     router.refresh();
   }
 
-  if (loading) return null;
+  if (loading) return <div style={{ width: "48px", height: "26px" }} />;
 
   if (!user) {
     return (

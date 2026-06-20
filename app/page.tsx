@@ -2140,24 +2140,34 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
 
 // ── Root page (screen router) ─────────────────────────────────────────────────
 
-function HomePageInner() {
+// Tiny component that owns useSearchParams so only it suspends during hydration,
+// not the entire page (which would leave the upload UI with a dead callback).
+function SearchParamsRedirect({
+  onLeaseParam,
+}: {
+  onLeaseParam: (id: string) => void;
+}) {
   const searchParams = useSearchParams();
+  useEffect(() => {
+    const paramId = searchParams.get("leaseId");
+    if (paramId) onLeaseParam(paramId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  return null;
+}
+
+function HomePageInner() {
   const [screen, setScreen] = useState<Screen>("landing");
   const [leaseId, setLeaseId] = useState("");
   const [filename, setFilename] = useState("");
 
-  // If ?leaseId=xxx is present in the URL (e.g. from dashboard "View progress →" link),
-  // jump straight to the processing screen for that lease.
-  useEffect(() => {
-    const paramId = searchParams.get("leaseId");
-    if (paramId && screen === "landing") {
-      setLeaseId(paramId);
-      setFilename(""); // filename not available from URL; ProcessingPage handles it
-      setScreen("processing");
-    }
-  // Only run on mount — deliberately exclude screen to avoid loop
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  // Called by SearchParamsRedirect when ?leaseId=xxx is present in the URL
+  // (e.g. from dashboard "View progress →" link).
+  function handleLeaseParam(id: string) {
+    setLeaseId(id);
+    setFilename("");
+    setScreen("processing");
+  }
 
   function handleUploadSuccess(id: string, name: string) {
     setLeaseId(id);
@@ -2179,13 +2189,17 @@ function HomePageInner() {
     return <ProcessingPage leaseId={leaseId} filename={filename} onReset={handleReset} />;
   }
 
-  return <LandingPage onUploadSuccess={handleUploadSuccess} />;
+  return (
+    <>
+      {/* Suspense wraps only the searchParams hook — not the upload UI */}
+      <Suspense fallback={null}>
+        <SearchParamsRedirect onLeaseParam={handleLeaseParam} />
+      </Suspense>
+      <LandingPage onUploadSuccess={handleUploadSuccess} />
+    </>
+  );
 }
 
 export default function HomePage() {
-  return (
-    <Suspense fallback={<LandingPage onUploadSuccess={() => {}} />}>
-      <HomePageInner />
-    </Suspense>
-  );
+  return <HomePageInner />;
 }
