@@ -23,10 +23,20 @@
 import { test, expect } from "@playwright/test";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
-const DEMO_REPORT = `${BASE}/report/ebf8bf97-563d-4b7d-859f-8ecf76905335`;
+// Reuse the same known-good faulty lease as report.spec.ts so this test
+// benefits from the same E2E_LEASE_FAULTY secret set in CI.
+const DEMO_LEASE_ID =
+  process.env.E2E_LEASE_FAULTY ?? "ebf8bf97-563d-4b7d-859f-8ecf76905335";
+const DEMO_REPORT = `${BASE}/report/${DEMO_LEASE_ID}`;
 
 test.use({ viewport: { width: 1440, height: 900 } });
 test.setTimeout(180_000);
+
+// This test navigates to a real report — skip when DB credentials are absent.
+test.skip(
+  !!process.env.E2E_SKIP_DB_TESTS,
+  "Skipped: E2E_SKIP_DB_TESTS set (no DB credentials in this CI run)"
+);
 
 test("demo recording — golden path", async ({ page }) => {
   // ── [0:00] Landing page ──────────────────────────────────────────────────────
@@ -52,7 +62,11 @@ test("demo recording — golden path", async ({ page }) => {
   // ── [0:12] Cut to pre-analysed report ────────────────────────────────────────
   // Skip the live upload + 90s analysis wait — navigate directly
   await page.goto(DEMO_REPORT, { waitUntil: "networkidle" });
-  await page.waitForTimeout(2500);
+
+  // Wait for the sidebar nav to confirm the report loaded — never rely on a
+  // fixed timeout since the API fetch can take 1-5s depending on cold start.
+  await page.getByRole("button", { name: /Red Flags/ }).waitFor({ state: "visible", timeout: 30_000 });
+  await page.waitForTimeout(1500);
 
   // ── [0:17] Overview panel ────────────────────────────────────────────────────
   // Risk gauge (9.5 Critical) and stat cards are visible by default
