@@ -34,16 +34,6 @@ Upload your lease. Get a full risk report — every red flag cited to the RTA �
 
 ---
 
-## Demo
-
-<a href="https://github.com/parthiv-2006/lease-guard/releases/download/v1.0.0/demo.mp4">
-  <img src="https://raw.githubusercontent.com/parthiv-2006/lease-guard/main/.github/assets/landing.png" alt="Watch the LeaseGuard demo — 1:24" width="100%" />
-</a>
-
-> ▶ [Watch the 1:24 demo](https://github.com/parthiv-2006/lease-guard/releases/download/v1.0.0/demo.mp4) — landing → live stats bar → risk report → Red Flags with statute citations → Negotiation Copilot → Agent Trace replay + drill-down → Share modal → Ask Your Lease chat.
-
----
-
 ## What it does
 
 LeaseGuard reads Ontario residential lease PDFs and produces a clause-by-clause risk report backed by retrieved statute and tribunal text. **The LLM never asserts legal facts from training data alone** — every finding is grounded in real law retrieved from a 2,372-chunk pgvector corpus of the Residential Tenancies Act, O.Reg 516/06, O.Reg 517/06, the Ontario Standard Form of Lease, and 84 real LTB tribunal decisions.
@@ -495,56 +485,6 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
     ├── 009_upload_ip.sql           DB-backed upload rate limiting
     ├── 010_chat_requests.sql       Chat rate limiting table
     └── 013_public_stats_view.sql   Aggregate stats view (no PII)
-```
-
----
-
-## Recording a demo video
-
-Target: **60–90 seconds**, no audio needed, 1920×1080, exported as MP4 (H.264) + WebM for the README embed.
-
-### Recommended tool
-
-**ShareX** (Windows, free) — record a fixed region, outputs WebM/MP4 directly, no post-processing needed. Download at [getsharex.com](https://getsharex.com).
-
-Alternative: `npx playwright test --video=on` captures WebM automatically during the `wow-features.spec.ts` run, but the viewport is fixed at 1280×720 and you can't control pacing.
-
-### Before recording
-
-1. Set browser window to 1920×1080 and zoom to 100%.
-2. Open a private/incognito window at `https://leaseguard-sigma.vercel.app` — avoids "Sign in" prompts during recording.
-3. Pre-open DevTools → Network tab, filter `XHR` — useful for showing the `/api/stats` call resolving live if you want a technical audience.
-4. Have the demo lease URL ready in a second tab: `/report/ebf8bf97-563d-4b7d-859f-8ecf76905335`.
-
-### Shot sequence (with target timestamps)
-
-| # | Action | Target time | Notes |
-|---|--------|------------|-------|
-| 1 | Land on homepage — let stats bar count up | 0:00–0:08 | Pause briefly on the live counters: **6.7 avg · 444 clauses** |
-| 2 | Drag or click to select `ontario_standard_lease.pdf` | 0:08–0:14 | Use `scripts/source-docs/ontario_standard_lease.pdf` |
-| 3 | Tick consent checkbox, click Analyse | 0:14–0:16 | |
-| 4 | Processing screen — step indicators animating | 0:16–0:30 | Let all 5 steps fill in; don't cut early |
-| 5 | Report loads — Overview panel | 0:30–0:38 | Show risk gauge + stat cards (Red Flags, Negotiation Points, etc.) |
-| 6 | Click **Red Flags** tab — expand one flag | 0:38–0:48 | Scroll to show the RTA citation below the clause text |
-| 7 | Click **Negotiation Guide** → open Copilot → choose Assertive tone | 0:48–1:00 | Wait for Groq to stream the draft; don't cut mid-stream |
-| 8 | Click **Agent Trace** → hit **▶ Watch the agent work** | 1:00–1:12 | Let ~10s of animation play; click a RAG bar mid-animation to show drill-down |
-| 9 | Click **Share Report** → show OG card in modal | 1:12–1:18 | |
-| 10 | Click **Ask your lease** chat bubble → type "Is this late fee legal?" → wait for streaming answer | 1:18–1:30 | End on the statute citation line |
-
-**Total: ~90 seconds.** Cut aggressively between steps 5–6 and 6–7 if the recording runs long.
-
-### Export settings (ShareX)
-
-- Format: MP4 (H.264, CRF 22) for the GitHub release asset
-- Also export WebM (VP9) for the `<video>` embed in the README
-- Upload MP4 to a GitHub release tagged `v1.x.0`, then update the `src` in the `## Demo` section
-
-### After recording
-
-Replace the `## Demo` video source with the new release URL:
-
-```markdown
-<video src="https://github.com/parthiv-2006/lease-guard/releases/download/v1.x.0/demo.mp4" controls width="100%"></video>
 ```
 
 ---
