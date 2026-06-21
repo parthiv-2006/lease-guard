@@ -44,6 +44,12 @@ export async function middleware(request: NextRequest) {
   // session refreshes that re-create the NextResponse object.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // CRITICAL: Next.js reads the nonce from the Content-Security-Policy header on
+  // the *request* (getScriptNonceFromHeader) and stamps it onto every script tag
+  // it emits. Without this, none of Next's bundle/inline scripts carry the nonce,
+  // and 'strict-dynamic' blocks them all — React never hydrates. Setting the CSP
+  // here also opts the route into dynamic rendering, required for per-request nonces.
+  requestHeaders.set("Content-Security-Policy", csp);
 
   let supabaseResponse = NextResponse.next({
     request: { headers: requestHeaders },
@@ -65,6 +71,7 @@ export async function middleware(request: NextRequest) {
           // refreshes the session and overwrites supabaseResponse.
           const refreshedHeaders = new Headers(request.headers);
           refreshedHeaders.set("x-nonce", nonce);
+          refreshedHeaders.set("Content-Security-Policy", csp);
           supabaseResponse = NextResponse.next({
             request: { headers: refreshedHeaders },
           });
