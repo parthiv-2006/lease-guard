@@ -548,18 +548,18 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             onDrop={onDrop}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
-            onClick={() => !file && inputRef.current?.click()}
             style={{
               border: `1.5px dashed ${borderColor}`,
               borderRadius: "10px",
               background: bgColor,
               padding: "24px 32px",
               textAlign: "center",
-              cursor: file ? "default" : "pointer",
+              cursor: "default",
               transition: "all 0.2s",
             }}
           >
             <input
+              id="lease-file-input"
               ref={inputRef}
               type="file"
               accept=".pdf"
@@ -568,7 +568,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             />
 
             {!file ? (
-              <>
+              <label htmlFor="lease-file-input" style={{ display: "block", cursor: "pointer" }}>
                 {/* PDF icon */}
                 <div
                   style={{
@@ -742,7 +742,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     See a highly flawed Ontario lease — analysed instantly
                   </p>
                 </div>
-              </>
+              </label>
             ) : (
               /* File selected state */
               <div>
