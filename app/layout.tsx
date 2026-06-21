@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
+// The middleware applies a per-request CSP nonce with 'strict-dynamic'. Next.js
+// can only stamp that nonce onto its <script> tags when the page is rendered
+// per-request — a statically prerendered page ships build-time HTML whose scripts
+// have no nonce, so 'strict-dynamic' blocks every bundle and React never hydrates.
+// Forcing dynamic rendering app-wide is the documented requirement for nonce CSP.
+export const dynamic = "force-dynamic";
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") ?? "https://leaseguard.ca";
 
