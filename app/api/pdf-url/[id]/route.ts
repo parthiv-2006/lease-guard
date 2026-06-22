@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClientIp } from "@/lib/client-ip";
+import { checkLeaseAccess } from "@/lib/lease-access";
 
 export async function GET(
   req: NextRequest,
@@ -46,15 +47,7 @@ export async function GET(
     );
   }
 
-  // If share_token is present on the report, validate that the client provided it and it matches
-  if (reportData.share_token && shareToken !== reportData.share_token) {
-    return NextResponse.json(
-      { error: "invalid_token", message: "Invalid share token." },
-      { status: 403 }
-    );
-  }
-
-  // Fetch the lease to get the file_path (+ owner for the ownership guard)
+  // Fetch the lease to get the file_path (+ owner for the access check)
   const { data: leaseData, error: leaseError } = await supabase
     .from("leases")
     .select("file_path, user_id")
@@ -68,16 +61,21 @@ export async function GET(
     );
   }
 
-  // Ownership guard: if an authenticated user requests a PDF whose lease belongs
-  // to a *different* authenticated user, deny. Mirrors /api/report/[id]. Guest
-  // leases (user_id IS NULL) and guest callers fall through — the UUID (and the
-  // share-token check above) act as the access token for the guest/share flow.
+  // Authorisation: owner, valid share token, or guest lease. Mirrors
+  // /api/report/[id] exactly — an owned lease's PDF is NOT served to an
+  // anonymous caller who merely knows the UUID.
   const authClient = await createSupabaseServerClient();
   const { data: { user: authUser } } = await authClient.auth.getUser();
-  if (authUser && leaseData.user_id && leaseData.user_id !== authUser.id) {
+  const access = checkLeaseAccess({
+    leaseUserId: leaseData.user_id as string | null | undefined,
+    authUserId: authUser?.id,
+    providedToken: shareToken,
+    reportShareToken: reportData.share_token as string | null | undefined,
+  });
+  if (!access.allowed) {
     return NextResponse.json(
-      { error: "forbidden", message: "Access denied." },
-      { status: 403 }
+      { error: access.error, message: access.message },
+      { status: access.status }
     );
   }
 
