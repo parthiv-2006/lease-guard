@@ -30,6 +30,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbChatRateLimit } from "@/lib/chat-rate-limit";
+import { getClientIp } from "@/lib/client-ip";
 import {
   detectPromptInjection,
   sanitizeChatMessage,
@@ -375,10 +376,7 @@ export async function POST(
   }
 
   // ── Extract IP ───────────────────────────────────────────────────────────
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
+  const ip = getClientIp(req);
 
   // ── Auth check (identifies user for rate limiting) ───────────────────────
   let userId: string | null = null;
