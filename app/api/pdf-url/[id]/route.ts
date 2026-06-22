@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getClientIp } from "@/lib/client-ip";
 
 export async function GET(
   req: NextRequest,
@@ -60,10 +54,10 @@ export async function GET(
     );
   }
 
-  // Fetch the lease to get the file_path
+  // Fetch the lease to get the file_path (+ owner for the ownership guard)
   const { data: leaseData, error: leaseError } = await supabase
     .from("leases")
-    .select("file_path")
+    .select("file_path, user_id")
     .eq("id", id)
     .single();
 
@@ -71,6 +65,19 @@ export async function GET(
     return NextResponse.json(
       { error: "not_found", message: "Lease file not found." },
       { status: 404 }
+    );
+  }
+
+  // Ownership guard: if an authenticated user requests a PDF whose lease belongs
+  // to a *different* authenticated user, deny. Mirrors /api/report/[id]. Guest
+  // leases (user_id IS NULL) and guest callers fall through — the UUID (and the
+  // share-token check above) act as the access token for the guest/share flow.
+  const authClient = await createSupabaseServerClient();
+  const { data: { user: authUser } } = await authClient.auth.getUser();
+  if (authUser && leaseData.user_id && leaseData.user_id !== authUser.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "Access denied." },
+      { status: 403 }
     );
   }
 
