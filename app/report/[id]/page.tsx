@@ -1252,7 +1252,16 @@ export default function ReportPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/report/${reportId}`);
+      // Forward the share token from the URL (?token=…) so a shared-link viewer
+      // who is not the owner is authorised by the API. Owners are authorised by
+      // their session cookie and need no token.
+      const token =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("token")
+          : null;
+      const res = await fetch(
+        `/api/report/${reportId}${token ? `?token=${encodeURIComponent(token)}` : ""}`
+      );
       if (res.status === 404) {
         setError("Report not found. It may have expired or the link is invalid.");
         return;

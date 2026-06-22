@@ -2,14 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { getClientIp } from "@/lib/client-ip";
+import { checkLeaseAccess } from "@/lib/lease-access";
 
 const DISCLAIMER =
   "This analysis is not legal advice. Consult a licensed paralegal or lawyer before making decisions about your lease. Community Legal Clinics in Ontario offer free legal help for tenants.";
@@ -95,26 +89,20 @@ export async function GET(
     );
   }
 
-  // Ownership guard: if an authenticated user is making this request and the
-  // lease belongs to a *different* authenticated user, deny access.
-  // Guest leases (user_id IS NULL) and guest callers are allowed through —
-  // the UUID acts as the access token for the guest flow.
+  // Authorisation: owner, valid share token, or guest lease. An owned lease is
+  // NOT readable by an anonymous caller who merely knows the UUID.
   const authUser = userResult.data?.user ?? null;
   const leaseRow = leaseResult.data as Record<string, unknown> | null;
-  if (authUser && leaseRow?.user_id && leaseRow.user_id !== authUser.id) {
+  const access = checkLeaseAccess({
+    leaseUserId: leaseRow?.user_id as string | null | undefined,
+    authUserId: authUser?.id,
+    providedToken: shareToken,
+    reportShareToken: data.share_token as string | null | undefined,
+  });
+  if (!access.allowed) {
     return NextResponse.json(
-      { error: "forbidden", message: "Access denied." },
-      { status: 403 }
-    );
-  }
-
-  // Share token is additive: if the caller provided a token, verify it matches.
-  // (The share token provides an alternative URL for sharing; the original UUID
-  // URL always works for the owner.)
-  if (shareToken && data.share_token !== shareToken) {
-    return NextResponse.json(
-      { error: "invalid_token", message: "Invalid share token." },
-      { status: 403 }
+      { error: access.error, message: access.message },
+      { status: access.status }
     );
   }
 
@@ -183,6 +171,22 @@ export async function POST(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+
+  // Authorisation: only the owner may mint a share link for an owned lease.
+  // Guest leases (user_id IS NULL) may be shared by any holder of the UUID.
+  const { data: leaseRow } = await supabase
+    .from("leases")
+    .select("user_id")
+    .eq("id", id)
+    .single();
+  const authClient = await createSupabaseServerClient();
+  const { data: { user: authUser } } = await authClient.auth.getUser();
+  if (leaseRow?.user_id && leaseRow.user_id !== authUser?.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "Only the owner can share this report." },
+      { status: 403 }
+    );
+  }
 
   const { v4: uuidv4 } = await import("uuid");
   const shareToken = uuidv4().replace(/-/g, "");

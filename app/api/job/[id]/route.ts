@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
-
-// Strip file paths and truncate to 200 chars before returning error messages
-// to clients — prevents leaking internal stack traces or server paths.
-function sanitizeErrorMessage(raw: string | null): string | null {
-  if (!raw) return null;
-  return raw
-    .replace(/(?:\/[^\s,;:'"]{2,}|[A-Z]:\\[^\s,;:'"]{2,})/g, "[path]")
-    .slice(0, 200);
-}
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { getClientIp } from "@/lib/client-ip";
+import { sanitizeErrorMessage } from "@/lib/sanitize-error";
 
 export async function GET(
   _req: NextRequest,

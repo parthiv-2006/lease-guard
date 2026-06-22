@@ -5,19 +5,12 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbUploadRateLimit } from "@/lib/upload-rate-limit";
 import { runLeaseAnalysis } from "@/lib/agent";
 import { v4 as uuidv4 } from "uuid";
+import { getClientIp } from "@/lib/client-ip";
 
 export const maxDuration = 300;
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
