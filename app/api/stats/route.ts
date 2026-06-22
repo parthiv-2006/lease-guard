@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const revalidate = 300;
+// Dynamic (not prerendered at build): this route queries Supabase, and
+// prerendering would execute that query in environments without Supabase env
+// vars (e.g. Vercel Preview), failing the build. CDN caching is still applied
+// via the Cache-Control header below (s-maxage=300, stale-while-revalidate).
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = createClient(
