@@ -88,10 +88,25 @@ export async function middleware(request: NextRequest) {
   // authorization — it cannot verify token revocation.  Actual auth
   // enforcement (ownership checks, identity verification) is done server-side
   // with getUser() inside each API route and server component.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  //
+  // Timeout guard: getSession() DOES hit the network when the access token is
+  // expired (refresh against Supabase auth). If the Supabase project is paused
+  // or unreachable, that call hangs past Vercel's middleware limit and every
+  // page returns 504 MIDDLEWARE_INVOCATION_TIMEOUT (seen 2026-07-15). Racing a
+  // 5s timeout degrades to treating the visitor as signed-out — the site stays
+  // up, and API routes still enforce real auth with getUser().
+  let user = null;
+  try {
+    const { data } = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("supabase auth timeout")), 5000)
+      ),
+    ]);
+    user = data.session?.user ?? null;
+  } catch {
+    user = null;
+  }
 
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
