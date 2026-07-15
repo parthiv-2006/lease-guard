@@ -1,0 +1,29 @@
+# Render Blueprint — deploys the MCP server on Render's free tier.
+# Replaces Railway (trial ended 2026-07). Same Dockerfile, no code changes:
+# the server reads $PORT (Render injects 10000) and serves GET /health.
+#
+# Deploy: Render dashboard → New → Blueprint → select this repo.
+# Render prompts for the four sync:false secrets on first deploy.
+#
+# Free-tier note: the instance spins down after 15 min without traffic.
+# The existing UptimeRobot monitor (5-min interval on /health) keeps it warm —
+# point it at the new https://<service>.onrender.com/health URL after deploy.
+
+services:
+  - type: web
+    name: leaseguard-mcp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
