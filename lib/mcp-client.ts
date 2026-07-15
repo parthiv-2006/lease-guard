@@ -56,11 +56,20 @@ interface PendingRequest {
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Per-tool-call timeout. PDF parsing can take ~60s; give headroom. */
-const TOOL_TIMEOUT_MS = 90_000;
+/**
+ * Per-tool-call timeout. PDF parsing can take ~60s; give headroom.
+ * Padded for Cloud Run's scale-to-zero cold starts (measured ~26s container
+ * boot on a comparable free-tier host — see Render diagnosis 2026-07-15).
+ */
+const TOOL_TIMEOUT_MS = 120_000;
 
-/** Timeout for the MCP initialize handshake. */
-const INIT_TIMEOUT_MS = 20_000;
+/**
+ * Timeout for the MCP initialize handshake — the first HTTP round-trip to a
+ * cold instance, so it eats most of the cold-start cost. 20s was too tight
+ * once we moved off an always-on host; 30s leaves headroom while keeping
+ * (INIT + one TOOL_TIMEOUT) under the 3-minute pipeline timeout in agent.ts.
+ */
+const INIT_TIMEOUT_MS = 30_000;
 
 /** Time to wait for graceful stdin.end() before SIGKILL (stdio mode). */
 const CLOSE_GRACE_MS = 2_000;
