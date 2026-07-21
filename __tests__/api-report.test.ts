@@ -325,12 +325,26 @@ describe("POST /api/report/[id]", () => {
     expect(res.status).toBe(400);
   });
 
-  it("generates a share link for action=share", async () => {
-    // Mock the update chain
+  // Mock supporting both the ownership lookup (.select on leases) and the
+  // .update on reports. Default: guest lease (user_id null) → sharing allowed.
+  function mockShareChains(opts: { updateError?: unknown; userId?: string | null } = {}) {
     mockUpdate.mockReturnValue({
-      eq: jest.fn().mockResolvedValue({ error: null }),
+      eq: jest.fn().mockResolvedValue({ error: opts.updateError ?? null }),
     });
-    mockFrom.mockReturnValue({ update: mockUpdate });
+    mockFrom.mockReturnValue({
+      update: mockUpdate,
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { user_id: opts.userId ?? null }, error: null }),
+        }),
+      }),
+    });
+  }
+
+  it("generates a share link for action=share", async () => {
+    mockShareChains();
 
     const res = await POST(
       makePost(VALID_ID, { action: "share" }),
@@ -345,10 +359,7 @@ describe("POST /api/report/[id]", () => {
   });
 
   it("returns 500 when the DB update fails", async () => {
-    mockUpdate.mockReturnValue({
-      eq: jest.fn().mockResolvedValue({ error: { message: "DB error" } }),
-    });
-    mockFrom.mockReturnValue({ update: mockUpdate });
+    mockShareChains({ updateError: { message: "DB error" } });
 
     const res = await POST(
       makePost(VALID_ID, { action: "share" }),
@@ -357,5 +368,18 @@ describe("POST /api/report/[id]", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("update_failed");
+  });
+
+  it("forbids a non-owner from minting a share link for an owned lease", async () => {
+    // Lease is owned by someone; caller is unauthenticated (getUser → null).
+    mockShareChains({ userId: "owner-user-id" });
+
+    const res = await POST(
+      makePost(VALID_ID, { action: "share" }),
+      makeParams(VALID_ID)
+    );
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("forbidden");
   });
 });

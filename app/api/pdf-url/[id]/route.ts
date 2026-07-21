@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getClientIp } from "@/lib/client-ip";
+import { checkLeaseAccess } from "@/lib/lease-access";
 
 export async function GET(
   req: NextRequest,
@@ -52,18 +47,10 @@ export async function GET(
     );
   }
 
-  // If share_token is present on the report, validate that the client provided it and it matches
-  if (reportData.share_token && shareToken !== reportData.share_token) {
-    return NextResponse.json(
-      { error: "invalid_token", message: "Invalid share token." },
-      { status: 403 }
-    );
-  }
-
-  // Fetch the lease to get the file_path
+  // Fetch the lease to get the file_path (+ owner for the access check)
   const { data: leaseData, error: leaseError } = await supabase
     .from("leases")
-    .select("file_path")
+    .select("file_path, user_id")
     .eq("id", id)
     .single();
 
@@ -71,6 +58,24 @@ export async function GET(
     return NextResponse.json(
       { error: "not_found", message: "Lease file not found." },
       { status: 404 }
+    );
+  }
+
+  // Authorisation: owner, valid share token, or guest lease. Mirrors
+  // /api/report/[id] exactly — an owned lease's PDF is NOT served to an
+  // anonymous caller who merely knows the UUID.
+  const authClient = await createSupabaseServerClient();
+  const { data: { user: authUser } } = await authClient.auth.getUser();
+  const access = checkLeaseAccess({
+    leaseUserId: leaseData.user_id as string | null | undefined,
+    authUserId: authUser?.id,
+    providedToken: shareToken,
+    reportShareToken: reportData.share_token as string | null | undefined,
+  });
+  if (!access.allowed) {
+    return NextResponse.json(
+      { error: access.error, message: access.message },
+      { status: access.status }
     );
   }
 

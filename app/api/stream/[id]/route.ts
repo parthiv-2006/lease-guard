@@ -12,6 +12,8 @@ import { createClient } from "@supabase/supabase-js";
 import { subscribeToAnalysis, hasBufferedEvents } from "@/lib/analysis-events";
 import type { AnalysisEvent } from "@/lib/analysis-events";
 import { checkDbRateLimit } from "@/lib/rate-limiter-db";
+import { getClientIp } from "@/lib/client-ip";
+import { sanitizeErrorMessage } from "@/lib/sanitize-error";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,10 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // Rate limit: 30 connections/hour per IP (SSE connections are long-lived)
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
+  const ip = getClientIp(req);
   const rl = await checkDbRateLimit(ip, { storeKey: "stream", maxRequests: 30 });
   if (!rl.allowed) {
     return new Response("Too many requests. Please try again later.", { status: 429 });
@@ -105,7 +104,7 @@ export async function GET(
           const raw = data.error_message as string | null;
           send({
             type: "error",
-            message: raw ?? "Analysis failed.",
+            message: sanitizeErrorMessage(raw) ?? "Analysis failed.",
             severity: "critical",
             timestamp: Date.now(),
           } satisfies AnalysisEvent);

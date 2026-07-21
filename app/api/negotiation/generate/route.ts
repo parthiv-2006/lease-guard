@@ -29,13 +29,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sanitizeName } from "@/lib/ai-safety";
 import { checkDbRateLimit, dbRateLimitExceededResponse } from "@/lib/rate-limiter-db";
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { getClientIp } from "@/lib/client-ip";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
