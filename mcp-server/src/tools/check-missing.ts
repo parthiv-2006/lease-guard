@@ -195,7 +195,7 @@ const ONTARIO_IMPLICIT_PROTECTIONS: ImplicitProtection[] = [
   {
     name: "Prohibition on unlawful eviction",
     description:
-      "The landlord cannot evict a tenant without a valid LTB order. Self-help eviction (changing locks, removing belongings) is illegal.",
+      "The landlord cannot evict a tenant without a valid LTB order. Self-help eviction (changing locks, removing belongings) is not permitted and any such clause is void and unenforceable.",
     statute_reference: "Residential Tenancies Act ss.35–36, 83",
     applies_regardless_of_lease: true,
   },

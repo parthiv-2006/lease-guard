@@ -1170,7 +1170,7 @@ function detectCriticalTextViolations(clauseText: string): Array<{
       statute_section: "RTA s.19",
       violation_type: "self_help_eviction",
       violation_description:
-        "Clause attempts to authorize self-help eviction (changing locks, removing belongings, or requiring immediate vacation without an LTB order) — illegal under RTA s.19. Only a Sheriff acting on a Board eviction order may remove a tenant.",
+        "Clause attempts to authorize self-help eviction (changing locks, removing belongings, or requiring immediate vacation without an LTB order) — void and unenforceable under RTA s.19. Only a Sheriff acting on a Board eviction order may remove a tenant.",
       quoted_text:
         "A landlord shall not alter the locking system on a door giving entry to a rental unit or residential complex, or cause the locking system to be altered, during the tenant's occupancy of the rental unit without giving the tenant replacement keys (RTA s.19).",
     });
