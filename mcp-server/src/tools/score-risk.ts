@@ -761,7 +761,7 @@ function detectStatutoryViolations(
       (lowerClause.includes("deposit") || lowerClause.includes("security")) &&
       (lowerClause.includes("non-refundable") ||
         lowerClause.includes("nonrefundable") ||
-        /\$\s*[2-9][\d,]{2,}/.test(lowerClause) ||               // $2,000+ (comma-safe)
+        /\$\s*[2-9][\d,]{3,}/.test(lowerClause) ||               // $2,000+ (comma-safe)
         /(?:two|three|four|five|[2-5])\s+month/.test(lowerClause)) &&  // "three months' rent"
       (statute.section_number === "105" || statute.section_number.startsWith("106"))
     ) {
