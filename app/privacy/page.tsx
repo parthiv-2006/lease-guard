@@ -19,44 +19,43 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section style={{ marginBottom: "40px" }}>
-      <h2
-        style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontWeight: 600,
-          fontSize: "22px",
-          color: "#181614",
-          letterSpacing: "-0.01em",
-          margin: "0 0 12px",
-          display: "flex",
-          gap: "12px",
-          alignItems: "baseline",
-        }}
-      >
-        <span
+    <section
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(120px,170px) 1fr",
+        gap: 24,
+        padding: "30px 0",
+        borderTop: "1px solid #e0d9c6",
+      }}
+    >
+      <div>
+        <div
           style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: "11px",
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 11,
             fontWeight: 600,
-            color: "#9a9590",
+            color: "#9c2b23",
             letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            flexShrink: 0,
+            marginBottom: 6,
           }}
         >
-          {number}
-        </span>
-        {title}
-      </h2>
-      <div
-        style={{
-          fontSize: "14px",
-          color: "#3d3935",
-          lineHeight: 1.75,
-        }}
-      >
-        {children}
+          {number.padStart(2, "0")}
+        </div>
+        <h2
+          style={{
+            fontFamily: "'Newsreader', serif",
+            fontStyle: "italic",
+            fontWeight: 600,
+            fontSize: 19,
+            color: "#17140f",
+            letterSpacing: "-0.01em",
+            margin: 0,
+          }}
+        >
+          {title}
+        </h2>
       </div>
+      <div style={{ fontSize: 14, color: "#4a4438", lineHeight: 1.75 }}>{children}</div>
     </section>
   );
 }
@@ -67,15 +66,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 function Ul({ items }: { items: string[] }) {
   return (
-    <ul
-      style={{
-        margin: "0 0 12px",
-        paddingLeft: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-      }}
-    >
+    <ul style={{ margin: "0 0 12px", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
       {items.map((item, i) => (
         <li key={i} style={{ lineHeight: 1.65 }}>
           {item}
@@ -85,15 +76,23 @@ function Ul({ items }: { items: string[] }) {
   );
 }
 
+const FACTS = [
+  { figure: "90 days", label: "Reports and uploaded PDFs expire and are deleted automatically" },
+  { figure: "Never trained on", label: "Your lease data is never used to train AI models" },
+  { figure: "No tracking", label: "One strictly necessary session cookie. No analytics or ad cookies" },
+  { figure: "5 / hour", label: "Maximum analyses per IP address, to limit abuse" },
+];
+
 export default function PrivacyPage() {
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f3ee",
+        background: "#f7f4ee",
+        color: "#17140f",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
       }}
     >
       {/* Header */}
@@ -102,98 +101,101 @@ export default function PrivacyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 48px",
-          height: "56px",
-          borderBottom: "1px solid #e8e4dc",
-          background: "#f6f3ee",
+          padding: "0 clamp(20px,4vw,56px)",
+          height: 66,
+          borderBottom: "1px solid #17140f",
+          background: "rgba(247,244,238,0.92)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           flexShrink: 0,
         }}
       >
         <Link
           href="/"
           style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Newsreader', serif",
+            fontStyle: "italic",
             fontWeight: 600,
-            fontSize: "17px",
-            letterSpacing: "0.02em",
-            color: "#181614",
+            fontSize: 22,
+            letterSpacing: "-0.01em",
+            color: "#17140f",
             textDecoration: "none",
           }}
         >
           LeaseGuard
         </Link>
-        <Link
-          href="/"
-          style={{
-            fontSize: "13px",
-            color: "#6b6560",
-            textDecoration: "none",
-          }}
-        >
+        <Link href="/" style={{ fontSize: 14, color: "#4a4438", textDecoration: "none" }}>
           ← Back to home
         </Link>
       </header>
 
       {/* Content */}
-      <main
-        style={{
-          flex: 1,
-          maxWidth: "720px",
-          width: "100%",
-          margin: "0 auto",
-          padding: "56px 24px 80px",
-        }}
-      >
+      <main style={{ flex: 1, maxWidth: 820, width: "100%", margin: "0 auto", padding: "clamp(48px,6vw,64px) clamp(20px,4vw,24px) 0" }}>
         {/* Title block */}
-        <div style={{ marginBottom: "48px" }}>
+        <div style={{ marginBottom: 40 }}>
           <p
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#9a9590",
-              letterSpacing: "0.08em",
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 12,
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
-              margin: "0 0 10px",
+              color: "#6f6857",
+              margin: "0 0 16px",
             }}
           >
-            Legal
+            Privacy · PIPEDA
           </p>
           <h1
             style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
               fontWeight: 600,
-              fontSize: "42px",
-              color: "#181614",
+              fontSize: "clamp(38px,5vw,54px)",
+              color: "#17140f",
               letterSpacing: "-0.02em",
-              margin: "0 0 14px",
-              lineHeight: 1.1,
+              margin: "0 0 16px",
+              lineHeight: 1.08,
             }}
           >
-            Privacy Policy
+            Your lease is yours.
           </h1>
-          <p style={{ fontSize: "14px", color: "#6b6560", margin: 0 }}>
-            Last updated: {LAST_UPDATED}. This policy applies to all users of
-            LeaseGuard, a service provided by Parthiv Paul (&ldquo;we&rdquo;,
-            &ldquo;our&rdquo;, &ldquo;us&rdquo;).
+          <p style={{ fontSize: 15, color: "#4a4438", margin: 0, lineHeight: 1.6 }}>
+            Last updated: {LAST_UPDATED}. This policy applies to all users of LeaseGuard, a
+            service provided by Parthiv Paul (&ldquo;we&rdquo;, &ldquo;our&rdquo;,
+            &ldquo;us&rdquo;).
           </p>
         </div>
 
-        {/* PIPEDA notice */}
+        {/* Facts strip */}
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #e8e4dc",
-            borderRadius: "10px",
-            padding: "20px 24px",
-            marginBottom: "40px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+            gap: 24,
+            border: "1px solid #e0d9c6",
+            borderLeft: "none",
+            borderRight: "none",
+            padding: "28px 0",
+            marginBottom: 40,
           }}
         >
-          <p style={{ fontSize: "13px", color: "#5c5751", margin: 0, lineHeight: 1.65 }}>
+          {FACTS.map((f) => (
+            <div key={f.label}>
+              <div style={{ fontFamily: "'Newsreader', serif", fontWeight: 600, fontSize: 26, marginBottom: 8, lineHeight: 1.1 }}>
+                {f.figure}
+              </div>
+              <div style={{ fontSize: 12, color: "#6f6857", lineHeight: 1.5 }}>{f.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* PIPEDA notice */}
+        <div style={{ borderLeft: "3px solid #9c2b23", background: "#f7f4ee", padding: "16px 20px", marginBottom: 8 }}>
+          <p style={{ fontSize: 14, color: "#4a4438", margin: 0, lineHeight: 1.65 }}>
             LeaseGuard is subject to Canada&rsquo;s{" "}
             <strong>Personal Information Protection and Electronic Documents Act (PIPEDA)</strong>.
-            We are committed to responsible handling of your personal
-            information. This policy explains what we collect, why, and how you
-            can exercise your rights.
+            We are committed to responsible handling of your personal information. This policy
+            explains what we collect, why, and how you can exercise your rights.
           </p>
         </div>
 
@@ -204,7 +206,7 @@ export default function PrivacyPage() {
             Parthiv Paul is responsible for personal information collected and
             held by LeaseGuard. Questions or complaints about our privacy
             practices may be directed to{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#9c2b23" }}>
               {CONTACT_EMAIL}
             </a>
             .
@@ -293,7 +295,7 @@ export default function PrivacyPage() {
             Authenticated users can delete individual analyses at any time from
             the Dashboard. To request deletion of your account and all
             associated data, email{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#9c2b23" }}>
               {CONTACT_EMAIL}
             </a>
             . We will complete the deletion within 30 days.
@@ -387,7 +389,7 @@ export default function PrivacyPage() {
           <P>
             To report a suspected security vulnerability or data incident,
             contact us immediately at{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#9c2b23" }}>
               {CONTACT_EMAIL}
             </a>
             .
@@ -395,9 +397,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section number="11" title="Your Rights — Access and Erasure">
-          <P>
-            Under PIPEDA, you have the right to:
-          </P>
+          <P>Under PIPEDA, you have the right to:</P>
           <Ul
             items={[
               "Access the personal information we hold about you.",
@@ -411,7 +411,7 @@ export default function PrivacyPage() {
           </P>
           <P>
             <strong>To delete your account and all data:</strong> Email{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#9c2b23" }}>
               {CONTACT_EMAIL}
             </a>{" "}
             from the email address associated with your account, with the
@@ -429,7 +429,7 @@ export default function PrivacyPage() {
           <P>
             If you have a complaint about our privacy practices, please contact
             us first at{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#181614" }}>
+            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#9c2b23" }}>
               {CONTACT_EMAIL}
             </a>
             . We will respond within 30 days.
@@ -441,7 +441,7 @@ export default function PrivacyPage() {
               href="https://www.priv.gc.ca"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "#181614" }}
+              style={{ color: "#9c2b23" }}
             >
               www.priv.gc.ca
             </a>
@@ -459,30 +459,81 @@ export default function PrivacyPage() {
         </Section>
       </main>
 
+      {/* Delete everything CTA */}
+      <div style={{ borderTop: "1px solid #17140f", background: "#151209", color: "#f4efe4" }}>
+        <div
+          style={{
+            maxWidth: 820,
+            margin: "0 auto",
+            padding: "clamp(40px,5vw,56px) clamp(20px,4vw,24px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 24,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
+                fontWeight: 600,
+                fontSize: 26,
+                margin: "0 0 8px",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Delete everything now.
+            </h2>
+            <p style={{ margin: 0, fontSize: 13, color: "#a8a08c", maxWidth: 440, lineHeight: 1.6 }}>
+              Signed-in users can delete any analysis from the Dashboard — PDF, clause text and
+              report together, immediately. No account? Email us your report URL and we&rsquo;ll
+              remove it early instead of waiting for the 90-day expiry.
+            </p>
+          </div>
+          <Link
+            href="/dashboard"
+            style={{
+              flexShrink: 0,
+              padding: "14px 26px",
+              border: "1px solid #f4efe4",
+              background: "#f4efe4",
+              color: "#151209",
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: "none",
+              fontFamily: "'Public Sans', sans-serif",
+            }}
+          >
+            Go to Dashboard
+          </Link>
+        </div>
+      </div>
+
       {/* Footer */}
       <footer
         style={{
-          padding: "16px 48px",
-          borderTop: "1px solid #e8e4dc",
-          fontSize: "11px",
-          color: "#b0aaa4",
+          padding: "20px clamp(20px,4vw,56px)",
+          borderTop: "1px solid #17140f",
+          fontSize: 12,
+          color: "#6f6857",
           textAlign: "center",
           flexShrink: 0,
           display: "flex",
-          gap: "16px",
+          gap: 16,
           justifyContent: "center",
           alignItems: "center",
+          flexWrap: "wrap",
         }}
       >
-        <span>
-          LeaseGuard provides educational information only — not legal advice.
-        </span>
-        <span style={{ color: "#ddd8cf" }}>·</span>
-        <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+        <span>LeaseGuard provides educational information only — not legal advice.</span>
+        <span style={{ color: "#cfc6ab" }}>·</span>
+        <Link href="/privacy" style={{ color: "#6f6857", textDecoration: "underline" }}>
           Privacy Policy
         </Link>
-        <span style={{ color: "#ddd8cf" }}>·</span>
-        <Link href="/terms" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+        <span style={{ color: "#cfc6ab" }}>·</span>
+        <Link href="/terms" style={{ color: "#6f6857", textDecoration: "underline" }}>
           Terms of Service
         </Link>
       </footer>

@@ -47,7 +47,7 @@ function PanelEmptyState({
   icon,
   title,
   subtitle,
-  accentColor = "#15803d",
+  accentColor = "#2f6b3a",
 }: {
   icon: React.ReactNode;
   title: string;
@@ -86,7 +86,7 @@ function PanelEmptyState({
           style={{
             fontSize: "16px",
             fontWeight: 600,
-            color: "#181614",
+            color: "#17140f",
             marginBottom: "8px",
             letterSpacing: "-0.01em",
           }}
@@ -97,7 +97,7 @@ function PanelEmptyState({
           <div
             style={{
               fontSize: "13px",
-              color: "#9a9590",
+              color: "#a8a08c",
               lineHeight: 1.65,
             }}
           >
@@ -141,8 +141,8 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
   return (
     <div
       style={{
-        border: "1px solid #e8e4dc",
-        borderRadius: "8px",
+        border: "1px solid #e0d9c6",
+        borderRadius: "0",
         overflow: "hidden",
         borderLeft: `3px solid ${col}`,
         boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
@@ -158,11 +158,11 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
           alignItems: "center",
           gap: "12px",
           padding: "14px 18px",
-          background: open ? "#faf9f6" : accentHeader ? riskBg(clause.risk_level) : "#fff",
+          background: open ? "#f0ebdf" : accentHeader ? riskBg(clause.risk_level) : "#fffdfa",
           border: "none",
           cursor: "pointer",
           textAlign: "left",
-          borderBottom: open ? "1px solid #e8e4dc" : "none",
+          borderBottom: open ? "1px solid #e0d9c6" : "none",
           transition: "background 0.15s",
         }}
       >
@@ -171,15 +171,15 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             width: 28,
             height: 28,
             borderRadius: "50%",
-            background: "#f6f3ee",
-            border: "1px solid #e8e4dc",
+            background: "#f7f4ee",
+            border: "1px solid #e0d9c6",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "11px",
             fontWeight: 600,
-            color: "#6b6560",
-            fontFamily: "'DM Sans', sans-serif",
+            color: "#6f6857",
+            fontFamily: "'Public Sans', sans-serif",
             flexShrink: 0,
           }}
         >
@@ -190,7 +190,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             style={{
               fontSize: "14px",
               fontWeight: 600,
-              color: "#181614",
+              color: "#17140f",
               marginBottom: "3px",
             }}
           >
@@ -212,7 +212,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   padding: "1px 7px",
                   background: bg,
                   border: `1px solid ${border}`,
-                  borderRadius: "3px",
+                  borderRadius: "0",
                   color: col,
                   fontWeight: 500,
                   letterSpacing: "0.03em",
@@ -226,10 +226,10 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 style={{
                   fontSize: "10px",
                   padding: "1px 7px",
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  borderRadius: "3px",
-                  color: "#15803d",
+                  background: "#e3efe0",
+                  border: "1px solid #b8d4bb",
+                  borderRadius: "0",
+                  color: "#2f6b3a",
                   fontWeight: 500,
                 }}
               >
@@ -243,10 +243,10 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   style={{
                     fontSize: "10px",
                     padding: "1px 7px",
-                    background: clause.grounding_confidence < 0.4 ? "#fffbeb" : "#f9fafb",
-                    border: `1px solid ${clause.grounding_confidence < 0.4 ? "#fde68a" : "#d1d5db"}`,
-                    borderRadius: "3px",
-                    color: clause.grounding_confidence < 0.4 ? "#92400e" : "#6b7280",
+                    background: clause.grounding_confidence < 0.4 ? "#f3ecd3" : "#f9fafb",
+                    border: `1px solid ${clause.grounding_confidence < 0.4 ? "#dfd0a0" : "#d1d5db"}`,
+                    borderRadius: "0",
+                    color: clause.grounding_confidence < 0.4 ? "#8a4a17" : "#6b7280",
                     fontWeight: 500,
                     cursor: "default",
                   }}
@@ -266,13 +266,13 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             flexShrink: 0,
           }}
         >
-          <Icon name="chevronDown" size={14} color="#9a9590" />
+          <Icon name="chevronDown" size={14} color="#a8a08c" />
         </span>
       </button>
 
       {/* Expanded body */}
       {open && (
-        <div style={{ padding: "20px 20px 16px", background: "#fff" }}>
+        <div style={{ padding: "20px 20px 16px", background: "#fffdfa" }}>
           {/* Original clause text */}
           <div style={{ marginBottom: "18px" }}>
             <div
@@ -280,7 +280,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 fontSize: "10px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
               }}
@@ -290,14 +290,14 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             <div
               style={{
                 fontSize: "13px",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
                 fontStyle: "italic",
                 lineHeight: 1.7,
-                color: "#5c5751",
-                background: "#f6f3ee",
+                color: "#4a4438",
+                background: "#f7f4ee",
                 padding: "12px 14px",
-                borderRadius: "6px",
-                borderLeft: "2px solid #ddd8cf",
+                borderRadius: "0",
+                borderLeft: "2px solid #cfc6ab",
               }}
             >
               {clause.raw_text}
@@ -311,7 +311,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 fontSize: "10px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
               }}
@@ -322,7 +322,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
               style={{
                 margin: 0,
                 fontSize: "14px",
-                color: "#181614",
+                color: "#17140f",
                 lineHeight: 1.65,
               }}
             >
@@ -338,7 +338,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   fontSize: "10px",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   fontWeight: 500,
                   marginBottom: "8px",
                 }}
@@ -349,7 +349,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 style={{
                   margin: 0,
                   fontSize: "13px",
-                  color: "#5c5751",
+                  color: "#4a4438",
                   lineHeight: 1.65,
                 }}
               >
@@ -366,7 +366,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   fontSize: "10px",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   fontWeight: 500,
                   marginBottom: "8px",
                 }}
@@ -381,9 +381,9 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                     key={i}
                     style={{
                       padding: "8px 12px",
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      borderRadius: "6px",
+                      background: "#f4d9d6",
+                      border: "1px solid #e3b0a8",
+                      borderRadius: "0",
                       display: "flex",
                       gap: "10px",
                       alignItems: "flex-start",
@@ -392,11 +392,11 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                     <code
                       style={{
                         fontSize: "11px",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        color: "#b91c1c",
-                        background: "#fee2e2",
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        color: "#9c2b23",
+                        background: "#f4d9d6",
                         padding: "1px 6px",
-                        borderRadius: "3px",
+                        borderRadius: "0",
                         flexShrink: 0,
                       }}
                     >
@@ -405,7 +405,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                     <span
                       style={{
                         fontSize: "12px",
-                        color: "#6b6560",
+                        color: "#6f6857",
                         lineHeight: 1.4,
                       }}
                     >
@@ -433,7 +433,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                   fontSize: "10px",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#6b6560",
+                  color: "#6f6857",
                   fontWeight: 500,
                   marginBottom: "8px",
                 }}
@@ -454,12 +454,12 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 <div
                   style={{
                     fontSize: "12px",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'IBM Plex Mono', monospace",
                     lineHeight: 1.75,
                     color: "#374151",
-                    background: "#f0fdf4",
+                    background: "#e3efe0",
                     padding: "12px 14px",
-                    borderRadius: "6px",
+                    borderRadius: "0",
                     borderLeft: "2px solid #86efac",
                     whiteSpace: "pre-wrap",
                   }}
@@ -475,9 +475,9 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
             <div
               style={{
                 padding: "12px 14px",
-                background: "#f6f9ff",
-                border: "1px solid #dbeafe",
-                borderRadius: "6px",
+                background: "#eef3f6",
+                border: "1px solid #c7d9e6",
+                borderRadius: "0",
                 marginBottom: "16px",
               }}
             >
@@ -485,7 +485,7 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                 style={{
                   fontSize: "12px",
                   fontWeight: 600,
-                  color: "#1d4ed8",
+                  color: "#1f3a52",
                   marginBottom: "4px",
                 }}
               >
@@ -496,17 +496,17 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
                       marginLeft: "8px",
                       fontSize: "10px",
                       padding: "1px 6px",
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      borderRadius: "3px",
-                      color: "#b91c1c",
+                      background: "#f4d9d6",
+                      border: "1px solid #e3b0a8",
+                      borderRadius: "0",
+                      color: "#9c2b23",
                     }}
                   >
                     Walk-away threshold
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: "12px", color: "#5c5751" }}>
+              <div style={{ fontSize: "12px", color: "#4a4438" }}>
                 {negotiation.ask}
               </div>
             </div>
@@ -538,15 +538,15 @@ export function RedFlagsPanel({
         title="Red Flags"
         count={redFlags.length}
         subtitle="Clauses with risk score ≥ 6.0. These require your attention before signing."
-        accentColor="#b91c1c"
+        accentColor="#9c2b23"
       />
       {redFlags.length === 0 ? (
         <PanelEmptyState
-          accentColor="#15803d"
+          accentColor="#2f6b3a"
           icon={
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#15803d" strokeWidth="1.5" />
-              <path d="M7.5 12.5l3 3 6-6" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="10" stroke="#2f6b3a" strokeWidth="1.5" />
+              <path d="M7.5 12.5l3 3 6-6" stroke="#2f6b3a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           }
           title="No red flags found"
@@ -614,7 +614,7 @@ export function ClauseExplorerPanel({
         title="Clause Explorer"
         count={filtered.length}
         subtitle="Every clause analysed. Click any clause to expand its full analysis."
-        accentColor="#181614"
+        accentColor="#17140f"
       />
 
       {/* Filter + sort controls */}
@@ -634,14 +634,14 @@ export function ClauseExplorerPanel({
               onClick={() => setFilter(l)}
               style={{
                 padding: "5px 12px",
-                borderRadius: "5px",
+                borderRadius: "0",
                 cursor: "pointer",
                 fontSize: "12px",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
                 fontWeight: 500,
-                background: filter === l ? "#181614" : "#fff",
-                border: `1px solid ${filter === l ? "#181614" : "#ddd8cf"}`,
-                color: filter === l ? "#fff" : "#6b6560",
+                background: filter === l ? "#17140f" : "#fffdfa",
+                border: `1px solid ${filter === l ? "#17140f" : "#cfc6ab"}`,
+                color: filter === l ? "#fffdfa" : "#6f6857",
                 transition: "all 0.15s",
               }}
             >
@@ -662,7 +662,7 @@ export function ClauseExplorerPanel({
             gap: "8px",
           }}
         >
-          <span style={{ fontSize: "12px", color: "#9a9590" }}>Sort:</span>
+          <span style={{ fontSize: "12px", color: "#a8a08c" }}>Sort:</span>
           <select
             value={sort}
             onChange={(e) =>
@@ -670,11 +670,11 @@ export function ClauseExplorerPanel({
             }
             style={{
               padding: "5px 10px",
-              borderRadius: "5px",
-              border: "1px solid #ddd8cf",
+              borderRadius: "0",
+              border: "1px solid #cfc6ab",
               fontSize: "12px",
-              color: "#5c5751",
-              background: "#fff",
+              color: "#4a4438",
+              background: "#fffdfa",
               cursor: "pointer",
             }}
           >
@@ -688,11 +688,11 @@ export function ClauseExplorerPanel({
       {filtered.length === 0 ? (
         report.clauses.length === 0 ? (
           <PanelEmptyState
-            accentColor="#9a9590"
+            accentColor="#a8a08c"
             icon={
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <rect x="4" y="4" width="16" height="16" rx="3" stroke="#9a9590" strokeWidth="1.5" />
-                <path d="M8 8h8M8 12h8M8 16h5" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="4" y="4" width="16" height="16" rx="3" stroke="#a8a08c" strokeWidth="1.5" />
+                <path d="M8 8h8M8 12h8M8 16h5" stroke="#a8a08c" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             }
             title="No clauses detected"
@@ -700,12 +700,12 @@ export function ClauseExplorerPanel({
           />
         ) : (
           <PanelEmptyState
-            accentColor="#9a9590"
+            accentColor="#a8a08c"
             icon={
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <circle cx="11" cy="11" r="7" stroke="#9a9590" strokeWidth="1.5" />
-                <path d="M16.5 16.5l3.5 3.5" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M8.5 11h5M11 8.5v5" stroke="#9a9590" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="11" cy="11" r="7" stroke="#a8a08c" strokeWidth="1.5" />
+                <path d="M16.5 16.5l3.5 3.5" stroke="#a8a08c" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M8.5 11h5M11 8.5v5" stroke="#a8a08c" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             }
             title="No clauses match this filter"
@@ -747,9 +747,9 @@ function NegotiationCard({
 }) {
   const [open, setOpen] = useState(false);
   const priorityColor: Record<string, string> = {
-    high: "#b91c1c",
-    medium: "#b45309",
-    low: "#15803d",
+    high: "#9c2b23",
+    medium: "#93690f",
+    low: "#2f6b3a",
   };
   const col = priorityColor[n.priority] ?? "#6b7280";
 
@@ -762,8 +762,8 @@ function NegotiationCard({
   return (
     <div
       style={{
-        border: "1px solid #e8e4dc",
-        borderRadius: "8px",
+        border: "1px solid #e0d9c6",
+        borderRadius: "0",
         overflow: "hidden",
         borderLeft: `3px solid ${col}`,
         boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
@@ -777,9 +777,9 @@ function NegotiationCard({
           alignItems: "center",
           gap: "14px",
           padding: "16px 18px",
-          background: open ? "#faf9f6" : "#fff",
+          background: open ? "#f0ebdf" : "#fffdfa",
           border: "none",
-          borderBottom: open ? "1px solid #e8e4dc" : "none",
+          borderBottom: open ? "1px solid #e0d9c6" : "none",
           cursor: "pointer",
           textAlign: "left",
         }}
@@ -795,7 +795,7 @@ function NegotiationCard({
             }}
           >
             <span
-              style={{ fontSize: "14px", fontWeight: 600, color: "#181614" }}
+              style={{ fontSize: "14px", fontWeight: 600, color: "#17140f" }}
             >
               {n.clause_label}
             </span>
@@ -804,10 +804,10 @@ function NegotiationCard({
                 style={{
                   fontSize: "10px",
                   padding: "2px 7px",
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "3px",
-                  color: "#b91c1c",
+                  background: "#f4d9d6",
+                  border: "1px solid #e3b0a8",
+                  borderRadius: "0",
+                  color: "#9c2b23",
                   fontWeight: 500,
                 }}
               >
@@ -815,25 +815,25 @@ function NegotiationCard({
               </span>
             )}
           </div>
-          <div style={{ fontSize: "12px", color: "#6b6560" }}>{n.ask}</div>
+          <div style={{ fontSize: "12px", color: "#6f6857" }}>{n.ask}</div>
         </div>
         <span
           style={{
             fontSize: "10px",
             padding: "2px 9px",
-            borderRadius: "100px",
+            borderRadius: "0",
             background:
               n.priority === "high"
-                ? "#fef2f2"
+                ? "#f4d9d6"
                 : n.priority === "medium"
-                ? "#fffbeb"
-                : "#f0fdf4",
+                ? "#f3ecd3"
+                : "#e3efe0",
             border: `1px solid ${
               n.priority === "high"
-                ? "#fecaca"
+                ? "#e3b0a8"
                 : n.priority === "medium"
-                ? "#fde68a"
-                : "#bbf7d0"
+                ? "#dfd0a0"
+                : "#b8d4bb"
             }`,
             color: col,
             fontWeight: 500,
@@ -851,12 +851,12 @@ function NegotiationCard({
             flexShrink: 0,
           }}
         >
-          <Icon name="chevronDown" size={14} color="#9a9590" />
+          <Icon name="chevronDown" size={14} color="#a8a08c" />
         </span>
       </button>
 
       {open && (
-        <div style={{ padding: "22px 20px", background: "#fff" }}>
+        <div style={{ padding: "22px 20px", background: "#fffdfa" }}>
           {/* Ask for */}
           <div style={{ marginBottom: "20px" }}>
             <div
@@ -864,7 +864,7 @@ function NegotiationCard({
                 fontSize: "10px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
               }}
@@ -875,7 +875,7 @@ function NegotiationCard({
               style={{
                 margin: 0,
                 fontSize: "14px",
-                color: "#181614",
+                color: "#17140f",
                 lineHeight: 1.6,
                 fontWeight: 500,
               }}
@@ -891,7 +891,7 @@ function NegotiationCard({
                 fontSize: "10px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
                 display: "flex",
@@ -905,14 +905,14 @@ function NegotiationCard({
             <div
               style={{
                 fontSize: "12px",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'IBM Plex Mono', monospace",
                 lineHeight: 1.7,
-                color: "#181614",
-                background: "#f6f9ff",
+                color: "#17140f",
+                background: "#eef3f6",
                 padding: "14px 16px",
-                borderRadius: "6px",
-                border: "1px solid #dbeafe",
-                borderLeft: "3px solid #1d4ed8",
+                borderRadius: "0",
+                border: "1px solid #c7d9e6",
+                borderLeft: "3px solid #1f3a52",
               }}
             >
               {n.counter_language}
@@ -926,7 +926,7 @@ function NegotiationCard({
                 fontSize: "10px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
               }}
@@ -937,7 +937,7 @@ function NegotiationCard({
               style={{
                 margin: 0,
                 fontSize: "13px",
-                color: "#5c5751",
+                color: "#4a4438",
                 lineHeight: 1.6,
               }}
             >
@@ -957,9 +957,9 @@ function NegotiationCard({
             <div
               style={{
                 padding: "14px",
-                background: "#fff7ed",
-                borderRadius: "6px",
-                border: "1px solid #fed7aa",
+                background: "#f3e2c9",
+                borderRadius: "0",
+                border: "1px solid #e3cd8f",
               }}
             >
               <div
@@ -967,7 +967,7 @@ function NegotiationCard({
                   fontSize: "10px",
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
-                  color: "#b45309",
+                  color: "#93690f",
                   fontWeight: 600,
                   marginBottom: "6px",
                 }}
@@ -978,7 +978,7 @@ function NegotiationCard({
                 style={{
                   margin: 0,
                   fontSize: "12px",
-                  color: "#5c5751",
+                  color: "#4a4438",
                   lineHeight: 1.5,
                   fontStyle: "italic",
                 }}
@@ -989,9 +989,9 @@ function NegotiationCard({
             <div
               style={{
                 padding: "14px",
-                background: "#f0f9ff",
-                borderRadius: "6px",
-                border: "1px solid #bae6fd",
+                background: "#eef3f6",
+                borderRadius: "0",
+                border: "1px solid #c7d9e6",
               }}
             >
               <div
@@ -999,7 +999,7 @@ function NegotiationCard({
                   fontSize: "10px",
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
-                  color: "#0369a1",
+                  color: "#1f3a52",
                   fontWeight: 600,
                   marginBottom: "6px",
                 }}
@@ -1010,7 +1010,7 @@ function NegotiationCard({
                 style={{
                   margin: 0,
                   fontSize: "12px",
-                  color: "#181614",
+                  color: "#17140f",
                   lineHeight: 1.5,
                 }}
               >
@@ -1062,7 +1062,7 @@ export function NegotiationPanel({
         title="Negotiation Guide"
         count={report.negotiation_points.length}
         subtitle="Prioritised by impact. Walk-away clauses are flagged separately."
-        accentColor="#1d4ed8"
+        accentColor="#1f3a52"
         action={
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
             <button
@@ -1072,35 +1072,35 @@ export function NegotiationPanel({
                 alignItems: "center",
                 gap: "6px",
                 padding: "6px 14px",
-                background: hasPoints ? "#181614" : "#f3f1ee",
-                border: `1px solid ${hasPoints ? "#181614" : "#ddd8cf"}`,
-                color: hasPoints ? "#fff" : "#b0aaa4",
-                borderRadius: "6px",
+                background: hasPoints ? "#17140f" : "#f7f4ee",
+                border: `1px solid ${hasPoints ? "#17140f" : "#cfc6ab"}`,
+                color: hasPoints ? "#fffdfa" : "#a8a08c",
+                borderRadius: "0",
                 fontSize: "12px",
                 fontWeight: 500,
                 cursor: hasPoints ? "pointer" : "not-allowed",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
                 transition: "all 0.15s",
                 opacity: hasPoints ? 1 : 0.7,
               }}
               onMouseEnter={(e) => {
-                if (hasPoints) e.currentTarget.style.background = "#2a2825";
+                if (hasPoints) e.currentTarget.style.background = "#1c1811";
               }}
               onMouseLeave={(e) => {
-                if (hasPoints) e.currentTarget.style.background = "#181614";
+                if (hasPoints) e.currentTarget.style.background = "#17140f";
               }}
             >
-              <Icon name="negotiate" size={13} color={hasPoints ? "#fff" : "#b0aaa4"} />
+              <Icon name="negotiate" size={13} color={hasPoints ? "#fffdfa" : "#a8a08c"} />
               Open Negotiation Copilot
             </button>
             {showNoItemsNotice && (
               <div
                 style={{
                   fontSize: "11px",
-                  color: "#92400e",
-                  background: "#fffbeb",
-                  border: "1px solid #fde68a",
-                  borderRadius: "5px",
+                  color: "#8a4a17",
+                  background: "#f3ecd3",
+                  border: "1px solid #dfd0a0",
+                  borderRadius: "0",
                   padding: "5px 10px",
                   maxWidth: "220px",
                   textAlign: "right",
@@ -1116,11 +1116,11 @@ export function NegotiationPanel({
       />
       {!hasPoints ? (
         <PanelEmptyState
-          accentColor="#15803d"
+          accentColor="#2f6b3a"
           icon={
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3C8 3 4 6.5 4 11c0 2.8 1.4 5.3 3.5 6.8V20a1 1 0 001 1h7a1 1 0 001-1v-2.2C18.6 16.3 20 13.8 20 11c0-4.5-4-8-8-8z" stroke="#15803d" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M9 21v1M15 21v1" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M12 3C8 3 4 6.5 4 11c0 2.8 1.4 5.3 3.5 6.8V20a1 1 0 001 1h7a1 1 0 001-1v-2.2C18.6 16.3 20 13.8 20 11c0-4.5-4-8-8-8z" stroke="#2f6b3a" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M9 21v1M15 21v1" stroke="#2f6b3a" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           }
           title="Nothing to negotiate"
@@ -1131,9 +1131,9 @@ export function NegotiationPanel({
         const items = byPriority[priority];
         if (!items.length) return null;
         const dotColor = {
-          high: "#b91c1c",
-          medium: "#b45309",
-          low: "#15803d",
+          high: "#9c2b23",
+          medium: "#93690f",
+          low: "#2f6b3a",
         }[priority];
         return (
           <div key={priority} style={{ marginBottom: "28px" }}>
@@ -1142,7 +1142,7 @@ export function NegotiationPanel({
                 fontSize: "11px",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "12px",
                 display: "flex",
@@ -1195,19 +1195,19 @@ export function MissingPanel({ report }: { report: Report }) {
   );
 
   const sevColor: Record<string, string> = {
-    critical: "#b91c1c",
-    important: "#b45309",
-    minor: "#15803d",
+    critical: "#9c2b23",
+    important: "#93690f",
+    minor: "#2f6b3a",
   };
   const sevBg: Record<string, string> = {
-    critical: "#fef2f2",
-    important: "#fffbeb",
-    minor: "#f0fdf4",
+    critical: "#f4d9d6",
+    important: "#f3ecd3",
+    minor: "#e3efe0",
   };
   const sevBorder: Record<string, string> = {
-    critical: "#fecaca",
-    important: "#fde68a",
-    minor: "#bbf7d0",
+    critical: "#e3b0a8",
+    important: "#dfd0a0",
+    minor: "#b8d4bb",
   };
 
   return (
@@ -1216,15 +1216,15 @@ export function MissingPanel({ report }: { report: Report }) {
         title="Missing Protections"
         count={sorted.length}
         subtitle="Rights guaranteed by Ontario law that are absent from your lease. You have these rights regardless — but their absence means you may not know to enforce them."
-        accentColor="#b45309"
+        accentColor="#93690f"
       />
       {sorted.length === 0 ? (
         <PanelEmptyState
-          accentColor="#15803d"
+          accentColor="#2f6b3a"
           icon={
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M9 12l2 2 4-4" stroke="#15803d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="#15803d" strokeWidth="1.5" />
+              <path d="M9 12l2 2 4-4" stroke="#2f6b3a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="#2f6b3a" strokeWidth="1.5" />
             </svg>
           }
           title="All protections present"
@@ -1260,7 +1260,7 @@ export function MissingPanel({ report }: { report: Report }) {
                       style={{
                         fontSize: "14px",
                         fontWeight: 600,
-                        color: "#181614",
+                        color: "#17140f",
                       }}
                     >
                       {m.protection_name}
@@ -1268,18 +1268,18 @@ export function MissingPanel({ report }: { report: Report }) {
                     <code
                       style={{
                         fontSize: "11px",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        background: "#f6f3ee",
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        background: "#f7f4ee",
                         padding: "1px 6px",
-                        borderRadius: "3px",
-                        color: "#6b6560",
-                        border: "1px solid #e8e4dc",
+                        borderRadius: "0",
+                        color: "#6f6857",
+                        border: "1px solid #e0d9c6",
                       }}
                     >
                       {m.rta_section}
                     </code>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#6b6560", lineHeight: 1.5 }}>
+                  <div style={{ fontSize: "12px", color: "#6f6857", lineHeight: 1.5 }}>
                     {m.explanation}
                   </div>
                 </div>
@@ -1287,7 +1287,7 @@ export function MissingPanel({ report }: { report: Report }) {
                   style={{
                     fontSize: "10px",
                     padding: "2px 9px",
-                    borderRadius: "100px",
+                    borderRadius: "0",
                     background: sevBg[m.severity],
                     border: `1px solid ${sevBorder[m.severity]}`,
                     color: sevColor[m.severity],
@@ -1308,7 +1308,7 @@ export function MissingPanel({ report }: { report: Report }) {
                   fontSize: "10px",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   fontWeight: 500,
                   marginBottom: "8px",
                 }}
@@ -1319,7 +1319,7 @@ export function MissingPanel({ report }: { report: Report }) {
                 style={{
                   margin: "0 0 12px",
                   fontSize: "13px",
-                  color: "#181614",
+                  color: "#17140f",
                   lineHeight: 1.65,
                 }}
               >
@@ -1328,15 +1328,15 @@ export function MissingPanel({ report }: { report: Report }) {
               <div
                 style={{
                   padding: "10px 14px",
-                  background: "#fff7ed",
-                  borderRadius: "6px",
-                  border: "1px solid #fed7aa",
+                  background: "#f3e2c9",
+                  borderRadius: "0",
+                  border: "1px solid #e3cd8f",
                   fontSize: "13px",
-                  color: "#6b6560",
+                  color: "#6f6857",
                   lineHeight: 1.55,
                 }}
               >
-                <strong style={{ color: "#b45309" }}>Risk if missing: </strong>
+                <strong style={{ color: "#93690f" }}>Risk if missing: </strong>
                 {m.risk_if_missing}
               </div>
             </div>
@@ -1346,7 +1346,7 @@ export function MissingPanel({ report }: { report: Report }) {
                   fontSize: "10px",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   fontWeight: 500,
                   marginBottom: "8px",
                   display: "flex",
@@ -1360,14 +1360,14 @@ export function MissingPanel({ report }: { report: Report }) {
               <div
                 style={{
                   fontSize: "12px",
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'IBM Plex Mono', monospace",
                   lineHeight: 1.7,
-                  color: "#181614",
-                  background: "#f6f9ff",
+                  color: "#17140f",
+                  background: "#eef3f6",
                   padding: "12px 14px",
-                  borderRadius: "6px",
-                  border: "1px solid #dbeafe",
-                  borderLeft: "3px solid #1d4ed8",
+                  borderRadius: "0",
+                  border: "1px solid #c7d9e6",
+                  borderLeft: "3px solid #1f3a52",
                 }}
               >
                 {m.suggested_addition}
@@ -1399,22 +1399,22 @@ export function ContradictionsPanel({
   onClauseActivate?: (clauseId: string) => void;
 }) {
   const sevColor: Record<string, string> = {
-    critical: "#b91c1c",
-    high: "#b91c1c",
-    medium: "#b45309",
-    low: "#15803d",
+    critical: "#9c2b23",
+    high: "#9c2b23",
+    medium: "#93690f",
+    low: "#2f6b3a",
   };
   const sevBg: Record<string, string> = {
-    critical: "#fef2f2",
-    high: "#fef2f2",
-    medium: "#fffbeb",
-    low: "#f0fdf4",
+    critical: "#f4d9d6",
+    high: "#f4d9d6",
+    medium: "#f3ecd3",
+    low: "#e3efe0",
   };
   const sevBorder: Record<string, string> = {
-    critical: "#fecaca",
-    high: "#fecaca",
-    medium: "#fde68a",
-    low: "#bbf7d0",
+    critical: "#e3b0a8",
+    high: "#e3b0a8",
+    medium: "#dfd0a0",
+    low: "#b8d4bb",
   };
   const sevLabel: Record<string, string> = {
     critical: "Critical",
@@ -1429,16 +1429,16 @@ export function ContradictionsPanel({
         title="Contradictions"
         count={report.contradictions.length}
         subtitle="Clauses within this lease that conflict with each other. Legal ambiguity in residential leases generally resolves in the tenant's favour, but disputes are costly."
-        accentColor="#7c3aed"
+        accentColor="#6b3a52"
       />
       {report.contradictions.length === 0 ? (
         <PanelEmptyState
-          accentColor="#15803d"
+          accentColor="#2f6b3a"
           icon={
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6h16M4 12h16M4 18h10" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="19" cy="18" r="3" stroke="#15803d" strokeWidth="1.5" />
-              <path d="M17.5 18l1 1 2-2" stroke="#15803d" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 6h16M4 12h16M4 18h10" stroke="#2f6b3a" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="19" cy="18" r="3" stroke="#2f6b3a" strokeWidth="1.5" />
+              <path d="M17.5 18l1 1 2-2" stroke="#2f6b3a" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           }
           title="No contradictions found"
@@ -1458,34 +1458,34 @@ export function ContradictionsPanel({
             : "Clause B";
 
           const sev = x.severity ?? "medium";
-          const color = sevColor[sev] ?? "#b45309";
-          const bg = sevBg[sev] ?? "#fffbeb";
-          const border = sevBorder[sev] ?? "#fde68a";
+          const color = sevColor[sev] ?? "#93690f";
+          const bg = sevBg[sev] ?? "#f3ecd3";
+          const border = sevBorder[sev] ?? "#dfd0a0";
 
           return (
             <div
               key={x.id}
               style={{
-                background: "#fff",
-                border: "1px solid #e8e4dc",
-                borderRadius: "8px",
+                background: "#fffdfa",
+                border: "1px solid #e0d9c6",
+                borderRadius: "0",
                 overflow: "hidden",
                 borderLeft: `3px solid ${color}`,
                 boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
               }}
             >
               {/* Header */}
-              <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid #f0ede6" }}>
+              <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid #f0ebdf" }}>
                 {/* Title row */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#181614", flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: "#17140f", flex: 1, minWidth: 0 }}>
                     {formatContraType(x.contradiction_type)}
                   </span>
                   <span
                     style={{
                       fontSize: "11px",
                       padding: "2px 10px",
-                      borderRadius: "100px",
+                      borderRadius: "0",
                       background: bg,
                       border: `1px solid ${border}`,
                       color,
@@ -1507,12 +1507,12 @@ export function ContradictionsPanel({
                     style={{
                       fontSize: "12px",
                       padding: "4px 12px",
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      borderRadius: "5px",
-                      color: "#b91c1c",
+                      background: "#f4d9d6",
+                      border: "1px solid #e3b0a8",
+                      borderRadius: "0",
+                      color: "#9c2b23",
                       cursor: clauseA ? "pointer" : "default",
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Public Sans', sans-serif",
                       fontWeight: 500,
                       transition: "background 0.12s",
                       maxWidth: "220px",
@@ -1521,16 +1521,16 @@ export function ContradictionsPanel({
                       whiteSpace: "nowrap",
                     }}
                     onMouseEnter={(e) => {
-                      if (clauseA) e.currentTarget.style.background = "#fee2e2";
+                      if (clauseA) e.currentTarget.style.background = "#f4d9d6";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#fef2f2";
+                      e.currentTarget.style.background = "#f4d9d6";
                     }}
                   >
                     {labelA}
                   </button>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                    <path d="M4 8h8M10 5l3 3-3 3M6 5L3 8l3 3" stroke="#c8c3ba" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 8h8M10 5l3 3-3 3M6 5L3 8l3 3" stroke="#cfc6ab" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <button
                     onClick={() => onClauseActivate?.(x.clause_b_id)}
@@ -1538,12 +1538,12 @@ export function ContradictionsPanel({
                     style={{
                       fontSize: "12px",
                       padding: "4px 12px",
-                      background: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      borderRadius: "5px",
-                      color: "#b91c1c",
+                      background: "#f4d9d6",
+                      border: "1px solid #e3b0a8",
+                      borderRadius: "0",
+                      color: "#9c2b23",
                       cursor: clauseB ? "pointer" : "default",
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Public Sans', sans-serif",
                       fontWeight: 500,
                       transition: "background 0.12s",
                       maxWidth: "220px",
@@ -1552,45 +1552,45 @@ export function ContradictionsPanel({
                       whiteSpace: "nowrap",
                     }}
                     onMouseEnter={(e) => {
-                      if (clauseB) e.currentTarget.style.background = "#fee2e2";
+                      if (clauseB) e.currentTarget.style.background = "#f4d9d6";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#fef2f2";
+                      e.currentTarget.style.background = "#f4d9d6";
                     }}
                   >
                     {labelB}
                   </button>
                   {(clauseA || clauseB) && (
-                    <span style={{ fontSize: "11px", color: "#b0aaa4" }}>
+                    <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                       Click to highlight in PDF
                     </span>
                   )}
                 </div>
 
-                <p style={{ margin: 0, fontSize: "13px", color: "#5c5751", lineHeight: 1.65 }}>
+                <p style={{ margin: 0, fontSize: "13px", color: "#4a4438", lineHeight: 1.65 }}>
                   {x.explanation}
                 </p>
               </div>
 
               {/* Which governs footer */}
               {(x.which_governs || x.legal_basis) && (
-                <div style={{ padding: "12px 20px", background: "#faf9f6", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ padding: "12px 20px", background: "#f0ebdf", display: "flex", flexDirection: "column", gap: "6px" }}>
                   {x.which_governs && (
                     <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", paddingTop: "1px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#a8a08c", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", paddingTop: "1px" }}>
                         Which governs
                       </span>
-                      <p style={{ margin: 0, fontSize: "12px", color: "#181614", lineHeight: 1.55 }}>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#17140f", lineHeight: 1.55 }}>
                         {x.which_governs}
                       </p>
                     </div>
                   )}
                   {x.legal_basis && (
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#a8a08c", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
                         Legal basis
                       </span>
-                      <span style={{ fontSize: "12px", color: "#6b6560" }}>
+                      <span style={{ fontSize: "12px", color: "#6f6857" }}>
                         {x.legal_basis}
                       </span>
                     </div>
@@ -1621,16 +1621,16 @@ export function SourcesPanel({
         title="Sources"
         count={report.sources.length}
         subtitle={`All statute sections retrieved during analysis. Corpus version ${report.overall.corpus_version}${report.overall.corpus_date ? ` · Updated ${report.overall.corpus_date}` : ""}`}
-        accentColor="#0369a1"
+        accentColor="#1f3a52"
       />
       {report.sources.length === 0 ? (
         <PanelEmptyState
-          accentColor="#9a9590"
+          accentColor="#a8a08c"
           icon={
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14" stroke="#9a9590" strokeWidth="1.5" />
-              <path d="M4 19a2 2 0 002 2h12a2 2 0 002-2" stroke="#9a9590" strokeWidth="1.5" />
-              <path d="M9 7h6M9 11h4" stroke="#9a9590" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14" stroke="#a8a08c" strokeWidth="1.5" />
+              <path d="M4 19a2 2 0 002 2h12a2 2 0 002-2" stroke="#a8a08c" strokeWidth="1.5" />
+              <path d="M9 7h6M9 11h4" stroke="#a8a08c" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           }
           title="No sources retrieved"
@@ -1643,9 +1643,9 @@ export function SourcesPanel({
           <div
             key={s.id}
             style={{
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "8px",
+              background: "#fffdfa",
+              border: "1px solid #e0d9c6",
+              borderRadius: "0",
               padding: "18px 20px",
               boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
             }}
@@ -1663,8 +1663,8 @@ export function SourcesPanel({
                 <code
                   style={{
                     fontSize: "13px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: "#1d4ed8",
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    color: "#1f3a52",
                     fontWeight: 500,
                   }}
                 >
@@ -1674,12 +1674,12 @@ export function SourcesPanel({
                   style={{
                     fontSize: "14px",
                     fontWeight: 600,
-                    color: "#181614",
+                    color: "#17140f",
                   }}
                 >
                   {s.section_title}
                 </span>
-                <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                   {s.act_name}
                 </span>
               </div>
@@ -1687,9 +1687,9 @@ export function SourcesPanel({
                 style={{
                   margin: "0 0 12px",
                   fontSize: "12px",
-                  color: "#5c5751",
+                  color: "#4a4438",
                   lineHeight: 1.65,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "'IBM Plex Mono', monospace",
                 }}
               >
                 {s.full_text}
@@ -1716,23 +1716,23 @@ export function SourcesPanel({
                     alignItems: "center",
                     gap: "4px",
                     fontSize: "12px",
-                    color: "#1d4ed8",
+                    color: "#1f3a52",
                     textDecoration: "none",
                     fontWeight: 500,
                   }}
                 >
-                  <Icon name="external" size={13} color="#1d4ed8" /> ontario.ca
+                  <Icon name="external" size={13} color="#1f3a52" /> ontario.ca
                 </a>
                 {s.relevance_score > 0 && (
-                  <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                  <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                     Relevance: {(s.relevance_score * 100).toFixed(0)}%
                   </span>
                 )}
-                <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                   {s.corpus_version}
                 </span>
                 {s.relevant_clauses?.length > 0 && (
-                  <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                  <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                     Used by:{" "}
                     {s.relevant_clauses.map((id, i) => {
                       const c = report.clauses.find((cl) => cl.id === id);
@@ -1747,9 +1747,9 @@ export function SourcesPanel({
                             padding: "0 2px",
                             cursor: "pointer",
                             fontSize: "11px",
-                            color: "#1d4ed8",
+                            color: "#1f3a52",
                             textDecoration: "underline",
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "'Public Sans', sans-serif",
                           }}
                         >
                           {c ? `Clause ${c.number}` : id}
@@ -1768,11 +1768,11 @@ export function SourcesPanel({
         style={{
           marginTop: "20px",
           padding: "14px 18px",
-          background: "#f6f3ee",
-          border: "1px solid #e8e4dc",
-          borderRadius: "8px",
+          background: "#f7f4ee",
+          border: "1px solid #e0d9c6",
+          borderRadius: "0",
           fontSize: "12px",
-          color: "#9a9590",
+          color: "#a8a08c",
           lineHeight: 1.5,
         }}
       >
@@ -1797,16 +1797,16 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
   const allSucceeded = steps.every((t) => t.success);
 
   const toolColors: Record<string, string> = {
-    parse_document: "#1d4ed8",
+    parse_document: "#1f3a52",
     detect_jurisdiction: "#7c3aed",
-    segment_clauses: "#0369a1",
+    segment_clauses: "#1f3a52",
     classify_clause: "#0d9488",
-    lookup_statute: "#b45309",
+    lookup_statute: "#93690f",
     lookup_tribunal: "#9333ea",
-    score_risk: "#c2410c",
-    detect_contradiction: "#b91c1c",
-    check_missing: "#15803d",
-    generate_negotiation: "#1d4ed8",
+    score_risk: "#a15a1f",
+    detect_contradiction: "#9c2b23",
+    check_missing: "#2f6b3a",
+    generate_negotiation: "#1f3a52",
     generate_report: "#374151",
   };
 
@@ -1832,7 +1832,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                 style={{
                   width: "1px",
                   flex: "0 0 8px",
-                  background: i === 0 ? "transparent" : "#e8e4dc",
+                  background: i === 0 ? "transparent" : "#e0d9c6",
                 }}
               />
               <div
@@ -1840,7 +1840,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                   width: 24,
                   height: 24,
                   borderRadius: "50%",
-                  background: step.success ? col : "#b91c1c",
+                  background: step.success ? col : "#9c2b23",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1851,8 +1851,8 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                   style={{
                     fontSize: "9px",
                     fontWeight: 700,
-                    color: "#fff",
-                    fontFamily: "'DM Sans', sans-serif",
+                    color: "#fffdfa",
+                    fontFamily: "'Public Sans', sans-serif",
                   }}
                 >
                   {step.sequence}
@@ -1864,7 +1864,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                   flex: 1,
                   minHeight: "8px",
                   background:
-                    i === steps.length - 1 ? "transparent" : "#e8e4dc",
+                    i === steps.length - 1 ? "transparent" : "#e0d9c6",
                 }}
               />
             </div>
@@ -1875,9 +1875,9 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
             >
               <div
                 style={{
-                  background: "#fff",
-                  border: "1px solid #e8e4dc",
-                  borderRadius: "8px",
+                  background: "#fffdfa",
+                  border: "1px solid #e0d9c6",
+                  borderRadius: "0",
                   overflow: "hidden",
                   marginBottom: "2px",
                 }}
@@ -1890,9 +1890,9 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                     alignItems: "center",
                     gap: "10px",
                     padding: "11px 14px",
-                    background: isOpen ? "#faf9f6" : "#fff",
+                    background: isOpen ? "#f0ebdf" : "#fffdfa",
                     border: "none",
-                    borderBottom: isOpen ? "1px solid #e8e4dc" : "none",
+                    borderBottom: isOpen ? "1px solid #e0d9c6" : "none",
                     cursor: "pointer",
                     textAlign: "left",
                   }}
@@ -1900,7 +1900,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                   <code
                     style={{
                       fontSize: "12px",
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "'IBM Plex Mono', monospace",
                       color: col,
                       fontWeight: 500,
                       flex: 1,
@@ -1909,7 +1909,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                   >
                     {toToolLabel(step.tool_name)}
                   </code>
-                  <span style={{ fontSize: "11px", color: "#9a9590" }}>
+                  <span style={{ fontSize: "11px", color: "#a8a08c" }}>
                     {step.duration_ms >= 1000
                       ? `${(step.duration_ms / 1000).toFixed(2)}s`
                       : `${step.duration_ms}ms`}
@@ -1918,10 +1918,10 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                     style={{
                       fontSize: "10px",
                       padding: "1px 7px",
-                      borderRadius: "3px",
-                      background: step.success ? "#f0fdf4" : "#fef2f2",
-                      border: `1px solid ${step.success ? "#bbf7d0" : "#fecaca"}`,
-                      color: step.success ? "#15803d" : "#b91c1c",
+                      borderRadius: "0",
+                      background: step.success ? "#e3efe0" : "#f4d9d6",
+                      border: `1px solid ${step.success ? "#b8d4bb" : "#e3b0a8"}`,
+                      color: step.success ? "#2f6b3a" : "#9c2b23",
                       fontWeight: 500,
                     }}
                   >
@@ -1933,7 +1933,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                       transition: "transform 0.2s",
                     }}
                   >
-                    <Icon name="chevronDown" size={13} color="#9a9590" />
+                    <Icon name="chevronDown" size={13} color="#a8a08c" />
                   </span>
                 </button>
 
@@ -1952,7 +1952,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                           fontSize: "10px",
                           letterSpacing: "0.07em",
                           textTransform: "uppercase",
-                          color: "#9a9590",
+                          color: "#a8a08c",
                           fontWeight: 500,
                           marginBottom: "6px",
                         }}
@@ -1963,11 +1963,11 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                         style={{
                           margin: 0,
                           fontSize: "11px",
-                          fontFamily: "'JetBrains Mono', monospace",
-                          color: "#5c5751",
-                          background: "#f6f3ee",
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          color: "#4a4438",
+                          background: "#f7f4ee",
                           padding: "10px",
-                          borderRadius: "5px",
+                          borderRadius: "0",
                           overflow: "auto",
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
@@ -1982,7 +1982,7 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                           fontSize: "10px",
                           letterSpacing: "0.07em",
                           textTransform: "uppercase",
-                          color: "#9a9590",
+                          color: "#a8a08c",
                           fontWeight: 500,
                           marginBottom: "6px",
                         }}
@@ -1993,11 +1993,11 @@ function TraceList({ steps }: { steps: Report["agent_trace"] }) {
                         style={{
                           margin: 0,
                           fontSize: "11px",
-                          fontFamily: "'JetBrains Mono', monospace",
-                          color: "#181614",
-                          background: "#f6f3ee",
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          color: "#17140f",
+                          background: "#f7f4ee",
                           padding: "10px",
-                          borderRadius: "5px",
+                          borderRadius: "0",
                           overflow: "auto",
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
@@ -2086,7 +2086,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
         subtitle={`${report.agent_trace.length} tool calls · ${(totalMs / 1000).toFixed(1)}s total · ${
           allSucceeded ? "All calls succeeded" : "Some calls failed"
         }`}
-        accentColor="#374151"
+        accentColor="#4a4438"
       />
 
       {/* Grounding explanation */}
@@ -2094,11 +2094,11 @@ export function AgentTracePanel({ report }: { report: Report }) {
         style={{
           marginBottom: "20px",
           padding: "14px 18px",
-          background: "#f6f9ff",
-          border: "1px solid #dbeafe",
-          borderRadius: "8px",
+          background: "#eef3f6",
+          border: "1px solid #c7d9e6",
+          borderRadius: "0",
           fontSize: "13px",
-          color: "#1d4ed8",
+          color: "#1f3a52",
           lineHeight: 1.55,
         }}
       >
@@ -2135,12 +2135,12 @@ export function AgentTracePanel({ report }: { report: Report }) {
             alignItems: "center",
             gap: "7px",
             padding: "8px 16px",
-            borderRadius: "7px",
-            border: "1px solid #2a2623",
-            background: replayState === "playing" ? "#1a1916" : "#131110",
-            color: replayState === "playing" ? "#4a4744" : "#e8e4dc",
+            borderRadius: "0",
+            border: "1px solid #2b2720",
+            background: replayState === "playing" ? "#1c1811" : "#151209",
+            color: replayState === "playing" ? "#4a4438" : "#e0d9c6",
             fontSize: "12px",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'IBM Plex Mono', monospace",
             fontWeight: 500,
             cursor: replayState === "playing" ? "default" : "pointer",
             transition: "background 0.15s, color 0.15s",
@@ -2155,7 +2155,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
-                  background: "#15803d",
+                  background: "#2f6b3a",
                   animation: "replay-pulse 1.2s ease-in-out infinite",
                   flexShrink: 0,
                 }}
@@ -2173,8 +2173,8 @@ export function AgentTracePanel({ report }: { report: Report }) {
           <span
             style={{
               fontSize: "11px",
-              color: "#9a9590",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#a8a08c",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
             Animate {replaySteps.length} tool calls firing in sequence (~15s)
@@ -2187,9 +2187,9 @@ export function AgentTracePanel({ report }: { report: Report }) {
         <div
           style={{
             marginBottom: "24px",
-            background: "#131110",
-            border: "1px solid #2a2623",
-            borderRadius: "8px",
+            background: "#151209",
+            border: "1px solid #2b2720",
+            borderRadius: "0",
             overflow: "hidden",
           }}
         >
@@ -2197,7 +2197,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
           <div
             style={{
               padding: "9px 14px",
-              borderBottom: "1px solid #2a2623",
+              borderBottom: "1px solid #2b2720",
               display: "flex",
               alignItems: "center",
               gap: "8px",
@@ -2208,7 +2208,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                background: replayState === "done" ? "#4ade80" : "#15803d",
+                background: replayState === "done" ? "#7ec98f" : "#2f6b3a",
                 flexShrink: 0,
                 animation:
                   replayState === "playing"
@@ -2219,11 +2219,11 @@ export function AgentTracePanel({ report }: { report: Report }) {
             <span
               style={{
                 fontSize: "11px",
-                color: "#4a4744",
+                color: "#4a4438",
                 letterSpacing: "0.07em",
                 textTransform: "uppercase",
                 fontWeight: 500,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'IBM Plex Mono', monospace",
               }}
             >
               Agent Log
@@ -2232,8 +2232,8 @@ export function AgentTracePanel({ report }: { report: Report }) {
               style={{
                 marginLeft: "auto",
                 fontSize: "10px",
-                color: "#3a3532",
-                fontFamily: "'JetBrains Mono', monospace",
+                color: "#4a4438",
+                fontFamily: "'IBM Plex Mono', monospace",
               }}
             >
               {visibleCount}/{replaySteps.length} calls
@@ -2247,7 +2247,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
               padding: "10px 14px",
               height: "200px",
               overflowY: "auto",
-              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+              fontFamily: "'IBM Plex Mono', 'Fira Code', 'Consolas', monospace",
               fontSize: "11.5px",
               lineHeight: 1.75,
             }}
@@ -2263,7 +2263,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
                     animation: "replay-fadein 0.22s ease",
                   }}
                 >
-                  <span style={{ color: "#3a3532", flexShrink: 0, userSelect: "none" }}>
+                  <span style={{ color: "#4a4438", flexShrink: 0, userSelect: "none" }}>
                     #{String(step.sequence).padStart(2, "0")}
                   </span>
                   <span style={{ color: col, fontWeight: 600 }}>
@@ -2273,7 +2273,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
                     style={{
                       marginLeft: "auto",
                       flexShrink: 0,
-                      color: step.success ? "#4ade80" : "#f87171",
+                      color: step.success ? "#7ec98f" : "#c65950",
                     }}
                   >
                     {step.success ? "✓" : "✗"}{" "}
@@ -2286,7 +2286,7 @@ export function AgentTracePanel({ report }: { report: Report }) {
               <div
                 style={{
                   marginTop: "6px",
-                  color: "#4ade80",
+                  color: "#7ec98f",
                   fontSize: "11px",
                   animation: "replay-fadein 0.22s ease",
                 }}
@@ -2304,9 +2304,9 @@ export function AgentTracePanel({ report }: { report: Report }) {
           display: "flex",
           gap: "6px",
           marginBottom: "20px",
-          background: "#f6f3ee",
-          border: "1px solid #e8e4dc",
-          borderRadius: "8px",
+          background: "#f7f4ee",
+          border: "1px solid #e0d9c6",
+          borderRadius: "0",
           padding: "4px",
           width: "fit-content",
         }}
@@ -2318,14 +2318,14 @@ export function AgentTracePanel({ report }: { report: Report }) {
             onClick={() => setView(v)}
             style={{
               padding: "6px 16px",
-              borderRadius: "6px",
+              borderRadius: "0",
               border: "none",
               cursor: "pointer",
               fontSize: "12px",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
               fontWeight: 500,
-              background: view === v ? "#fff" : "transparent",
-              color: view === v ? "#181614" : "#9a9590",
+              background: view === v ? "#fffdfa" : "transparent",
+              color: view === v ? "#17140f" : "#a8a08c",
               boxShadow: view === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
               transition: "all 0.15s",
               display: "flex",

@@ -3,14 +3,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { SignOutButton } from "../components/auth-button";
+import { DashboardList, type LeaseCardData, type TopFinding } from "../components/dashboard-list";
 
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "View and manage your Ontario lease analyses.",
   robots: { index: false, follow: false },
 };
-import { SignOutButton } from "../components/auth-button";
-import { DeleteLeaseButton } from "../components/delete-lease-button";
 
 interface LeaseRow {
   id: string;
@@ -22,36 +22,28 @@ interface LeaseRow {
   property_address: string | null;
   property_city: string | null;
   error_message: string | null;
+  display_title: string | null;
 }
 
-const RISK_COLORS: Record<string, { text: string; bg: string; border: string }> = {
-  critical: { text: "#b91c1c", bg: "#fef2f2", border: "#fecaca" },
-  high: { text: "#c2410c", bg: "#fff7ed", border: "#fed7aa" },
-  medium: { text: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-  low: { text: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
-};
-
-function riskStyle(level: string | null) {
-  return RISK_COLORS[level ?? "low"] ?? RISK_COLORS.low;
+interface ClauseRow {
+  lease_id: string;
+  clause_number: string;
+  heading: string | null;
+  risk_score: number | null;
+  statutory_violations: Array<{ statute_section: string; violation_description: string }> | null;
 }
 
 function filename(filePath: string): string {
   return filePath.split("/").pop() ?? filePath;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function toFinding(c: ClauseRow): TopFinding {
+  const violation = c.statutory_violations?.[0];
+  return {
+    citation: violation?.statute_section ?? c.heading ?? `Clause ${c.clause_number}`,
+    text: violation?.violation_description ?? c.heading ?? `Clause ${c.clause_number}`,
+  };
 }
-
-const dashboardStyles = `
-  .dash-new-btn:hover { background: #2a2825 !important; }
-  .dash-view-btn:hover { background: #f6f3ee !important; }
-  @keyframes dash-spin { to { transform: rotate(360deg); } }
-`;
 
 export default async function DashboardPage() {
   const authClient = await createSupabaseServerClient();
@@ -69,64 +61,113 @@ export default async function DashboardPage() {
   const { data: leases } = await adminClient
     .from("leases")
     .select(
-      "id, status, uploaded_at, overall_risk_score, overall_risk_level, file_path, property_address, property_city, error_message"
+      "id, status, uploaded_at, overall_risk_score, overall_risk_level, file_path, property_address, property_city, error_message, display_title"
     )
     .eq("user_id", user.id)
-    .neq("status", "failed")
     .order("uploaded_at", { ascending: false });
 
   const rows = (leases ?? []) as LeaseRow[];
+  const leaseIds = rows.filter((r) => r.status === "complete").map((r) => r.id);
+
+  // Top clause per lease (for hover-peek + verdict header), fetched in one query
+  // and grouped client-side — cheap for the realistic size of one user's docket.
+  let topFindingByLease = new Map<string, TopFinding>();
+  if (leaseIds.length > 0) {
+    const { data: clauses } = await adminClient
+      .from("clauses")
+      .select("lease_id, clause_number, heading, risk_score, statutory_violations")
+      .in("lease_id", leaseIds)
+      .order("risk_score", { ascending: false, nullsFirst: false });
+
+    for (const c of (clauses ?? []) as ClauseRow[]) {
+      if (!topFindingByLease.has(c.lease_id)) {
+        topFindingByLease.set(c.lease_id, toFinding(c));
+      }
+    }
+  }
+
+  const cards: LeaseCardData[] = rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    uploaded_at: r.uploaded_at,
+    overall_risk_score: r.overall_risk_score,
+    overall_risk_level: r.overall_risk_level,
+    title: r.display_title ?? r.property_address ?? filename(r.file_path).replace(/\.[^.]+$/, ""),
+    subtitle: r.property_city ?? filename(r.file_path),
+    error_message: r.error_message,
+    topFinding: topFindingByLease.get(r.id) ?? null,
+  }));
+
+  const scored = cards.filter((c) => c.status === "complete" && c.overall_risk_score != null);
+  const topLease = [...scored].sort((a, b) => (b.overall_risk_score ?? 0) - (a.overall_risk_score ?? 0))[0] ?? null;
+  const needsAttention = scored.filter((c) => c.overall_risk_level === "critical" || c.overall_risk_level === "high").length;
+
   const initial = (user.email ?? user.id)[0].toUpperCase();
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f3ee",
+        background: "#f7f4ee",
+        color: "#17140f",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
       }}
     >
-      <style>{dashboardStyles}</style>
       {/* Header */}
       <header
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 48px",
-          height: "56px",
-          borderBottom: "1px solid #e8e4dc",
-          background: "#f6f3ee",
+          padding: "0 clamp(20px,4vw,56px)",
+          height: 66,
+          borderBottom: "1px solid #17140f",
+          background: "rgba(247,244,238,0.92)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           flexShrink: 0,
         }}
       >
-        <Link
-          href="/"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontWeight: 600,
-            fontSize: "17px",
-            letterSpacing: "0.02em",
-            color: "#181614",
-            textDecoration: "none",
-          }}
-        >
-          LeaseGuard
-        </Link>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+          <Link
+            href="/"
+            style={{
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 600,
+              fontSize: 22,
+              letterSpacing: "-0.01em",
+              color: "#17140f",
+              textDecoration: "none",
+            }}
+          >
+            LeaseGuard
+          </Link>
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#6f6857",
+            }}
+          >
+            Docket
+          </span>
+        </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          {/* User avatar + email */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span
               style={{
-                width: "26px",
-                height: "26px",
+                width: 30,
+                height: 30,
                 borderRadius: "50%",
-                background: "#181614",
-                color: "#fff",
-                fontSize: "11px",
+                background: "#151209",
+                color: "#e9e4d5",
+                fontSize: 12,
                 fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
@@ -136,360 +177,191 @@ export default async function DashboardPage() {
             >
               {initial}
             </span>
-            <span style={{ fontSize: "13px", color: "#5c5751" }}>
-              {user.email}
-            </span>
+            <span style={{ fontSize: 13, color: "#4a4438" }}>{user.email}</span>
           </div>
           <SignOutButton />
         </div>
       </header>
 
       {/* Main */}
-      <main
-        style={{
-          flex: 1,
-          maxWidth: "1200px",
-          width: "100%",
-          margin: "0 auto",
-          padding: "48px 40px 80px",
-        }}
-      >
+      <main style={{ flex: 1, maxWidth: 1200, width: "100%", margin: "0 auto", padding: "clamp(40px,5vw,48px) clamp(24px,4vw,40px) 80px" }}>
         {/* Title row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: "32px",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 32 }}>
           <div>
             <h1
               style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
                 fontWeight: 600,
-                fontSize: "30px",
-                color: "#181614",
-                letterSpacing: "-0.02em",
+                fontSize: "clamp(38px,5vw,60px)",
+                lineHeight: 1,
                 margin: 0,
+                letterSpacing: "-0.02em",
               }}
             >
-              Your Analyses
+              Your analyses
             </h1>
-            {rows.length > 0 && (
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#9a9590",
-                  margin: "4px 0 0",
-                }}
-              >
-                {rows.length} {rows.length === 1 ? "lease" : "leases"} analysed
-              </p>
-            )}
+            <p style={{ fontSize: 15, color: "#6f6857", margin: "8px 0 0" }}>
+              {rows.length === 0
+                ? "Nothing on file yet."
+                : `${rows.length} ${rows.length === 1 ? "lease" : "leases"} on file · ${needsAttention} need${needsAttention === 1 ? "s" : ""} attention`}
+            </p>
           </div>
           <Link
             href="/"
-            className="dash-new-btn"
             style={{
-              padding: "9px 20px",
-              borderRadius: "7px",
-              background: "#181614",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 500,
+              padding: "14px 24px",
+              border: "1px solid #17140f",
+              background: "#151209",
+              color: "#f4efe4",
+              fontSize: 15,
+              fontWeight: 600,
               textDecoration: "none",
-              letterSpacing: "0.01em",
               flexShrink: 0,
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
-            + New analysis
+            Analyse a new lease
           </Link>
         </div>
 
-        {rows.length === 0 ? (
-          /* Empty state */
+        {/* Verdict header */}
+        {topLease && (
           <div
             style={{
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "12px",
-              padding: "64px 36px",
-              textAlign: "center",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+              gap: 1,
+              background: "#151209",
+              border: "1px solid #17140f",
+              color: "#e9e4d5",
+              marginBottom: "clamp(32px,4vw,48px)",
             }}
           >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "12px",
-                background: "#f6f3ee",
-                border: "1px solid #e8e4dc",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px",
-              }}
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#9a9590"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="12" y1="12" x2="12" y2="16" />
-                <line x1="10" y1="14" x2="14" y2="14" />
-              </svg>
-            </div>
-            <h2
-              style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontWeight: 600,
-                fontSize: "22px",
-                color: "#181614",
-                margin: "0 0 8px",
-              }}
-            >
-              No analyses yet
-            </h2>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6b6560",
-                margin: "0 0 24px",
-                lineHeight: 1.6,
-              }}
-            >
-              Upload an Ontario residential lease and your analysis will appear
-              here.
-            </p>
-            <Link
-              href="/"
-              style={{
-                display: "inline-block",
-                padding: "10px 24px",
-                borderRadius: "7px",
-                background: "#181614",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                textDecoration: "none",
-                letterSpacing: "0.01em",
-              }}
-            >
-              Analyse a lease →
-            </Link>
-          </div>
-        ) : (
-          /* Lease list */
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            {rows.map((lease, i) => {
-              const rs = riskStyle(lease.overall_risk_level);
-              const title =
-                lease.property_address ??
-                filename(lease.file_path).replace(/\.[^.]+$/, "");
-              const subtitle =
-                lease.property_city ?? filename(lease.file_path);
-              const isComplete = lease.status === "complete";
-              const isFailed = lease.status === "failed";
-              const isInProgress = lease.status === "pending" || lease.status === "processing";
+            <VerdictCell eyebrow="Highest risk on file">
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontWeight: 700, fontSize: "clamp(60px,7vw,86px)", lineHeight: 1, color: "#ff9d94" }}>
+                  {topLease.overall_risk_score?.toFixed(1)}
+                </span>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", color: "#ff9d94" }}>
+                  {topLease.overall_risk_level}
+                </span>
+              </div>
+              <div style={{ fontSize: 14, color: "#e9e4d5", marginTop: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {topLease.title}
+              </div>
+            </VerdictCell>
 
-              return (
-                <div
-                  key={lease.id}
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #e8e4dc",
-                    borderRadius:
-                      i === 0 && rows.length === 1
-                        ? "10px"
-                        : i === 0
-                        ? "10px 10px 2px 2px"
-                        : i === rows.length - 1
-                        ? "2px 2px 10px 10px"
-                        : "2px",
-                    padding: "18px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                  }}
-                >
-                  {/* Status indicator */}
-                  {isComplete && (
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: "60px",
-                        borderRadius: "8px",
-                        background: rs.bg,
-                        border: `1px solid ${rs.border}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "7px 4px 6px",
-                        gap: "1px",
-                      }}
-                    >
-                      <span style={{
-                        fontFamily: "'Cormorant Garamond', serif",
-                        fontSize: "22px",
-                        fontWeight: 600,
-                        color: rs.text,
-                        lineHeight: 1,
-                        letterSpacing: "-0.01em",
-                      }}>
-                        {lease.overall_risk_score?.toFixed(1) ?? "-"}
-                      </span>
-                      <span style={{
-                        fontSize: "8px",
-                        color: rs.text,
-                        letterSpacing: "0.07em",
-                        textTransform: "uppercase",
-                        fontWeight: 600,
-                        opacity: 0.85,
-                      }}>
-                        {lease.overall_risk_level ?? "-"}
-                      </span>
-                    </div>
-                  )}
+            <VerdictCell eyebrow="Severity spread" border>
+              <SeveritySpread scored={scored} />
+            </VerdictCell>
 
-                  {isFailed && (
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "8px",
-                        background: "#fef2f2",
-                        border: "1px solid #fecaca",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                      </svg>
-                    </div>
-                  )}
-
-                  {isInProgress && (
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "8px",
-                        background: "#f0f9ff",
-                        border: "1px solid #bae6fd",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "dash-spin 1s linear infinite" }}>
-                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"/>
-                        <path d="M21 12a9 9 0 01-9 9"/>
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Details */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: "14px", fontWeight: 500, color: "#181614", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {title}
-                    </p>
-                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: isFailed ? "#b91c1c" : isInProgress ? "#0284c7" : "#9a9590", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {isFailed
-                        ? "Analysis failed"
-                        : isInProgress
-                        ? "Analysing…"
-                        : `${subtitle} · ${formatDate(lease.uploaded_at)}`}
-                    </p>
+            <VerdictCell eyebrow="Act on this first" eyebrowColor="#ff9d94" border>
+              {topLease.topFinding ? (
+                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                  <div style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontSize: 21, lineHeight: 1.4, marginBottom: 10 }}>
+                    &ldquo;{topLease.topFinding.text}&rdquo;
                   </div>
-
-                  {/* Action button — only complete gets "View report", in-progress gets "View progress", failed gets nothing */}
-                  {isComplete && (
-                    <Link
-                      href={`/report/${lease.id}`}
-                      className="dash-view-btn"
-                      style={{
-                        flexShrink: 0,
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        border: "1px solid #e8e4dc",
-                        background: "#fff",
-                        fontSize: "12px",
-                        color: "#5c5751",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      View report →
-                    </Link>
-                  )}
-
-                  {isInProgress && (
-                    <Link
-                      href={`/?leaseId=${lease.id}`}
-                      className="dash-view-btn"
-                      style={{
-                        flexShrink: 0,
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        border: "1px solid #bae6fd",
-                        background: "#f0f9ff",
-                        fontSize: "12px",
-                        color: "#0284c7",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      View progress →
-                    </Link>
-                  )}
-
-                  {/* PIPEDA erasure — always shown */}
-                  <DeleteLeaseButton leaseId={lease.id} />
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#a8a08c", marginBottom: 16 }}>
+                    {topLease.topFinding.citation}
+                  </div>
+                  <Link
+                    href={`/report/${topLease.id}`}
+                    style={{ marginTop: "auto", fontSize: 14, fontWeight: 600, color: "#f4efe4", borderBottom: "1px solid #4a4438", textDecoration: "none", alignSelf: "flex-start" }}
+                  >
+                    Open the finding →
+                  </Link>
                 </div>
-              );
-            })}
+              ) : (
+                <Link
+                  href={`/report/${topLease.id}`}
+                  style={{ fontSize: 14, fontWeight: 600, color: "#f4efe4", borderBottom: "1px solid #4a4438", textDecoration: "none" }}
+                >
+                  Open the report →
+                </Link>
+              )}
+            </VerdictCell>
           </div>
         )}
+
+        <DashboardList rows={cards} />
       </main>
 
       {/* Footer */}
       <footer
         style={{
-          padding: "16px 48px",
-          borderTop: "1px solid #e8e4dc",
-          fontSize: "11px",
-          color: "#b0aaa4",
+          padding: "20px clamp(20px,4vw,56px)",
+          borderTop: "1px solid #17140f",
+          fontSize: 12,
+          color: "#6f6857",
           textAlign: "center",
           flexShrink: 0,
           display: "flex",
-          gap: "16px",
+          gap: 16,
           justifyContent: "center",
           alignItems: "center",
           flexWrap: "wrap",
         }}
       >
         <span>LeaseGuard provides educational information only — not legal advice.</span>
-        <span style={{ color: "#ddd8cf" }}>·</span>
-        <Link href="/privacy" style={{ color: "#b0aaa4", textDecoration: "underline" }}>
+        <span style={{ color: "#cfc6ab" }}>·</span>
+        <Link href="/privacy" style={{ color: "#6f6857", textDecoration: "underline" }}>
           Privacy Policy
         </Link>
       </footer>
+    </div>
+  );
+}
+
+function VerdictCell({
+  eyebrow,
+  eyebrowColor = "#a8a08c",
+  border,
+  children,
+}: {
+  eyebrow: string;
+  eyebrowColor?: string;
+  border?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ padding: "clamp(24px,2.6vw,32px)", borderLeft: border ? "1px solid #2b2720" : "none", display: "flex", flexDirection: "column" }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: eyebrowColor, marginBottom: 16 }}>
+        {eyebrow}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: "#9c2b23",
+  high: "#a15a1f",
+  medium: "#93690f",
+  low: "#2f6b3a",
+};
+
+function SeveritySpread({ scored }: { scored: LeaseCardData[] }) {
+  const counts: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const c of scored) {
+    if (c.overall_risk_level) counts[c.overall_risk_level] = (counts[c.overall_risk_level] ?? 0) + 1;
+  }
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 2, height: 12, marginBottom: 14 }}>
+        {(["critical", "high", "medium", "low"] as const).map((level) => (
+          <div key={level} style={{ flex: Math.max(0.35, counts[level]), background: SEVERITY_COLOR[level] }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {(["critical", "high", "medium", "low"] as const).map((level) => (
+          <div key={level} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, background: SEVERITY_COLOR[level], flexShrink: 0 }} />
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#a8a08c", textTransform: "capitalize", flex: 1 }}>{level}</span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#e9e4d5" }}>{counts[level]}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

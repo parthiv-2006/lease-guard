@@ -131,6 +131,17 @@ export async function GET(
   // and should not be exposed in the API response.
   const { user_id: _uid, ...safeLeaseRow } = (leaseRow as Record<string, unknown> & { user_id?: unknown }) ?? {};
 
+  // Redact the address for anyone who isn't the owner, when the owner has
+  // opted to hide it on the share link (set via POST { action: "share",
+  // hide_address: true }). The owner viewing their own report directly
+  // always sees the real address.
+  const isOwnerViewing = Boolean(authUser && leaseRow?.user_id && leaseRow.user_id === authUser.id);
+  if (data.share_hide_address && !isOwnerViewing) {
+    safeLeaseRow.property_address = null;
+    safeLeaseRow.property_unit = null;
+    safeLeaseRow.property_postal_code = null;
+  }
+
   const report = {
     ...(data.full_report_json as object),
     disclaimer: DISCLAIMER,
@@ -179,17 +190,28 @@ export async function POST(
     );
   }
 
+  const hideAddress = body?.hide_address === true;
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Reuse the existing token if one was already minted — only the
+  // hide_address preference needs updating on repeat calls (e.g. toggling
+  // the "hide address" checkbox after the link already exists).
+  const { data: existing } = await supabase
+    .from("reports")
+    .select("share_token")
+    .eq("lease_id", id)
+    .single();
+
   const { v4: uuidv4 } = await import("uuid");
-  const shareToken = uuidv4().replace(/-/g, "");
+  const shareToken = existing?.share_token ?? uuidv4().replace(/-/g, "");
 
   const { error } = await supabase
     .from("reports")
-    .update({ share_token: shareToken })
+    .update({ share_token: shareToken, share_hide_address: hideAddress })
     .eq("lease_id", id);
 
   if (error) {
@@ -203,9 +225,91 @@ export async function POST(
   return NextResponse.json({
     share_url: `${baseUrl}/report/${id}?token=${shareToken}`,
     expires_in_days: 90,
+    hide_address: hideAddress,
     consent_notice:
       "Anyone with this link can view your report for 90 days. The report contains excerpts from your lease.",
   });
+}
+
+// ── PATCH /api/report/[id] ────────────────────────────────────────────────────
+// Rename a lease's dashboard display title. Authenticated owner only.
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "report-patch", maxRequests: 30 });
+  if (!rl.allowed) {
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
+  const { id } = await params;
+
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json(
+      { error: "invalid_id", message: "Invalid report ID format." },
+      { status: 400 }
+    );
+  }
+
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "unauthenticated", message: "Sign in to rename your analyses." },
+      { status: 401 }
+    );
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const rawTitle = typeof body?.display_title === "string" ? body.display_title.trim() : "";
+  if (rawTitle.length > 200) {
+    return NextResponse.json(
+      { error: "invalid_title", message: "Title must be 200 characters or fewer." },
+      { status: 400 }
+    );
+  }
+  // Empty string clears the override, reverting to the derived title.
+  const displayTitle = rawTitle.length > 0 ? rawTitle : null;
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: lease, error: leaseErr } = await supabase
+    .from("leases")
+    .select("id, user_id")
+    .eq("id", id)
+    .single();
+
+  if (leaseErr || !lease) {
+    return NextResponse.json(
+      { error: "not_found", message: "Analysis not found." },
+      { status: 404 }
+    );
+  }
+
+  if (lease.user_id !== user.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "You do not own this analysis." },
+      { status: 403 }
+    );
+  }
+
+  const { error: updateErr } = await supabase
+    .from("leases")
+    .update({ display_title: displayTitle })
+    .eq("id", id);
+
+  if (updateErr) {
+    return NextResponse.json(
+      { error: "update_failed", message: "Could not rename. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ display_title: displayTitle });
 }
 
 // ── DELETE /api/report/[id] ───────────────────────────────────────────────────

@@ -64,9 +64,9 @@ function Tooltip({ state }: { state: TooltipState }) {
         left: x + 12,
         top: y - 8,
         zIndex: 9999,
-        background: "#1a1916",
+        background: "#1c1811",
         border: `1px solid ${col}`,
-        borderRadius: "8px",
+        borderRadius: "0",
         padding: "10px 14px",
         minWidth: "220px",
         maxWidth: "300px",
@@ -76,7 +76,7 @@ function Tooltip({ state }: { state: TooltipState }) {
     >
       <div
         style={{
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'IBM Plex Mono', monospace",
           fontSize: "12px",
           fontWeight: 600,
           color: col,
@@ -90,7 +90,7 @@ function Tooltip({ state }: { state: TooltipState }) {
           display: "flex",
           gap: "12px",
           fontSize: "11px",
-          color: "#c5bfb5",
+          color: "#cfc6ab",
           marginBottom: "6px",
         }}
       >
@@ -116,8 +116,8 @@ function Tooltip({ state }: { state: TooltipState }) {
           }}
         >
           {outKeys.map((k) => (
-            <div key={k} style={{ fontSize: "10px", color: "#9a9590" }}>
-              <span style={{ color: "#c5bfb5" }}>{k}: </span>
+            <div key={k} style={{ fontSize: "10px", color: "#a8a08c" }}>
+              <span style={{ color: "#cfc6ab" }}>{k}: </span>
               {String(step.output_summary[k])}
             </div>
           ))}
@@ -165,7 +165,7 @@ function GanttBar({ item, isExpanded, onHover, onToggle }: GanttBarProps) {
         height: ROW_HEIGHT - 8,
         background: isExpanded ? col : bg,
         border: `1px solid ${isExpanded ? col : border}`,
-        borderRadius: "5px",
+        borderRadius: "0",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -181,9 +181,9 @@ function GanttBar({ item, isExpanded, onHover, onToggle }: GanttBarProps) {
         <span
           style={{
             fontSize: "10px",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'IBM Plex Mono', monospace",
             fontWeight: 600,
-            color: isExpanded ? "#fff" : col,
+            color: isExpanded ? "#fffdfa" : col,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -194,9 +194,9 @@ function GanttBar({ item, isExpanded, onHover, onToggle }: GanttBarProps) {
             <span
               style={{
                 background: col,
-                color: "#fff",
+                color: "#fffdfa",
                 padding: "0 3px",
-                borderRadius: "2px",
+                borderRadius: "0",
                 marginRight: "4px",
                 fontSize: "8px",
                 fontWeight: 700,
@@ -255,10 +255,10 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
       style={{
         border: `1px solid ${CATEGORY_BORDER[cat]}`,
         borderTop: `3px solid ${col}`,
-        borderRadius: "8px",
+        borderRadius: "0",
         overflow: "hidden",
         marginTop: "12px",
-        background: "#fff",
+        background: "#fffdfa",
         animation: "fadeSlideDown 0.18s ease-out",
       }}
     >
@@ -284,7 +284,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
         <code
           style={{
             fontSize: "13px",
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'IBM Plex Mono', monospace",
             fontWeight: 700,
             color: col,
           }}
@@ -294,14 +294,14 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
         <span
           style={{
             fontSize: "12px",
-            color: "#9a9590",
-            fontFamily: "'DM Sans', sans-serif",
+            color: "#a8a08c",
+            fontFamily: "'Public Sans', sans-serif",
           }}
         >
           {formatDuration(step.duration_ms)}
         </span>
         {step.called_at && (
-          <span style={{ fontSize: "11px", color: "#9a9590" }}>
+          <span style={{ fontSize: "11px", color: "#a8a08c" }}>
             started {new Date(step.called_at).toLocaleTimeString()}
           </span>
         )}
@@ -310,10 +310,10 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
             marginLeft: "auto",
             fontSize: "10px",
             padding: "2px 8px",
-            borderRadius: "3px",
-            background: step.success ? "#f0fdf4" : "#fef2f2",
-            border: `1px solid ${step.success ? "#bbf7d0" : "#fecaca"}`,
-            color: step.success ? "#15803d" : "#b91c1c",
+            borderRadius: "0",
+            background: step.success ? "#e3efe0" : "#f4d9d6",
+            border: `1px solid ${step.success ? "#b8d4bb" : "#e3b0a8"}`,
+            color: step.success ? "#2f6b3a" : "#9c2b23",
             fontWeight: 600,
           }}
         >
@@ -325,9 +325,9 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
       {isRag && (
         <div
           style={{
-            borderBottom: "1px solid #f0ede6",
+            borderBottom: "1px solid #f0ebdf",
             padding: "14px 16px",
-            background: "#fffdf7",
+            background: "#fffdfa",
           }}
         >
           {/* Query string */}
@@ -338,7 +338,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                   fontSize: "10px",
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   fontWeight: 500,
                 }}
               >
@@ -348,12 +348,12 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                 style={{
                   marginTop: "4px",
                   padding: "8px 12px",
-                  background: "#f6f3ee",
-                  borderRadius: "5px",
+                  background: "#f7f4ee",
+                  borderRadius: "0",
                   fontSize: "12px",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: "#5c5751",
-                  borderLeft: "3px solid #d97706",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  color: "#4a4438",
+                  borderLeft: "3px solid #93690f",
                 }}
               >
                 {queryString}
@@ -375,7 +375,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                 fontSize: "10px",
                 letterSpacing: "0.07em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
               }}
             >
@@ -384,12 +384,12 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
             <button
               onClick={() => setShowExplainer((v) => !v)}
               style={{
-                background: showExplainer ? "#fef3c7" : "#f6f3ee",
-                border: "1px solid #e8e4dc",
-                borderRadius: "100px",
+                background: showExplainer ? "#fef3c7" : "#f7f4ee",
+                border: "1px solid #e0d9c6",
+                borderRadius: "0",
                 padding: "1px 8px",
                 fontSize: "10px",
-                color: "#b45309",
+                color: "#93690f",
                 cursor: "pointer",
                 fontWeight: 500,
                 lineHeight: "18px",
@@ -405,9 +405,9 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
               style={{
                 marginBottom: "10px",
                 padding: "10px 12px",
-                background: "#fffbeb",
-                border: "1px solid #fde68a",
-                borderRadius: "6px",
+                background: "#f3ecd3",
+                border: "1px solid #dfd0a0",
+                borderRadius: "0",
                 fontSize: "12px",
                 color: "#78350f",
                 lineHeight: "1.6",
@@ -427,18 +427,18 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                 <div
                   key={src.id}
                   style={{
-                    border: "1px solid #e8e4dc",
-                    borderRadius: "6px",
+                    border: "1px solid #e0d9c6",
+                    borderRadius: "0",
                     overflow: "hidden",
-                    background: "#fff",
+                    background: "#fffdfa",
                   }}
                 >
                   {/* Source header row */}
                   <div
                     style={{
                       padding: "8px 12px",
-                      background: "#f6f3ee",
-                      borderBottom: "1px solid #e8e4dc",
+                      background: "#f7f4ee",
+                      borderBottom: "1px solid #e0d9c6",
                       display: "flex",
                       alignItems: "baseline",
                       gap: "8px",
@@ -448,9 +448,9 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                     <code
                       style={{
                         fontSize: "11px",
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "'IBM Plex Mono', monospace",
                         fontWeight: 700,
-                        color: "#d97706",
+                        color: "#93690f",
                       }}
                     >
                       {src.act_name} · s.{src.section_number}
@@ -458,8 +458,8 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                     <span
                       style={{
                         fontSize: "11px",
-                        color: "#5c5751",
-                        fontFamily: "'DM Sans', sans-serif",
+                        color: "#4a4438",
+                        fontFamily: "'Public Sans', sans-serif",
                       }}
                     >
                       {src.section_title}
@@ -472,7 +472,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                         style={{
                           marginLeft: "auto",
                           fontSize: "10px",
-                          color: "#d97706",
+                          color: "#93690f",
                           textDecoration: "none",
                           whiteSpace: "nowrap",
                         }}
@@ -487,8 +487,8 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                     style={{
                       padding: "8px 12px",
                       fontSize: "11px",
-                      color: "#5c5751",
-                      fontFamily: "'DM Sans', sans-serif",
+                      color: "#4a4438",
+                      fontFamily: "'Public Sans', sans-serif",
                       lineHeight: "1.5",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -511,9 +511,9 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                     <span
                       style={{
                         fontSize: "10px",
-                        color: "#9a9590",
+                        color: "#a8a08c",
                         whiteSpace: "nowrap",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Public Sans', sans-serif",
                       }}
                     >
                       Match strength
@@ -522,8 +522,8 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                       style={{
                         flex: 1,
                         height: "4px",
-                        background: "#e8e4dc",
-                        borderRadius: "2px",
+                        background: "#e0d9c6",
+                        borderRadius: "0",
                         overflow: "hidden",
                       }}
                     >
@@ -531,16 +531,16 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                         style={{
                           width: `${Math.round((src.relevance_score ?? 0) * 100)}%`,
                           height: "100%",
-                          background: "#d97706",
-                          borderRadius: "2px",
+                          background: "#93690f",
+                          borderRadius: "0",
                         }}
                       />
                     </div>
                     <span
                       style={{
                         fontSize: "10px",
-                        color: "#b45309",
-                        fontFamily: "'JetBrains Mono', monospace",
+                        color: "#93690f",
+                        fontFamily: "'IBM Plex Mono', monospace",
                         whiteSpace: "nowrap",
                         fontWeight: 600,
                       }}
@@ -552,7 +552,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: "12px", color: "#9a9590", fontStyle: "italic" }}>
+            <div style={{ fontSize: "12px", color: "#a8a08c", fontStyle: "italic" }}>
               No matched sources — see raw output below.
             </div>
           )}
@@ -577,7 +577,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
             key={label}
             style={{
               padding: "14px 16px",
-              borderRight: label === "Input" ? "1px solid #f0ede6" : "none",
+              borderRight: label === "Input" ? "1px solid #f0ebdf" : "none",
             }}
           >
             <div
@@ -585,7 +585,7 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
                 fontSize: "10px",
                 letterSpacing: "0.07em",
                 textTransform: "uppercase",
-                color: "#9a9590",
+                color: "#a8a08c",
                 fontWeight: 500,
                 marginBottom: "8px",
               }}
@@ -596,11 +596,11 @@ function DetailDrawer({ step, sources }: { step: TraceStep; sources: Source[] })
               style={{
                 margin: 0,
                 fontSize: "11px",
-                fontFamily: "'JetBrains Mono', monospace",
-                color: dim ? "#5c5751" : "#181614",
-                background: "#f6f3ee",
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: dim ? "#4a4438" : "#17140f",
+                background: "#f7f4ee",
                 padding: "10px",
-                borderRadius: "5px",
+                borderRadius: "0",
                 overflow: "auto",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
@@ -646,18 +646,18 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ fontFamily: "'Public Sans', sans-serif" }}>
       {/* ── Fallback banner for reconstructed timelines ── */}
       {!geo.hasTimestamps && steps.length > 0 && (
         <div
           style={{
             marginBottom: "16px",
             padding: "10px 14px",
-            background: "#fffbeb",
-            border: "1px solid #fde68a",
-            borderRadius: "6px",
+            background: "#f3ecd3",
+            border: "1px solid #dfd0a0",
+            borderRadius: "0",
             fontSize: "12px",
-            color: "#b45309",
+            color: "#93690f",
           }}
         >
           Timing data unavailable for this report - showing sequential duration estimate.
@@ -678,18 +678,18 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
           { label: `${rows.length} tool calls`, col: "#374151" },
           {
             label: `${(geo.totalSpanMs / 1000).toFixed(1)}s wall clock`,
-            col: "#1d4ed8",
+            col: "#1f3a52",
           },
           { label: `${parallelCount} parallel lanes`, col: "#7c3aed" },
-          { label: `peak ${formatDuration(peakMs)}`, col: "#c2410c" },
+          { label: `peak ${formatDuration(peakMs)}`, col: "#a15a1f" },
         ].map(({ label, col }) => (
           <span
             key={label}
             style={{
               padding: "4px 10px",
-              borderRadius: "100px",
-              background: "#f6f3ee",
-              border: "1px solid #e8e4dc",
+              borderRadius: "0",
+              background: "#f7f4ee",
+              border: "1px solid #e0d9c6",
               fontSize: "12px",
               color: col,
               fontWeight: 500,
@@ -727,11 +727,11 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
               style={{
                 width: 10,
                 height: 10,
-                borderRadius: "2px",
+                borderRadius: "0",
                 background: CATEGORY_COLOR[cat],
               }}
             />
-            <span style={{ fontSize: "11px", color: "#6b6560" }}>{label}</span>
+            <span style={{ fontSize: "11px", color: "#6f6857" }}>{label}</span>
           </div>
         ))}
       </div>
@@ -742,18 +742,18 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
         style={{
           display: "flex",
           flexDirection: "column",
-          border: "1px solid #e8e4dc",
-          borderRadius: "10px",
+          border: "1px solid #e0d9c6",
+          borderRadius: "0",
           overflow: "hidden",
-          background: "#faf9f6",
+          background: "#f0ebdf",
         }}
       >
         {/* Column headers */}
         <div
           style={{
             display: "flex",
-            borderBottom: "1px solid #e8e4dc",
-            background: "#f6f3ee",
+            borderBottom: "1px solid #e0d9c6",
+            background: "#f7f4ee",
           }}
         >
           <div
@@ -764,9 +764,9 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
               fontSize: "10px",
               letterSpacing: "0.07em",
               textTransform: "uppercase",
-              color: "#9a9590",
+              color: "#a8a08c",
               fontWeight: 500,
-              borderRight: "1px solid #e8e4dc",
+              borderRight: "1px solid #e0d9c6",
             }}
           >
             Tool
@@ -778,7 +778,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
               fontSize: "10px",
               letterSpacing: "0.07em",
               textTransform: "uppercase",
-              color: "#9a9590",
+              color: "#a8a08c",
               fontWeight: 500,
             }}
           >
@@ -798,7 +798,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
               key={group.toolName}
               style={{
                 display: "flex",
-                borderBottom: "1px solid #edeae3",
+                borderBottom: "1px solid #e9e4d5",
               }}
             >
               {/* Tool label */}
@@ -809,15 +809,15 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
                   padding: "0 14px",
                   display: "flex",
                   alignItems: "center",
-                  borderRight: "1px solid #e8e4dc",
+                  borderRight: "1px solid #e0d9c6",
                   minHeight: groupHeight + 8,
-                  background: "#fff",
+                  background: "#fffdfa",
                 }}
               >
                 <code
                   style={{
                     fontSize: "11px",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'IBM Plex Mono', monospace",
                     color: col,
                     fontWeight: 500,
                     whiteSpace: "nowrap",
@@ -837,7 +837,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
                   position: "relative",
                   height: groupHeight + 8,
                   padding: "4px 0",
-                  background: "#faf9f6",
+                  background: "#f0ebdf",
                 }}
               >
                 {/* Background grid lines at ruler tick positions */}
@@ -850,7 +850,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
                       top: 0,
                       bottom: 0,
                       width: "1px",
-                      background: "#e8e4dc",
+                      background: "#e0d9c6",
                       pointerEvents: "none",
                     }}
                   />
@@ -886,15 +886,15 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
                   alignItems: "center",
                   justifyContent: "flex-end",
                   paddingRight: "10px",
-                  borderLeft: "1px solid #e8e4dc",
-                  background: "#fff",
+                  borderLeft: "1px solid #e0d9c6",
+                  background: "#fffdfa",
                 }}
               >
                 <span
                   style={{
                     fontSize: "10px",
-                    color: "#9a9590",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    color: "#a8a08c",
+                    fontFamily: "'IBM Plex Mono', monospace",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -911,8 +911,8 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
         <div
           style={{
             display: "flex",
-            borderTop: "1px solid #e8e4dc",
-            background: "#f6f3ee",
+            borderTop: "1px solid #e0d9c6",
+            background: "#f7f4ee",
             height: RULER_HEIGHT,
           }}
         >
@@ -920,7 +920,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
             style={{
               width: LABEL_COL_WIDTH,
               flexShrink: 0,
-              borderRight: "1px solid #e8e4dc",
+              borderRight: "1px solid #e0d9c6",
             }}
           />
           <div style={{ flex: 1, position: "relative" }}>
@@ -941,15 +941,15 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
                   style={{
                     width: "1px",
                     height: "6px",
-                    background: "#c5bfb5",
+                    background: "#cfc6ab",
                     marginLeft: tick.pct === 0 ? "0" : undefined,
                   }}
                 />
                 <span
                   style={{
                     fontSize: "9px",
-                    color: "#9a9590",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    color: "#a8a08c",
+                    fontFamily: "'IBM Plex Mono', monospace",
                     whiteSpace: "nowrap",
                     transform: tick.pct === 0 ? "none" : "translateX(-50%)",
                     paddingTop: "2px",
@@ -960,7 +960,7 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
               </div>
             ))}
           </div>
-          <div style={{ width: "68px", flexShrink: 0, borderLeft: "1px solid #e8e4dc" }} />
+          <div style={{ width: "68px", flexShrink: 0, borderLeft: "1px solid #e0d9c6" }} />
         </div>
       </div>
 
@@ -975,8 +975,8 @@ export function TraceTimeline({ steps, sources = [] }: TraceTimelineProps) {
         style={{
           marginTop: "12px",
           fontSize: "11px",
-          color: "#b0aaa4",
-          fontFamily: "'DM Sans', sans-serif",
+          color: "#a8a08c",
+          fontFamily: "'Public Sans', sans-serif",
         }}
       >
         Click any bar to inspect inputs &amp; outputs · Amber RAG bars show retrieved statute
