@@ -36,6 +36,34 @@
   --t-fast: 0.12s ease;
   --t-base: 0.18s ease;
   --t-slow: 0.28s ease;
+
+  /* ── v2 design system ("case-file" editorial palette) ──────────────────── */
+  /* Rolling out page-by-page (Landing → Pre-Report → Dashboard → Report).   */
+  /* Coexists with the tokens above until every page has migrated.          */
+  --v2-color-bg:            #f7f4ee;
+  --v2-color-bg-off:        #fffdfa;
+  --v2-color-ink:            #17140f;
+  --v2-color-ink-strong:     #151209;
+  --v2-color-ink-secondary:  #4a4438;
+  --v2-color-ink-muted:      #6f6857;
+  --v2-color-ink-faint:      #a8a08c;
+  --v2-color-border:         #e0d9c6;
+  --v2-color-border-dark:    #cfc6ab;
+  --v2-color-accent:         #9c2b23;
+  --v2-color-accent-hover:   #7a221b;
+  --v2-color-success:        #2f6b3a;
+  --v2-color-high:           #a15a1f;
+  --v2-color-high-text:      #8a4a17;
+  --v2-color-medium:         #93690f;
+  --v2-color-dark-bg:        #151209;
+  --v2-color-dark-card:      #1c1811;
+  --v2-color-dark-border:    #2b2720;
+  --v2-color-cream:          #f4efe4;
+  --v2-color-cream-dim:      #e9e4d5;
+
+  --v2-font-serif: 'Newsreader', Georgia, serif;
+  --v2-font-sans:  'Public Sans', system-ui, sans-serif;
+  --v2-font-mono:  'IBM Plex Mono', monospace;
 }
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
@@ -109,6 +137,90 @@ a {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── v2 hero document animation ──────────────────────────────────────────── */
+
+@keyframes lg-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.6); }
+}
+
+@keyframes lg-scan {
+  0%   { top: 52px; opacity: 0; }
+  4%   { opacity: 0.9; }
+  54%  { top: 78%; opacity: 0.9; }
+  60%  { opacity: 0; }
+  100% { top: 52px; opacity: 0; }
+}
+
+@keyframes lg-h1 {
+  0%, 17%   { background-size: 0% 100%, 0% 2px; }
+  27%, 93%  { background-size: 100% 100%, 100% 2px; }
+  100%      { background-size: 0% 100%, 0% 2px; }
+}
+
+@keyframes lg-h2 {
+  0%, 31%   { background-size: 0% 100%, 0% 2px; }
+  41%, 93%  { background-size: 100% 100%, 100% 2px; }
+  100%      { background-size: 0% 100%, 0% 2px; }
+}
+
+@keyframes lg-h3 {
+  0%, 45%   { background-size: 0% 100%, 0% 2px; }
+  55%, 93%  { background-size: 100% 100%, 100% 2px; }
+  100%      { background-size: 0% 100%, 0% 2px; }
+}
+
+@keyframes lg-f1 {
+  0%, 22%   { opacity: 0; transform: translateX(10px); }
+  30%, 93%  { opacity: 1; transform: translateX(0); }
+  100%      { opacity: 0; transform: translateX(10px); }
+}
+
+@keyframes lg-f2 {
+  0%, 36%   { opacity: 0; transform: translateX(10px); }
+  44%, 93%  { opacity: 1; transform: translateX(0); }
+  100%      { opacity: 0; transform: translateX(10px); }
+}
+
+@keyframes lg-f3 {
+  0%, 50%   { opacity: 0; transform: translateX(10px); }
+  58%, 93%  { opacity: 1; transform: translateX(0); }
+  100%      { opacity: 0; transform: translateX(10px); }
+}
+
+@keyframes lg-stamp {
+  0%, 62%   { opacity: 0; transform: rotate(-7deg) scale(1.5); }
+  70%, 93%  { opacity: 1; transform: rotate(-7deg) scale(1); }
+  100%      { opacity: 0; transform: rotate(-7deg) scale(1.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lg-anim] {
+    animation-play-state: paused !important;
+  }
+}
+
+/* ── v2 scroll-triggered section reveal ──────────────────────────────────── */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 

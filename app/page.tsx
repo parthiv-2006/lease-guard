@@ -4,7 +4,9 @@ import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthButton } from "./components/auth-button";
-import { Icon, RiskBadge } from "./components/shared";
+import { Reveal } from "./components/scroll-reveal";
+import { LeaseHeroAnimation } from "./components/lease-hero-animation";
+import { ScoreHero, SeverityRuler } from "./components/score-hero";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
 
@@ -63,31 +65,15 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const [uploading, setUploading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [showNav, setShowNav] = useState(true);
-  const [scrolled, setScrolled] = useState(false);
-  const [liveStats, setLiveStats] = useState<{
-    avg_risk_score: number;
-    total_clauses_analysed: number;
-  } | null>(null);
+  const [clauseIdx, setClauseIdx] = useState(0);
 
   useEffect(() => {
-    function checkWidth() { setShowNav(window.innerWidth >= 640); }
+    function checkWidth() { setShowNav(window.innerWidth >= 760); }
     checkWidth();
     window.addEventListener("resize", checkWidth);
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
 
-  useEffect(() => {
-    function handleScroll() { setScrolled(window.scrollY > 8); }
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setLiveStats(d))
-      .catch(() => {});
-  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function validateFile(f: File | null | undefined): string | null {
@@ -149,23 +135,83 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
     }
   }
 
-  const borderColor = error
-    ? "#b91c1c"
-    : dragOver
-    ? "#181614"
-    : file
-    ? "#181614"
-    : "#c8c3ba";
-  const bgColor = dragOver ? "#f0ede6" : "#fdfcfa";
+  function scrollToUpload() {
+    document.getElementById("lg-upload-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!file) setTimeout(() => inputRef.current?.click(), 350);
+  }
+
+  const borderColor = error ? "#9c2b23" : "#17140f";
+  const bgColor = dragOver ? "#efe6d3" : "#fffdfa";
+
+  const CLAUSES = [
+    {
+      key: "late",
+      label: "Late fees",
+      text: "The tenant shall pay a late fee of $100 per day for any rent payment received after the 1st of the month.",
+      locator: "Clause 12 · page 3 of 11",
+      meaning:
+        "A landlord cannot charge you anything beyond the rent and the specific fees the Act allows. A $100-per-day penalty is not one of them — on a two-week delay this clause claims $1,400 it almost certainly cannot collect.",
+      statuteRef: "RTA s.134 (1)",
+      statuteText:
+        "No landlord shall, directly or indirectly, collect or require a tenant to pay any fee, premium, commission, bonus, penalty, key deposit or other like amount of money.",
+    },
+    {
+      key: "pets",
+      label: "No-pet clause",
+      text: "No pets of any kind shall be kept on the premises at any time.",
+      locator: "Clause 14 · page 3 of 11",
+      meaning:
+        "You can sign this and still keep a pet. Provisions in a tenancy agreement prohibiting pets are void in Ontario — though a landlord may still apply to end a tenancy over noise, damage or allergic reactions.",
+      statuteRef: "RTA s.14",
+      statuteText:
+        "A provision in a tenancy agreement prohibiting the presence of animals in or about the residential complex is void.",
+    },
+    {
+      key: "entry",
+      label: "Landlord entry",
+      text: "The landlord may enter the rental unit at any reasonable time to show it to prospective tenants.",
+      locator: "Clause 21 · page 5 of 11",
+      meaning:
+        "Showings still require 24 hours written notice stating the reason and a time between 8 a.m. and 8 p.m. “Any reasonable time” quietly removes the notice you are entitled to.",
+      statuteRef: "RTA s.27 (1)",
+      statuteText:
+        "A landlord may enter a rental unit in accordance with written notice given to the tenant at least 24 hours before the time of entry.",
+    },
+  ];
+  const activeClause = CLAUSES[clauseIdx];
+
+  const REPORT_ITEMS = [
+    { n: "01", title: "Clause by clause", desc: "Every clause segmented, classified and scored on its own terms." },
+    { n: "02", title: "Contradictions", desc: "Clauses cross-checked against each other for internal conflicts." },
+    { n: "03", title: "Missing terms", desc: "Standard tenant protections your lease quietly leaves out." },
+    { n: "04", title: "Negotiation copilot", desc: "Language you can send back to push on the riskiest clauses." },
+    { n: "05", title: "Agent trace", desc: "Every tool call the agent made, in order, fully inspectable." },
+    { n: "06", title: "Sources", desc: "Each citation opens the exact section of the Act it came from." },
+  ];
+
+  const TRUST_ITEMS = [
+    { figure: "2,372", label: "Sections of Ontario law indexed", detail: "The full Residential Tenancies Act, kept current at corpus version RTA-2026-Q2." },
+    { figure: "100%", label: "Findings cited to statute", detail: "Every claim links to the section it came from — nothing is asserted from memory." },
+    { figure: "< 90s", label: "Median time to a full report", detail: "Text and scanned PDFs both, with OCR when a lease has been photographed." },
+    { figure: "1 click", label: "Delete your lease and report", detail: "PIPEDA-compliant removal, on demand, with no account required to start." },
+  ];
+
+  const navLinks = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
+    { label: "Ontario RTA", href: "/ontario-rta" },
+    { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
+    { label: "Privacy", href: "/privacy" },
+  ];
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f3ee",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "'DM Sans', sans-serif",
+        background: "#f7f4ee",
+        color: "#17140f",
+        fontFamily: "'Public Sans', sans-serif",
+        overflowX: "hidden",
       }}
     >
       {/* Header */}
@@ -173,45 +219,35 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         style={{
           position: "sticky",
           top: 0,
-          zIndex: 50,
+          zIndex: 60,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: showNav ? "0 48px" : "0 20px",
-          height: "56px",
-          borderBottom: "1px solid #e8e4dc",
-          background: scrolled ? "rgba(246,243,238,0.85)" : "#f6f3ee",
-          backdropFilter: scrolled ? "blur(8px)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(8px)" : "none",
+          gap: 16,
+          padding: showNav ? "0 clamp(20px,4vw,56px)" : "0 20px",
+          height: 66,
+          borderBottom: "1px solid #17140f",
+          background: "rgba(247,244,238,0.92)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           flexShrink: 0,
-          transition: "background 0.18s ease",
         }}
       >
         <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "7px",
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Newsreader', serif",
+            fontStyle: "italic",
             fontWeight: 600,
-            fontSize: "17px",
-            letterSpacing: "0.02em",
-            color: "#181614",
+            fontSize: 22,
+            letterSpacing: "-0.01em",
           }}
         >
-          <Icon name="shield" size={16} color="#181614" />
           LeaseGuard
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {showNav && (
-            <nav style={{ display: "flex", gap: "28px" }}>
-              {[
-                { label: "Dashboard", href: "/dashboard" },
-                { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
-                { label: "Ontario RTA", href: "https://www.ontario.ca/laws/statute/06r17", external: true },
-                { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
-                { label: "Privacy", href: "/privacy" },
-              ].map(({ label, href, external }) => {
+            <nav style={{ display: "flex", gap: "clamp(14px,2.4vw,28px)", alignItems: "center" }}>
+              {navLinks.map(({ label, href, external }) => {
                 const isActive = !external && pathname === href;
                 return (
                   <a
@@ -220,24 +256,16 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
                     style={{
-                      fontSize: "13px",
-                      color: isActive ? "#181614" : "#6b6560",
+                      fontSize: 14,
+                      color: isActive ? "#17140f" : "#4a4438",
+                      fontWeight: isActive ? 600 : 400,
                       textDecoration: "none",
-                      fontWeight: isActive ? 500 : 400,
-                      letterSpacing: "0.01em",
-                      transition: "color 0.12s ease, transform 0.12s ease",
-                      display: "inline-block",
-                      borderBottom: isActive ? "2px solid #181614" : "2px solid transparent",
-                      paddingBottom: "2px",
+                      borderBottom: isActive ? "1px solid #17140f" : "1px solid transparent",
+                      paddingBottom: 2,
+                      transition: "color 0.12s ease",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#181614";
-                      e.currentTarget.style.transform = "translateY(-0.5px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = isActive ? "#181614" : "#6b6560";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "#17140f"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = isActive ? "#17140f" : "#4a4438"; }}
                   >
                     {label}
                   </a>
@@ -250,312 +278,76 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
       </header>
 
       {/* Hero */}
-      <main
+      <section
         style={{
-          flex: 1,
+          maxWidth: 1320,
+          margin: "0 auto",
+          padding: "clamp(40px,6vw,76px) clamp(20px,4vw,48px) 0",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 24px 32px",
+          gap: "clamp(32px,4.5vw,64px)",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
         }}
       >
-        {/* Jurisdiction tag */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "4px 12px",
-            borderRadius: "100px",
-            background: "#fff",
-            border: "1px solid #e8e4dc",
-            fontSize: "11px",
-            color: "#6b6560",
-            marginBottom: "28px",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            fontWeight: 500,
-          }}
-        >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "#15803d",
-              display: "inline-block",
-            }}
-          />
-          Ontario Residential Tenancies Act
-        </div>
-
-        {/* Headline */}
-        <h1
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontWeight: 600,
-            fontSize: "clamp(40px, 6vw, 68px)",
-            lineHeight: 1.05,
-            color: "#181614",
-            textAlign: "center",
-            margin: "0 0 18px",
-            letterSpacing: "-0.02em",
-            maxWidth: "720px",
-          }}
-        >
-          Read what you sign.
-        </h1>
-        <p
-          style={{
-            fontSize: "16px",
-            color: "#6b6560",
-            textAlign: "center",
-            maxWidth: "480px",
-            lineHeight: 1.6,
-            margin: "0 0 28px",
-          }}
-        >
-          Upload your Ontario lease. LeaseGuard reads every clause against real
-          statute and tells you exactly what you are agreeing to — in under 90
-          seconds.
-        </p>
-
-        {/* How it works strip */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            marginBottom: "28px",
-            fontSize: "12px",
-            color: "#9a9590",
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          {[
-            { step: "① Agent reads every clause", sub: "via Claude + MCP tools" },
-            { step: "② Retrieves real Ontario law", sub: "2,372 RTA sections · pgvector" },
-            { step: "③ Flags what may not be enforceable", sub: "cited, never asserted" },
-          ].map(({ step, sub }, i) => (
-            <span key={step} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              {i > 0 && (
-                <span style={{ color: "#c8c3ba", fontSize: "14px", lineHeight: 1 }}>›</span>
-              )}
-              <span style={{ textAlign: "center" }}>
-                <span style={{ color: "#5c5751", fontWeight: 500 }}>{step}</span>
-                <br />
-                <span style={{ fontSize: "11px" }}>{sub}</span>
-              </span>
-            </span>
-          ))}
-          <span style={{ width: "100%", textAlign: "center", marginTop: "6px" }}>
-            <a
-              href={`/report/${DEMO_LEASE_ID}`}
-              style={{
-                color: "#181614",
-                fontSize: "12px",
-                textDecoration: "underline",
-                textUnderlineOffset: "2px",
-                fontWeight: 500,
-                letterSpacing: "0.01em",
-              }}
-            >
-              See it in action →
-            </a>
-          </span>
-        </div>
-
-        {/* Example findings preview */}
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "720px",
-            marginBottom: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
+        {/* Left column */}
+        <div style={{ flex: "1 1 430px", minWidth: 300, paddingBottom: 64 }}>
           <div
             style={{
-              fontSize: "10px",
-              letterSpacing: "0.08em",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 9,
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 12,
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "#b0aaa4",
-              fontWeight: 500,
-              marginBottom: "4px",
-              textAlign: "left",
-              paddingLeft: "2px",
+              color: "#6f6857",
+              marginBottom: 30,
             }}
           >
-            Example findings
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#2f6b3a",
+                animation: "lg-pulse 2.4s ease-in-out infinite",
+              }}
+            />
+            Ontario · RTA 2006
           </div>
-          {/* Featured clause card — shows a real clause text + statute citation */}
-          <div
+
+          <h1
             style={{
-              padding: "14px 16px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "8px",
-              boxShadow: "0 1px 4px rgba(185,28,28,0.06)",
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 600,
+              fontSize: "clamp(54px,7.4vw,104px)",
+              lineHeight: 0.94,
+              margin: "0 0 28px",
+              letterSpacing: "-0.022em",
             }}
           >
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "11.5px",
-                color: "#6b6560",
-                lineHeight: 1.6,
-                marginBottom: "10px",
-                padding: "10px 12px",
-                background: "rgba(255,255,255,0.6)",
-                borderRadius: "5px",
-                border: "1px solid #fecaca",
-                borderLeft: "3px solid #b91c1c",
-              }}
-            >
-              &ldquo;The tenant shall pay a late fee of $100 per day for any
-              rent payment received after the 1st of each month.&rdquo;
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                flexWrap: "wrap",
-                marginBottom: "8px",
-              }}
-            >
-              <RiskBadge level="critical" score={9.1} />
-              <span
-                style={{
-                  fontSize: "10px",
-                  padding: "2px 7px",
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "3px",
-                  color: "#b91c1c",
-                  fontWeight: 500,
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                Rent Payment
-              </span>
-            </div>
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#5c5751",
-                fontFamily: "'DM Sans', sans-serif",
-                lineHeight: 1.4,
-                marginBottom: "4px",
-              }}
-            >
-              Late fees of any amount are potentially unenforceable — landlords cannot
-              charge rent or compensation beyond what the RTA permits.
-            </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "#9a9590",
-                fontStyle: "italic",
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              Retrieved: Ontario Residential Tenancies Act, s.134 — Additional charges prohibited
-            </div>
-          </div>
+            Read what
+            <br />
+            you sign.
+          </h1>
+          <p style={{ fontSize: 20, color: "#4a4438", maxWidth: 470, margin: "0 0 36px", lineHeight: 1.6 }}>
+            Upload your lease. Every clause gets read against the actual statute, and you get a
+            plain-English answer on what you just agreed to.
+          </p>
 
-          {/* Compact finding rows */}
-          {[
-            {
-              color: "#c2410c",
-              bg: "#fff7ed",
-              border: "#fed7aa",
-              dot: "#c2410c",
-              text: "24-hour notice requirement waived — void under RTA s.27(1)",
-              tag: "Entry Rights",
-            },
-            {
-              color: "#15803d",
-              bg: "#f0fdf4",
-              border: "#bbf7d0",
-              dot: "#15803d",
-              text: "Rent increase procedure follows RTA s.116 — compliant",
-              tag: "Rent Increase",
-            },
-          ].map(({ color, bg, border, dot, text, tag }) => (
-            <div
-              key={text}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "9px 13px",
-                background: "#fff",
-                border: "1px solid #e8e4dc",
-                borderRadius: "7px",
-                boxShadow: "0 1px 3px rgba(24,22,20,0.05)",
-              }}
-            >
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: dot,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: "12px",
-                  color: "#181614",
-                  fontFamily: "'DM Sans', sans-serif",
-                  lineHeight: 1.4,
-                  textAlign: "left",
-                }}
-              >
-                {text}
-              </span>
-              <span
-                style={{
-                  fontSize: "10px",
-                  padding: "2px 7px",
-                  background: bg,
-                  border: `1px solid ${border}`,
-                  borderRadius: "3px",
-                  color: color,
-                  fontWeight: 500,
-                  letterSpacing: "0.02em",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {tag}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Upload zone */}
-        <div style={{ width: "100%", maxWidth: "720px" }}>
+          {/* Upload card */}
           <div
+            id="lg-upload-card"
             onDrop={onDrop}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             style={{
               border: `1.5px dashed ${borderColor}`,
-              borderRadius: "10px",
               background: bgColor,
-              padding: "24px 32px",
-              textAlign: "center",
-              cursor: "default",
-              transition: "all 0.2s",
+              padding: "26px 26px 22px",
+              maxWidth: 470,
+              transition: "background 0.15s ease, border-color 0.15s ease",
             }}
           >
             <input
@@ -568,287 +360,148 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
             />
 
             {!file ? (
-              <label htmlFor="lease-file-input" style={{ display: "block", cursor: "pointer" }}>
-                {/* PDF icon */}
-                <div
-                  style={{
-                    width: 48,
-                    height: 56,
-                    margin: "0 auto 20px",
-                    position: "relative",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 48 56"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{ width: "100%", height: "100%" }}
-                  >
-                    <rect
-                      x="1"
-                      y="1"
-                      width="38"
-                      height="46"
-                      rx="3"
-                      fill="#fff"
-                      stroke={dragOver ? "#181614" : "#ddd8cf"}
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M27 1l11 10H28a1 1 0 01-1-1V1z"
-                      fill={dragOver ? "#e8e4dc" : "#f0ede6"}
-                      stroke={dragOver ? "#181614" : "#ddd8cf"}
-                      strokeWidth="1.5"
-                    />
-                    <rect
-                      x="8"
-                      y="26"
-                      width="14"
-                      height="2"
-                      rx="1"
-                      fill={dragOver ? "#181614" : "#c8c3ba"}
-                    />
-                    <rect
-                      x="8"
-                      y="31"
-                      width="22"
-                      height="2"
-                      rx="1"
-                      fill={dragOver ? "#181614" : "#c8c3ba"}
-                    />
-                    <rect
-                      x="8"
-                      y="36"
-                      width="18"
-                      height="2"
-                      rx="1"
-                      fill={dragOver ? "#181614" : "#c8c3ba"}
-                    />
-                    <rect
-                      x="8"
-                      y="17"
-                      width="8"
-                      height="4"
-                      rx="1"
-                      fill="#b91c1c"
-                      opacity="0.85"
-                    />
-                    <text
-                      x="9.5"
-                      y="22.5"
-                      fontSize="5"
-                      fill="white"
-                      fontWeight="700"
-                      fontFamily="monospace"
-                    >
-                      PDF
-                    </text>
-                  </svg>
-                </div>
-                <p
-                  style={{
-                    margin: "0 0 6px",
-                    fontSize: "15px",
-                    fontWeight: 500,
-                    color: "#181614",
-                  }}
-                >
-                  {dragOver ? "Release to upload" : "Drop your lease PDF here"}
-                </p>
-                <p style={{ margin: "0 0 18px", fontSize: "13px", color: "#9a9590" }}>
-                  or{" "}
-                  <span
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
                     style={{
-                      color: "#181614",
-                      textDecoration: "underline",
-                      textUnderlineOffset: "2px",
+                      fontFamily: "'Public Sans', sans-serif",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      padding: "14px 24px",
+                      border: "1px solid #17140f",
+                      background: "#151209",
+                      color: "#f4efe4",
                       cursor: "pointer",
-                    }}
-                  >
-                    click to browse
-                  </span>
-                </p>
-
-                {/* Demo CTA — inline so it's always above the fold */}
-                <div
-                  style={{
-                    borderTop: "1px solid #e8e4dc",
-                    paddingTop: "14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#b0aaa4",
-                      letterSpacing: "0.05em",
-                      textTransform: "uppercase",
-                      fontWeight: 500,
-                    }}
-                  >
-                    or try a sample
-                  </span>
-                  <Link
-                    href={`/report/${DEMO_LEASE_ID}`}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      padding: "8px 16px",
-                      borderRadius: "7px",
-                      border: "1px solid #ddd8cf",
-                      background: "#fff",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                      color: "#181614",
-                      textDecoration: "none",
-                      transition: "border-color 0.15s, box-shadow 0.15s",
+                      transition: "background 0.15s, border-color 0.15s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#181614";
-                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(24,22,20,0.10)";
+                      e.currentTarget.style.background = "#9c2b23";
+                      e.currentTarget.style.borderColor = "#9c2b23";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#ddd8cf";
-                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.background = "#151209";
+                      e.currentTarget.style.borderColor = "#17140f";
                     }}
+                    onFocus={(e) => { e.currentTarget.style.outline = "2px solid #9c2b23"; e.currentTarget.style.outlineOffset = "3px"; }}
+                    onBlur={(e) => { e.currentTarget.style.outline = "none"; }}
                   >
-                    <span>Try with a sample lease</span>
-                    <span
-                      style={{
-                        padding: "2px 6px",
-                        borderRadius: "3px",
-                        background: "#fef2f2",
-                        border: "1px solid #fecaca",
-                        color: "#b91c1c",
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        letterSpacing: "0.02em",
-                      }}
-                    >
-                      9.5 Critical
-                    </span>
-                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 8h10M9 4l4 4-4 4" stroke="#181614" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </Link>
-                  <p style={{ margin: 0, fontSize: "11px", color: "#b0aaa4", lineHeight: 1.4 }}>
-                    See a highly flawed Ontario lease — analysed instantly
-                  </p>
+                    Choose lease PDF
+                  </button>
+                  <span style={{ fontSize: 15, color: "#6f6857" }}>
+                    {dragOver ? "Release to upload" : "or drop it here"}
+                  </span>
                 </div>
-              </label>
-            ) : (
-              /* File selected state */
-              <div>
                 <div
                   style={{
-                    display: "inline-flex",
+                    borderTop: "1px solid #e0d9c6",
+                    marginTop: 20,
+                    paddingTop: 16,
+                    display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    padding: "10px 16px",
-                    background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
-                    borderRadius: "7px",
-                    marginBottom: "16px",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8l3.5 3.5L13 4.5"
-                      stroke="#15803d"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <Link
+                    href={`/report/${DEMO_LEASE_ID}`}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: "#9c2b23",
+                      borderBottom: "1px solid #d8b6b2",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Analyse a sample lease instead →
+                  </Link>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#6f6857" }}>
+                    PDF · up to 25 MB
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    border: "1px solid #cfc6ab",
+                    background: "#f7f4ee",
+                    padding: "12px 14px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#2f6b3a", flexShrink: 0 }}>✓</span>
                   <span
                     style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#181614",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      flex: 1,
+                      minWidth: 120,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {file.name}
                   </span>
-                  <span style={{ fontSize: "12px", color: "#9a9590" }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#6f6857" }}>
                     {formatSize(file.size)}
                   </span>
                 </div>
-                <p
-                  style={{
-                    margin: "0 0 16px",
-                    fontSize: "13px",
-                    color: "#6b6560",
-                  }}
-                >
-                  PDF verified · jurisdiction will be confirmed during analysis
+                <p style={{ fontSize: 13, color: "#6f6857", margin: "10px 0 18px", fontFamily: "'IBM Plex Mono', monospace" }}>
+                  PDF verified · jurisdiction confirmed during analysis
                 </p>
 
-                {/* PIPEDA consent */}
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "10px",
-                    margin: "0 0 20px",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
+                <label style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer", marginBottom: 20 }}>
                   <input
                     type="checkbox"
                     checked={consentGiven}
                     onChange={(e) => setConsentGiven(e.target.checked)}
-                    style={{
-                      marginTop: "2px",
-                      flexShrink: 0,
-                      cursor: "pointer",
-                      accentColor: "#181614",
-                      width: "14px",
-                      height: "14px",
-                    }}
+                    style={{ marginTop: 3, width: 16, height: 16, accentColor: "#9c2b23", flexShrink: 0, cursor: "pointer" }}
                   />
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#5c5751",
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    I understand this PDF may contain personal information
-                    (names, addresses, financial details). By uploading, I
-                    consent to it being analysed and temporarily stored per
-                    the{" "}
+                  <span style={{ fontSize: 13, color: "#4a4438", lineHeight: 1.6 }}>
+                    I understand this PDF may contain personal information — names, addresses, financial
+                    details — and consent to it being analysed and temporarily stored per the{" "}
                     <a
                       href="/privacy"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        color: "#181614",
-                        textUnderlineOffset: "2px",
-                      }}
+                      style={{ color: "#9c2b23" }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       Privacy Policy
                     </a>
-                    . Reports are automatically deleted after 90 days.
+                    . Reports are deleted automatically after 90 days.
                   </span>
                 </label>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    justifyContent: "center",
-                  }}
-                >
+                <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                   <button
+                    type="button"
+                    onClick={handleAnalyse}
+                    disabled={uploading || !consentGiven}
+                    style={{
+                      fontFamily: "'Public Sans', sans-serif",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      padding: "14px 26px",
+                      cursor: uploading ? "wait" : !consentGiven ? "not-allowed" : "pointer",
+                      border: consentGiven ? "1px solid #17140f" : "1px solid #cfc6ab",
+                      background: uploading ? "#4a4438" : consentGiven ? "#151209" : "#e8e2d2",
+                      color: consentGiven ? "#f4efe4" : "#8a8272",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.outline = "2px solid #9c2b23"; e.currentTarget.style.outlineOffset = "3px"; }}
+                    onBlur={(e) => { e.currentTarget.style.outline = "none"; }}
+                  >
+                    {uploading ? "Uploading…" : "Analyse lease"}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setFile(null);
                       setError(null);
@@ -856,225 +509,400 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                     }}
                     disabled={uploading}
                     style={{
-                      padding: "10px 20px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      fontWeight: 500,
+                      fontFamily: "'Public Sans', sans-serif",
+                      fontSize: 15,
+                      padding: "14px 20px",
+                      border: "1px solid #cfc6ab",
                       background: "transparent",
-                      border: "1px solid #ddd8cf",
-                      color: "#6b6560",
+                      color: "#4a4438",
+                      cursor: "pointer",
                       opacity: uploading ? 0.5 : 1,
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#17140f"; e.currentTarget.style.color = "#17140f"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#cfc6ab"; e.currentTarget.style.color = "#4a4438"; }}
                   >
                     Remove
                   </button>
-                  <button
-                    onClick={handleAnalyse}
-                    disabled={uploading || !consentGiven}
-                    style={{
-                      padding: "10px 28px",
-                      borderRadius: "6px",
-                      cursor: uploading ? "wait" : !consentGiven ? "not-allowed" : "pointer",
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      background: uploading ? "#4a4744" : !consentGiven ? "#9a9590" : "#181614",
-                      border: `1px solid ${!consentGiven && !uploading ? "#9a9590" : "#181614"}`,
-                      color: "#fff",
-                      letterSpacing: "0.02em",
-                      transition: "background 0.15s, transform 0.12s ease, box-shadow 0.12s ease",
-                      opacity: !consentGiven && !uploading ? 0.7 : 1,
-                      transform: "translateY(0)",
-                      boxShadow: "none",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!uploading && consentGiven) {
-                        e.currentTarget.style.background = "#2d2926";
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(24,22,20,0.20)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!uploading && consentGiven) {
-                        e.currentTarget.style.background = "#181614";
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }
-                    }}
-                  >
-                    {uploading ? "Uploading…" : "Analyse Lease"}
-                  </button>
+                  {file && !consentGiven && (
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#8a4a17" }}>
+                      Consent required
+                    </span>
+                  )}
                 </div>
-              </div>
+              </>
             )}
           </div>
 
-          {/* Error */}
           {error && (
             <div
               style={{
-                marginTop: "12px",
+                marginTop: 14,
                 padding: "10px 14px",
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: "6px",
-                fontSize: "13px",
-                color: "#b91c1c",
+                background: "#fbeceb",
+                border: "1px solid #e3b0a8",
+                fontSize: 13,
+                color: "#9c2b23",
                 display: "flex",
-                gap: "8px",
+                gap: 8,
                 alignItems: "center",
+                maxWidth: 470,
               }}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <circle
-                  cx="8"
-                  cy="8"
-                  r="6.5"
-                  stroke="#b91c1c"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M8 5v3.5M8 11v.5"
-                  stroke="#b91c1c"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
+                <circle cx="8" cy="8" r="6.5" stroke="#9c2b23" strokeWidth="1.5" />
+                <path d="M8 5v3.5M8 11v.5" stroke="#9c2b23" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               {error}
             </div>
           )}
 
-          {/* Caption row */}
           <div
             style={{
               display: "flex",
-              justifyContent: "center",
-              gap: "20px",
-              marginTop: "20px",
+              gap: 22,
+              marginTop: 20,
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 12,
+              letterSpacing: "0.04em",
+              color: "#6f6857",
               flexWrap: "wrap",
             }}
           >
-            {["Text + scanned PDF", "Ontario leases", "Free · no account"].map(
-              (item) => (
-                <span
-                  key={item}
-                  style={{
-                    fontSize: "12px",
-                    color: "#9a9590",
-                    display: "flex",
-                    gap: "5px",
-                    alignItems: "center",
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8l3.5 3.5L13 4.5"
-                      stroke="#9a9590"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  {item}
-                </span>
-              )
-            )}
+            <span>Text + scanned PDF</span>
+            <span>No account</span>
+            <span>Delete anytime</span>
           </div>
-
         </div>
 
-        {/* Stats bar */}
-        <div
-          style={{
-            marginTop: "48px",
-            display: "flex",
-            padding: "22px 40px",
-            background: "#fff",
-            border: "1px solid #e8e4dc",
-            borderRadius: "10px",
-            boxShadow: "0 1px 3px rgba(24,22,20,0.06)",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            width: "100%",
-            maxWidth: "720px",
-          }}
-        >
-          {[
-            { n: "2,372", d: "RTA sections" },
-            { n: liveStats ? String(liveStats.avg_risk_score) : "—", d: "Avg risk score" },
-            { n: liveStats ? liveStats.total_clauses_analysed.toLocaleString() : "—", d: "Clauses analysed" },
-            { n: "Free", d: "No account needed" },
-          ].map(({ n, d }, i) => (
-            <div
-              key={d}
+        {/* Right column — animated hero document */}
+        <div style={{ flex: "1 1 480px", minWidth: 320, alignSelf: "stretch" }}>
+          <LeaseHeroAnimation />
+        </div>
+      </section>
+
+      {/* What it says / what it means */}
+      <Reveal
+        style={{
+          background: "#151209",
+          color: "#f4efe4",
+          borderTop: "1px solid #17140f",
+        }}
+      >
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(48px,6vw,84px) clamp(20px,4vw,48px)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              gap: 24,
+              flexWrap: "wrap",
+              marginBottom: "clamp(28px,4vw,48px)",
+            }}
+          >
+            <h2
               style={{
-                textAlign: "center",
-                flex: "1 1 0",
-                minWidth: "80px",
-                paddingLeft: i > 0 ? "20px" : 0,
-                paddingRight: "20px",
-                borderLeft: i > 0 ? "1px solid #e8e4dc" : "none",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
+                fontWeight: 600,
+                fontSize: "clamp(34px,4.4vw,58px)",
+                lineHeight: 1.02,
+                margin: 0,
+                letterSpacing: "-0.02em",
               }}
             >
+              What it says.
+              <br />
+              What it means.
+            </h2>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {CLAUSES.map((c, i) => {
+                const active = i === clauseIdx;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setClauseIdx(i)}
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 12,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      padding: "8px 14px",
+                      border: active ? "1px solid #f4efe4" : "1px solid #4a4438",
+                      background: active ? "#f4efe4" : "transparent",
+                      color: active ? "#151209" : "#a8a08c",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 1,
+              background: "#2b2720",
+              border: "1px solid #2b2720",
+            }}
+          >
+            <div style={{ background: "#151209", padding: "clamp(26px,3vw,40px)" }}>
               <div
                 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontWeight: 600,
-                  fontSize: "28px",
-                  color: "#181614",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "#a8a08c",
+                  marginBottom: 22,
                 }}
               >
-                {n}
+                Verbatim from your lease
               </div>
               <div
                 style={{
-                  fontSize: "11px",
-                  color: "#9a9590",
-                  marginTop: "5px",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
+                  fontFamily: "'Newsreader', serif",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(22px,2.5vw,31px)",
+                  lineHeight: 1.45,
                 }}
               >
-                {d}
+                &ldquo;{activeClause.text}&rdquo;
+              </div>
+              <div style={{ marginTop: 26, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#a8a08c" }}>
+                {activeClause.locator}
               </div>
             </div>
-          ))}
+            <div style={{ background: "#151209", padding: "clamp(26px,3vw,40px)", display: "flex", flexDirection: "column", gap: 24 }}>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    color: "#a8a08c",
+                    marginBottom: 18,
+                  }}
+                >
+                  In plain English
+                </div>
+                <p style={{ fontSize: 17, lineHeight: 1.65, margin: 0, color: "#e9e4d5" }}>{activeClause.meaning}</p>
+              </div>
+              <div style={{ border: "1px solid #2b2720", background: "#1c1811", padding: "20px 22px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "#151209",
+                      background: "#e9e4d5",
+                      padding: "3px 9px",
+                    }}
+                  >
+                    Retrieved
+                  </span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#e9e4d5" }}>
+                    {activeClause.statuteRef}
+                  </span>
+                </div>
+                <div style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontSize: 16, lineHeight: 1.6, color: "#a8a08c" }}>
+                  {activeClause.statuteText}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+      </Reveal>
+
+      {/* Score as hero object */}
+      <Reveal style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(48px,6vw,88px) clamp(20px,4vw,48px)" }}>
+        <div style={{ display: "flex", gap: "clamp(28px,5vw,72px)", alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ flex: "0 0 auto" }}>
+            <ScoreHero score={9.5} level="critical" />
+          </div>
+          <div style={{ flex: "1 1 380px", minWidth: 290 }}>
+            <h2
+              style={{
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
+                fontWeight: 600,
+                fontSize: "clamp(30px,3.6vw,46px)",
+                lineHeight: 1.08,
+                margin: "0 0 18px",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              One number you can argue with.
+            </h2>
+            <p style={{ fontSize: 18, color: "#4a4438", lineHeight: 1.65, margin: "0 0 34px", maxWidth: 520 }}>
+              Severity is weighted by how far each clause departs from the statute and how much it
+              can cost you. Every point traces back to a section you can cite at the Landlord and
+              Tenant Board.
+            </p>
+            <SeverityRuler score={9.5} level="critical" />
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Inside your report */}
+      <Reveal style={{ borderTop: "1px solid #17140f", background: "#fffdfa" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(40px,5vw,64px) clamp(20px,4vw,48px)" }}>
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#6f6857",
+              marginBottom: 34,
+            }}
+          >
+            Inside your report
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+              gap: "clamp(24px,3vw,44px) clamp(24px,4vw,56px)",
+            }}
+          >
+            {REPORT_ITEMS.map((item) => (
+              <div key={item.n} style={{ borderTop: "1px solid #17140f", paddingTop: 16 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#9c2b23", marginBottom: 12 }}>
+                  {item.n}
+                </div>
+                <div style={{ fontSize: 19, fontWeight: 600, marginBottom: 8, fontFamily: "'Newsreader', serif", fontStyle: "italic" }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: 14, color: "#6f6857", lineHeight: 1.6 }}>{item.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Trust / grounding strip */}
+      <Reveal style={{ borderTop: "1px solid #17140f", background: "#f7f4ee" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(40px,5vw,64px) clamp(20px,4vw,48px)" }}>
+          <div
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#6f6857",
+              marginBottom: 30,
+            }}
+          >
+            How the analysis is grounded
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: "clamp(22px,3vw,40px)" }}>
+            {TRUST_ITEMS.map((t) => (
+              <div key={t.label}>
+                <div style={{ fontFamily: "'Newsreader', serif", fontWeight: 600, fontSize: 32, lineHeight: 1, marginBottom: 10 }}>
+                  {t.figure}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{t.label}</div>
+                <div style={{ fontSize: 13, color: "#6f6857", lineHeight: 1.6 }}>{t.detail}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Closing CTA */}
+      <Reveal style={{ borderTop: "1px solid #17140f", background: "#151209", color: "#f4efe4" }}>
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(48px,6vw,84px) clamp(20px,4vw,48px)",
+            display: "flex",
+            gap: 36,
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 600,
+              fontSize: "clamp(32px,4.4vw,58px)",
+              lineHeight: 1,
+              margin: 0,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Read it before
+            <br />
+            you sign it.
+          </h2>
+          <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={scrollToUpload}
+              style={{
+                fontFamily: "'Public Sans', sans-serif",
+                fontSize: 16,
+                fontWeight: 600,
+                padding: "16px 30px",
+                border: "1px solid #f4efe4",
+                background: "#f4efe4",
+                color: "#151209",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#9c2b23";
+                e.currentTarget.style.borderColor = "#9c2b23";
+                e.currentTarget.style.color = "#fffdfa";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#f4efe4";
+                e.currentTarget.style.borderColor = "#f4efe4";
+                e.currentTarget.style.color = "#151209";
+              }}
+            >
+              Upload your lease
+            </button>
+            <Link href={`/report/${DEMO_LEASE_ID}`} style={{ fontSize: 15, color: "#a8a08c", borderBottom: "1px solid #4a4438", textDecoration: "none" }}>
+              or see a sample report
+            </Link>
+          </div>
+        </div>
+      </Reveal>
 
       {/* Footer */}
       <footer
         style={{
-          padding: "16px 48px",
-          borderTop: "1px solid #e8e4dc",
-          fontSize: "11px",
-          color: "#b0aaa4",
-          textAlign: "center",
-          lineHeight: 1.5,
-          flexShrink: 0,
+          padding: "26px clamp(20px,4vw,56px)",
+          fontSize: 13,
+          color: "#6f6857",
+          lineHeight: 1.6,
+          maxWidth: 1180,
+          margin: "0 auto",
           display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
         }}
       >
         <span>
-          LeaseGuard provides educational information only and does not
-          constitute legal advice. For matters requiring professional legal
-          judgment, consult a licensed paralegal or lawyer.
-        </span>
-        <span>
-          <a
-            href="/privacy"
-            style={{ color: "#b0aaa4", textUnderlineOffset: "2px" }}
-          >
+          LeaseGuard provides educational information only and does not constitute legal advice.
+          For matters requiring professional legal judgment, consult a licensed paralegal or
+          lawyer.{" "}
+          <a href="/privacy" style={{ color: "#6f6857", textUnderlineOffset: "2px" }}>
             Privacy Policy
           </a>
-          {" · "}
-          Analysis grounded in the Ontario Residential Tenancies Act, 2006.
+          . Corpus version RTA-2026-Q2.
         </span>
       </footer>
     </div>
