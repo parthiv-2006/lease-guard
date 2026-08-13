@@ -190,7 +190,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
   ];
 
   const TRUST_ITEMS = [
-    { figure: "2,372", label: "Sections of Ontario law indexed", detail: "The full Residential Tenancies Act, kept current at corpus version RTA-2026-Q2." },
+    { figure: "2,372", label: "Sections of Ontario law indexed", detail: "The full Residential Tenancies Act, kept current as case law and regulations change." },
     { figure: "100%", label: "Findings cited to statute", detail: "Every claim links to the section it came from — nothing is asserted from memory." },
     { figure: "< 90s", label: "Median time to a full report", detail: "Text and scanned PDFs both, with OCR when a lease has been photographed." },
     { figure: "1 click", label: "Delete your lease and report", detail: "PIPEDA-compliant removal, on demand, with no account required to start." },
@@ -902,7 +902,7 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
           <a href="/privacy" style={{ color: "#6f6857", textUnderlineOffset: "2px" }}>
             Privacy Policy
           </a>
-          . Corpus version RTA-2026-Q2.
+          . Analysis grounded in the Ontario Residential Tenancies Act, 2006.
         </span>
       </footer>
     </div>
@@ -919,10 +919,10 @@ interface LogLine {
 }
 
 function severityColor(s?: string): string {
-  if (s === "critical") return "#f87171";
-  if (s === "warning") return "#fbbf24";
-  if (s === "success") return "#4ade80";
-  return "#8c8680";
+  if (s === "critical") return "#ff9d94";
+  if (s === "warning") return "#e0a45e";
+  if (s === "success") return "#7ec98f";
+  return "#a8a08c";
 }
 
 function formatLogTime(ts: number): string {
@@ -936,6 +936,135 @@ interface ProcessingPageProps {
   leaseId: string;
   filename: string;
   onReset: () => void;
+}
+
+function ErrorCard({
+  tag,
+  tagBg,
+  tagColor,
+  code,
+  icon,
+  title,
+  body,
+  checklist,
+  note,
+  children,
+}: {
+  tag: string;
+  tagBg: string;
+  tagColor: string;
+  code: string;
+  icon: React.ReactNode;
+  title: string;
+  body: React.ReactNode;
+  checklist?: string[];
+  note?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f7f4ee",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Public Sans', sans-serif",
+        padding: 24,
+      }}
+    >
+      <div style={{ maxWidth: 480, width: "100%", border: "1px solid #17140f", background: "#fffdfa" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 24px",
+            borderBottom: "1px solid #e0d9c6",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: tagColor,
+              background: tagBg,
+              padding: "3px 9px",
+            }}
+          >
+            {tag}
+          </span>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#6f6857" }}>{code}</span>
+        </div>
+
+        <div style={{ padding: "32px 32px 36px", textAlign: "center" }}>
+          <div style={{ marginBottom: 20 }}>{icon}</div>
+
+          <div
+            style={{
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 600,
+              fontSize: 26,
+              margin: "0 0 10px",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {title}
+          </div>
+          <div style={{ fontSize: 14, color: "#4a4438", marginBottom: 22, lineHeight: 1.6 }}>{body}</div>
+
+          {checklist && (
+            <div style={{ background: "#f7f4ee", border: "1px solid #e0d9c6", padding: "14px 16px", textAlign: "left", marginBottom: 24 }}>
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: "#6f6857",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: 10,
+                }}
+              >
+                What to upload
+              </div>
+              {checklist.map((item) => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8l3.5 3.5L13 4.5" stroke="#2f6b3a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span style={{ fontSize: 12, color: "#4a4438" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {note && (
+            <div
+              style={{
+                background: "#f7f0dc",
+                border: "1px solid #e3cd8f",
+                padding: "12px 16px",
+                fontSize: 12,
+                color: "#8a4a17",
+                marginBottom: 24,
+                textAlign: "left",
+                lineHeight: 1.6,
+              }}
+            >
+              {note}
+            </div>
+          )}
+
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
@@ -1177,6 +1306,7 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
 
   const totalExpected = 90;
   const remaining = Math.max(0, totalExpected - elapsed);
+  const complete = currentStep >= PROCESSING_STEPS.length;
 
   if (failed) {
     // ── not_a_lease ─────────────────────────────────────────────────────────
@@ -1190,318 +1320,165 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
       const detectedLabel = detectedLabels[detectedAs ?? ""] ?? "a non-lease document";
 
       return (
-        <div
-          style={{
-            minHeight: "100vh",
-            background: "#f6f3ee",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "'DM Sans', sans-serif",
-            padding: "24px",
-          }}
+        <ErrorCard
+          tag="Error"
+          tagBg="#e8e2d2"
+          tagColor="#4a4438"
+          code="not_a_lease"
+          icon={
+            <svg width="48" height="56" viewBox="0 0 48 56" fill="none" style={{ display: "inline-block" }}>
+              <rect x="1" y="1" width="38" height="46" rx="0" fill="#fffdfa" stroke="#17140f" strokeWidth="1.5" />
+              <path d="M27 1l11 10H28a1 1 0 01-1-1V1z" fill="#f7f4ee" stroke="#17140f" strokeWidth="1.5" />
+              <circle cx="38" cy="45" r="10" fill="#9c2b23" />
+              <path d="M34.5 45l3.5-3.5m0 3.5l-3.5-3.5" stroke="#fffdfa" strokeWidth="2" strokeLinecap="round" />
+              <rect x="8" y="20" width="14" height="2" fill="#cfc6ab" />
+              <rect x="8" y="26" width="22" height="2" fill="#cfc6ab" />
+              <rect x="8" y="32" width="18" height="2" fill="#cfc6ab" />
+            </svg>
+          }
+          title="This doesn't look like a lease."
+          body={
+            <>
+              We detected {detectedLabel}, not an Ontario residential lease. LeaseGuard only
+              analyzes residential tenancy agreements — such as the Ontario Standard Form of Lease
+              or a custom rental agreement.
+            </>
+          }
+          checklist={[
+            "Ontario Standard Form of Lease",
+            "Custom residential rental agreements",
+            "Month-to-month or fixed-term tenancies",
+            "Ontario lease renewals or addendums",
+          ]}
         >
-          <div
+          <button
+            onClick={() => onReset()}
             style={{
-              maxWidth: "480px",
               width: "100%",
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "12px",
-              padding: "36px 32px",
-              textAlign: "center",
+              padding: "14px 24px",
+              border: "1px solid #17140f",
+              background: "#151209",
+              color: "#f4efe4",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
-            {/* Document-with-X icon */}
-            <div style={{ marginBottom: "20px" }}>
-              <svg width="52" height="60" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="40" height="50" rx="3" fill="#fef2f2" stroke="#fecaca" strokeWidth="1.5"/>
-                <path d="M29 1l12 11H30a1 1 0 01-1-1V1z" fill="#fee2e2" stroke="#fecaca" strokeWidth="1.5"/>
-                <circle cx="39" cy="47" r="11" fill="#b91c1c"/>
-                <path d="M35 47l4-4m0 4l-4-4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <rect x="8" y="22" width="16" height="2" rx="1" fill="#fca5a5"/>
-                <rect x="8" y="28" width="24" height="2" rx="1" fill="#fca5a5"/>
-                <rect x="8" y="34" width="20" height="2" rx="1" fill="#fca5a5"/>
-              </svg>
-            </div>
-
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "#181614",
-                fontFamily: "'Cormorant Garamond', serif",
-                marginBottom: "8px",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              This doesn&apos;t look like a lease
-            </div>
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#6b6560",
-                marginBottom: "20px",
-                lineHeight: 1.6,
-              }}
-            >
-              We detected {detectedLabel}, not an Ontario residential lease.
-              LeaseGuard only analyzes residential tenancy agreements — such as
-              the Ontario Standard Form of Lease or a custom rental agreement.
-            </div>
-
-            {/* What to upload */}
-            <div
-              style={{
-                background: "#f6f3ee",
-                borderRadius: "8px",
-                padding: "14px 16px",
-                textAlign: "left",
-                marginBottom: "24px",
-              }}
-            >
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "10px" }}>
-                What to upload
-              </div>
-              {[
-                "Ontario Standard Form of Lease",
-                "Custom residential rental agreements",
-                "Month-to-month or fixed-term tenancies",
-                "Ontario lease renewals or addendums",
-              ].map((item) => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8l3.5 3.5L13 4.5" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span style={{ fontSize: "12px", color: "#6b6560" }}>{item}</span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => onReset()}
-              style={{
-                width: "100%",
-                padding: "11px 24px",
-                borderRadius: "7px",
-                border: "none",
-                background: "#181614",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Upload a lease instead
-            </button>
-          </div>
-        </div>
+            Upload a lease instead
+          </button>
+        </ErrorCard>
       );
     }
 
     // ── wrong_jurisdiction ──────────────────────────────────────────────────
     if (errorCode === "wrong_jurisdiction") {
       return (
-        <div
-          style={{
-            minHeight: "100vh",
-            background: "#f6f3ee",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "'DM Sans', sans-serif",
-            padding: "24px",
-          }}
+        <ErrorCard
+          tag="Error"
+          tagBg="#e8e2d2"
+          tagColor="#4a4438"
+          code="wrong_jurisdiction"
+          icon={
+            <svg width="44" height="52" viewBox="0 0 48 56" fill="none" style={{ display: "inline-block" }}>
+              <circle cx="24" cy="22" r="20" fill="#fffdfa" stroke="#e3cd8f" strokeWidth="1.5" />
+              <path d="M24 12c-5.5 0-10 4.5-10 10 0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z" fill="#f7f0dc" stroke="#8a4a17" strokeWidth="1.5" />
+              <circle cx="24" cy="22" r="3.5" fill="#8a4a17" />
+            </svg>
+          }
+          title="Ontario leases only."
+          body={errorMsg}
+          note={
+            <>
+              LeaseGuard uses the Ontario Residential Tenancies Act, 2006 and LTB case law.
+              Analysis for other provinces is not yet supported.
+            </>
+          }
         >
-          <div
+          <button
+            onClick={() => onReset()}
             style={{
-              maxWidth: "480px",
               width: "100%",
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "12px",
-              padding: "36px 32px",
-              textAlign: "center",
+              padding: "14px 24px",
+              border: "1px solid #17140f",
+              background: "#151209",
+              color: "#f4efe4",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
-            {/* Location pin icon */}
-            <div style={{ marginBottom: "20px" }}>
-              <svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="24" cy="22" r="20" fill="#fef9ec" stroke="#fde68a" strokeWidth="1.5"/>
-                <path d="M24 12c-5.5 0-10 4.5-10 10 0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z" fill="#fde68a" stroke="#d97706" strokeWidth="1.5"/>
-                <circle cx="24" cy="22" r="3.5" fill="#d97706"/>
-              </svg>
-            </div>
-
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "#181614",
-                fontFamily: "'Cormorant Garamond', serif",
-                marginBottom: "8px",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Ontario leases only
-            </div>
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#6b6560",
-                marginBottom: "20px",
-                lineHeight: 1.6,
-              }}
-            >
-              {errorMsg}
-            </div>
-
-            <div
-              style={{
-                background: "#fefce8",
-                border: "1px solid #fde68a",
-                borderRadius: "8px",
-                padding: "12px 16px",
-                fontSize: "12px",
-                color: "#92400e",
-                marginBottom: "24px",
-                textAlign: "left",
-                lineHeight: 1.6,
-              }}
-            >
-              LeaseGuard uses the Ontario Residential Tenancies Act, 2006 and
-              LTB case law. Analysis for other provinces is not yet supported.
-            </div>
-
-            <button
-              onClick={() => onReset()}
-              style={{
-                width: "100%",
-                padding: "11px 24px",
-                borderRadius: "7px",
-                border: "none",
-                background: "#181614",
-                color: "#fff",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Try another document
-            </button>
-          </div>
-        </div>
+            Try another document
+          </button>
+        </ErrorCard>
       );
     }
 
     // ── generic analysis_failed ─────────────────────────────────────────────
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#f6f3ee",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "'DM Sans', sans-serif",
-          gap: "16px",
-        }}
+      <ErrorCard
+        tag="Error"
+        tagBg="#f4d9d6"
+        tagColor="#9c2b23"
+        code="analysis_failed"
+        icon={
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#9c2b23" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block" }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        }
+        title="The analysis stopped early."
+        body={errorMsg ?? "Something went wrong during analysis. Please try again."}
       >
-        <div
-          style={{
-            padding: "28px 32px",
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "10px",
-            maxWidth: "480px",
-            width: "100%",
-            textAlign: "center",
-          }}
-        >
-          {/* Icon */}
-          <div style={{ marginBottom: "12px" }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline-block" }}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
-          <div
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
             style={{
-              fontSize: "16px",
+              padding: "14px 24px",
+              border: "1px solid #17140f",
+              background: retrying ? "#4a4438" : "#151209",
+              color: "#f4efe4",
+              fontSize: 15,
               fontWeight: 600,
-              color: "#b91c1c",
-              marginBottom: "8px",
+              cursor: retrying ? "not-allowed" : "pointer",
+              fontFamily: "'Public Sans', sans-serif",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
             }}
           >
-            Analysis failed
-          </div>
-          <div style={{ fontSize: "13px", color: "#6b6560", lineHeight: 1.6 }}>
-            {errorMsg ?? "Something went wrong during analysis. Please try again."}
-          </div>
+            {retrying ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25" />
+                  <path d="M21 12a9 9 0 01-9 9" />
+                </svg>
+                Retrying…
+              </>
+            ) : (
+              "Try again"
+            )}
+          </button>
+          <button
+            onClick={() => onReset()}
+            style={{
+              padding: "12px 24px",
+              border: "1px solid #cfc6ab",
+              background: "transparent",
+              fontSize: 14,
+              cursor: "pointer",
+              color: "#4a4438",
+              fontFamily: "'Public Sans', sans-serif",
+            }}
+          >
+            Upload a different file
+          </button>
         </div>
-
-        {/* Primary action: retry same file */}
-        <button
-          onClick={handleRetry}
-          disabled={retrying}
-          style={{
-            padding: "11px 28px",
-            borderRadius: "7px",
-            background: retrying ? "#9a9590" : "#181614",
-            color: "#fff",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: retrying ? "not-allowed" : "pointer",
-            border: "none",
-            letterSpacing: "0.01em",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          {retrying ? (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
-                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"/>
-                <path d="M21 12a9 9 0 01-9 9"/>
-              </svg>
-              Retrying…
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
-              </svg>
-              Try again
-            </>
-          )}
-        </button>
-
-        {/* Secondary action: upload different file */}
-        <button
-          onClick={() => onReset()}
-          style={{
-            padding: "10px 24px",
-            borderRadius: "6px",
-            border: "1px solid #ddd8cf",
-            background: "#fff",
-            fontSize: "13px",
-            cursor: "pointer",
-            color: "#5c5751",
-          }}
-        >
-          Upload a different file
-        </button>
-
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
+      </ErrorCard>
     );
   }
 
@@ -1509,10 +1486,11 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f3ee",
+        background: "#f7f4ee",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
+        color: "#17140f",
       }}
     >
       {/* Header */}
@@ -1520,106 +1498,43 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "0 48px",
-          height: "56px",
-          borderBottom: "1px solid #e8e4dc",
-          background: "#f6f3ee",
+          padding: "0 clamp(20px,4vw,56px)",
+          height: 66,
+          borderBottom: "1px solid #17140f",
+          background: "#f7f4ee",
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontWeight: 600,
-            fontSize: "17px",
-            letterSpacing: "0.02em",
-            color: "#181614",
-          }}
-        >
+        <span style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontWeight: 600, fontSize: 22, letterSpacing: "-0.01em" }}>
           LeaseGuard
         </span>
       </header>
 
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "64px 24px",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: "640px" }}>
-          {/* File info */}
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "64px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 640 }}>
+          {/* File status bar */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              padding: "10px 16px",
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "7px",
-              marginBottom: "40px",
+              gap: 12,
+              padding: "14px 18px",
+              border: "1px solid #17140f",
+              background: "#fffdfa",
+              marginBottom: 40,
+              flexWrap: "wrap",
             }}
           >
-            <svg
-              width="16"
-              height="18"
-              viewBox="0 0 16 18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                x="0.75"
-                y="0.75"
-                width="12.5"
-                height="16.5"
-                rx="1.75"
-                fill="white"
-                stroke="#ddd8cf"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="3"
-                y="8"
-                width="5"
-                height="1.5"
-                rx="0.75"
-                fill="#c8c3ba"
-              />
-              <rect
-                x="3"
-                y="11"
-                width="8"
-                height="1.5"
-                rx="0.75"
-                fill="#c8c3ba"
-              />
-              <rect
-                x="3"
-                y="14"
-                width="6"
-                height="1.5"
-                rx="0.75"
-                fill="#c8c3ba"
-              />
-              <rect
-                x="3"
-                y="4"
-                width="3"
-                height="2"
-                rx="0.5"
-                fill="#b91c1c"
-                opacity="0.85"
-              />
+            <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+              <rect x="0.75" y="0.75" width="12.5" height="16.5" rx="0" fill="#fffdfa" stroke="#cfc6ab" strokeWidth="1.5" />
+              <rect x="3" y="8" width="5" height="1.5" fill="#cfc6ab" />
+              <rect x="3" y="11" width="8" height="1.5" fill="#cfc6ab" />
+              <rect x="3" y="14" width="6" height="1.5" fill="#cfc6ab" />
             </svg>
             <span
               style={{
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#181614",
+                fontSize: 15,
+                fontWeight: 600,
                 flex: 1,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -1628,77 +1543,53 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
             >
               {filename}
             </span>
-            <span style={{ fontSize: "12px", color: "#9a9590", flexShrink: 0 }}>
-              Ontario · processing
+            <span
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                background: "#e8e2d2",
+                color: "#4a4438",
+                padding: "3px 9px",
+                flexShrink: 0,
+              }}
+            >
+              Ontario · {complete ? "complete" : "processing"}
             </span>
           </div>
 
           {/* Title */}
-          <h2
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontWeight: 600,
-              fontSize: "28px",
-              color: "#181614",
-              margin: "0 0 8px",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Analysing your lease
+          <h2 style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontWeight: 600, fontSize: "clamp(34px,4.6vw,44px)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+            {complete ? "Your report is ready." : "Analysing your lease"}
           </h2>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#6b6560",
-              margin: "0 0 36px",
-            }}
-          >
-            Usually 60–90 seconds. Please keep this tab open.
+          <p style={{ fontSize: 16, color: "#6f6857", margin: "0 0 36px" }}>
+            {complete ? "Opening it now — this takes a second." : "Usually 60–90 seconds. Please keep this tab open."}
           </p>
 
           {/* Step timeline */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {PROCESSING_STEPS.map((step, i) => {
               const done = completedSteps.includes(i);
               const active = currentStep === i;
 
               return (
-                <div key={step.id} style={{ display: "flex", gap: "0" }}>
-                  {/* Left column */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      width: "32px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {/* Top connector */}
+                <div key={step.id} style={{ display: "flex" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32, flexShrink: 0 }}>
                     <div
                       style={{
-                        width: "1px",
+                        width: 1,
                         flex: "0 0 10px",
-                        background:
-                          i === 0
-                            ? "transparent"
-                            : done || active
-                            ? "#181614"
-                            : "#e8e4dc",
+                        background: i === 0 ? "transparent" : done || active ? "#17140f" : "#e0d9c6",
                       }}
                     />
-                    {/* Dot */}
                     <div
                       style={{
-                        width: done ? 20 : active ? 20 : 16,
-                        height: done ? 20 : active ? 20 : 16,
+                        width: done || active ? 18 : 13,
+                        height: done || active ? 18 : 13,
                         borderRadius: "50%",
-                        background: done
-                          ? "#181614"
-                          : active
-                          ? "transparent"
-                          : "#e8e4dc",
-                        border: active ? "2px solid #181614" : "none",
+                        background: done ? "#17140f" : "transparent",
+                        border: active ? "2px solid #9c2b23" : done ? "none" : "1px solid #cfc6ab",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1707,113 +1598,48 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
                       }}
                     >
                       {done && (
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 10 10"
-                          fill="none"
-                        >
-                          <path
-                            d="M2 5l2.2 2.2L8 3"
-                            stroke="white"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                          <path d="M2 5l2.2 2.2L8 3" stroke="#fffdfa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                       {active && (
-                        <div
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            background: "#181614",
-                            animation: "pulse-dot 1.2s ease-in-out infinite",
-                          }}
-                        />
+                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#9c2b23", animation: "lg-pulse 1.2s ease-in-out infinite" }} />
                       )}
                     </div>
-                    {/* Bottom connector */}
                     <div
                       style={{
-                        width: "1px",
+                        width: 1,
                         flex: 1,
-                        minHeight: "10px",
-                        background:
-                          i === PROCESSING_STEPS.length - 1
-                            ? "transparent"
-                            : done
-                            ? "#181614"
-                            : "#e8e4dc",
+                        minHeight: 10,
+                        background: i === PROCESSING_STEPS.length - 1 ? "transparent" : done ? "#17140f" : "#e0d9c6",
                       }}
                     />
                   </div>
 
-                  {/* Right column: content */}
-                  <div
-                    style={{
-                      paddingLeft: "14px",
-                      paddingBottom: "24px",
-                      paddingTop: "4px",
-                      flex: 1,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
+                  <div style={{ paddingLeft: 14, paddingBottom: 24, paddingTop: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span
                         style={{
-                          fontSize: "14px",
-                          fontWeight: done ? 400 : active ? 600 : 400,
-                          color: done
-                            ? "#6b6560"
-                            : active
-                            ? "#181614"
-                            : "#b0aaa4",
-                          transition: "all 0.2s",
+                          fontSize: 14,
+                          fontWeight: active ? 600 : 400,
+                          color: done ? "#4a4438" : active ? "#17140f" : "#b5ac98",
                         }}
                       >
                         {step.label}
                       </span>
                       {active && (
-                        <span
-                          style={{
-                            fontSize: "10px",
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            color: "#9a9590",
-                            fontWeight: 500,
-                          }}
-                        >
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9c2b23", fontWeight: 500 }}>
                           In progress
                         </span>
                       )}
                       {done && (
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            color: "#15803d",
-                            fontWeight: 500,
-                          }}
-                        >
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#2f6b3a", fontWeight: 500 }}>
                           Done
                         </span>
                       )}
                     </div>
                     {(active || done) && (
-                      <div
-                        style={{
-                          marginTop: "3px",
-                          fontSize: "12px",
-                          color: active ? "#6b6560" : "#9a9590",
-                          lineHeight: 1.4,
-                        }}
-                      >
+                      <div style={{ marginTop: 3, fontSize: 12, color: active ? "#4a4438" : "#a8a08c", lineHeight: 1.4 }}>
                         {step.detail}
                       </div>
                     )}
@@ -1824,133 +1650,80 @@ function ProcessingPage({ leaseId, filename, onReset }: ProcessingPageProps) {
           </div>
 
           {/* Streaming agent log */}
-          <div
-            style={{
-              marginTop: "24px",
-              background: "#131110",
-              border: "1px solid #2a2623",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            {/* Log header */}
-            <div
-              style={{
-                padding: "9px 14px",
-                borderBottom: "1px solid #2a2623",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
+          <div style={{ marginTop: 24, background: "#131110", border: "1px solid #17140f" }}>
+            <div style={{ padding: "9px 14px", borderBottom: "1px solid #2b2720", display: "flex", alignItems: "center", gap: 8 }}>
               <div
                 style={{
                   width: 6,
                   height: 6,
                   borderRadius: "50%",
-                  background: currentStep >= PROCESSING_STEPS.length ? "#4ade80" : "#15803d",
+                  background: complete ? "#7ec98f" : "#2f6b3a",
                   flexShrink: 0,
-                  animation: currentStep < PROCESSING_STEPS.length ? "pulse-dot 1.4s ease-in-out infinite" : "none",
+                  animation: complete ? "none" : "lg-pulse 1.4s ease-in-out infinite",
                 }}
               />
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "#4a4744",
-                  letterSpacing: "0.07em",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
-                  fontFamily: "monospace",
-                }}
-              >
-                Agent Log
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#a8a08c", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 500 }}>
+                Agent log
               </span>
-              <span
-                style={{
-                  marginLeft: "auto",
-                  fontSize: "10px",
-                  color: "#3a3532",
-                  fontFamily: "monospace",
-                }}
-              >
+              <span style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#6f6857" }}>
                 {logLines.length} events
               </span>
             </div>
 
-            {/* Log lines */}
             <div
               ref={logContainerRef}
               style={{
                 padding: "10px 14px",
-                height: "180px",
+                height: 196,
                 overflowY: "auto",
-                fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', monospace",
-                fontSize: "11.5px",
-                lineHeight: "1.75",
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 12,
+                lineHeight: 1.85,
                 scrollBehavior: "smooth",
               }}
             >
               {logLines.length === 0 ? (
-                <span style={{ color: "#3a3532", fontStyle: "italic" }}>
-                  Connecting to analysis pipeline...
-                </span>
+                <span style={{ color: "#6f6857", fontStyle: "italic" }}>Connecting to analysis pipeline...</span>
               ) : (
                 logLines.map((line) => (
-                  <div
-                    key={line.id}
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      animation: "log-fadein 0.25s ease",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#3a3532",
-                        flexShrink: 0,
-                        userSelect: "none",
-                      }}
-                    >
-                      {formatLogTime(line.timestamp)}
-                    </span>
-                    <span style={{ color: severityColor(line.severity) }}>
-                      {line.message}
-                    </span>
+                  <div key={line.id} style={{ display: "flex", gap: 12, animation: "log-fadein 0.25s ease" }}>
+                    <span style={{ color: "#8a8272", flexShrink: 0, userSelect: "none" }}>{formatLogTime(line.timestamp)}</span>
+                    <span style={{ color: severityColor(line.severity) }}>{line.message}</span>
                   </div>
                 ))
               )}
             </div>
           </div>
 
+          {/* Progress rule */}
+          <div style={{ marginTop: 12, height: 3, background: "#e0d9c6" }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.min(100, (elapsed / totalExpected) * 100)}%`,
+                background: "#9c2b23",
+                transition: "width 0.4s ease",
+              }}
+            />
+          </div>
+
           {/* Time display */}
           <div
             style={{
-              marginTop: "12px",
+              marginTop: 10,
               padding: "12px 16px",
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "8px",
+              background: "#fffdfa",
+              border: "1px solid #e0d9c6",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              fontFamily: "'IBM Plex Mono', monospace",
             }}
           >
-            <span style={{ fontSize: "12px", color: "#9a9590" }}>
-              {currentStep >= PROCESSING_STEPS.length
-                ? "Analysis complete"
-                : `Elapsed: ${elapsed}s`}
+            <span style={{ fontSize: 12, color: "#6f6857" }}>
+              {complete ? "Analysis complete" : `Elapsed: ${elapsed}s`}
             </span>
-            {currentStep < PROCESSING_STEPS.length && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#6b6560",
-                  fontWeight: 500,
-                }}
-              >
-                ~{remaining}s remaining
-              </span>
-            )}
+            {!complete && <span style={{ fontSize: 12, color: "#4a4438", fontWeight: 500 }}>~{remaining}s remaining</span>}
           </div>
 
           <style>{`
