@@ -7,38 +7,11 @@ import { AuthButton } from "./components/auth-button";
 import { Reveal } from "./components/scroll-reveal";
 import { LeaseHeroAnimation } from "./components/lease-hero-animation";
 import { ScoreHero, SeverityRuler } from "./components/score-hero";
+import { PROCESSING_STEPS } from "./components/processing-steps";
 
 // ── Upload page ───────────────────────────────────────────────────────────────
 
 type Screen = "landing" | "processing";
-
-const PROCESSING_STEPS = [
-  {
-    id: "parse",
-    label: "Reading your document",
-    detail: "Extracting text from every page of your lease",
-  },
-  {
-    id: "jurisdiction",
-    label: "Confirming Ontario jurisdiction",
-    detail: "Verifying this is an Ontario residential tenancy agreement",
-  },
-  {
-    id: "segment",
-    label: "Finding each clause",
-    detail: "Breaking your lease into individual clauses for analysis",
-  },
-  {
-    id: "research",
-    label: "Looking up the law",
-    detail: "Checking 2,372 RTA sections for relevant rules",
-  },
-  {
-    id: "report",
-    label: "Writing your report",
-    detail: "Scoring risk, flagging issues, and building your negotiation guide",
-  },
-];
 
 // Map progress_pct (0–100) to step index (0–4)
 function pctToStep(pct: number): number {

@@ -208,6 +208,87 @@ export async function POST(
   });
 }
 
+// ── PATCH /api/report/[id] ────────────────────────────────────────────────────
+// Rename a lease's dashboard display title. Authenticated owner only.
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const rl = await checkDbRateLimit(getClientIp(req), { storeKey: "report-patch", maxRequests: 30 });
+  if (!rl.allowed) {
+    const { body, headers, status } = dbRateLimitExceededResponse(rl.resetAt);
+    return NextResponse.json(body, { status, headers });
+  }
+
+  const { id } = await params;
+
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    return NextResponse.json(
+      { error: "invalid_id", message: "Invalid report ID format." },
+      { status: 400 }
+    );
+  }
+
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "unauthenticated", message: "Sign in to rename your analyses." },
+      { status: 401 }
+    );
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const rawTitle = typeof body?.display_title === "string" ? body.display_title.trim() : "";
+  if (rawTitle.length > 200) {
+    return NextResponse.json(
+      { error: "invalid_title", message: "Title must be 200 characters or fewer." },
+      { status: 400 }
+    );
+  }
+  // Empty string clears the override, reverting to the derived title.
+  const displayTitle = rawTitle.length > 0 ? rawTitle : null;
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: lease, error: leaseErr } = await supabase
+    .from("leases")
+    .select("id, user_id")
+    .eq("id", id)
+    .single();
+
+  if (leaseErr || !lease) {
+    return NextResponse.json(
+      { error: "not_found", message: "Analysis not found." },
+      { status: 404 }
+    );
+  }
+
+  if (lease.user_id !== user.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "You do not own this analysis." },
+      { status: 403 }
+    );
+  }
+
+  const { error: updateErr } = await supabase
+    .from("leases")
+    .update({ display_title: displayTitle })
+    .eq("id", id);
+
+  if (updateErr) {
+    return NextResponse.json(
+      { error: "update_failed", message: "Could not rename. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ display_title: displayTitle });
+}
+
 // ── DELETE /api/report/[id] ───────────────────────────────────────────────────
 // PIPEDA right of erasure. Authenticated users only; must own the lease.
 // Cascades: tool_call_logs → clauses → reports → storage → leases.
