@@ -229,18 +229,18 @@ const PAGES: Array<{ num: number; sections: Section[] }> = [
 
 function DocHeader() {
   return (
-    <div style={{ marginBottom: 26, paddingBottom: 18, borderBottom: "1.5px solid #181614" }}>
-      <div style={{ fontSize: 8, letterSpacing: "0.13em", textTransform: "uppercase", color: "#9a9590", fontFamily: "'DM Sans', sans-serif", marginBottom: 9 }}>
+    <div style={{ marginBottom: 26, paddingBottom: 18, borderBottom: "1.5px solid #17140f" }}>
+      <div style={{ fontSize: 8, letterSpacing: "0.13em", textTransform: "uppercase", color: "#a8a08c", fontFamily: "'Public Sans', sans-serif", marginBottom: 9 }}>
         Province of Ontario · Residential Tenancies Act, 2006
       </div>
-      <div style={{ fontSize: 19, fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, color: "#181614", letterSpacing: "-0.01em", marginBottom: 16 }}>
+      <div style={{ fontSize: 19, fontFamily: "'Newsreader', serif", fontWeight: 600, color: "#17140f", letterSpacing: "-0.01em", marginBottom: 16 }}>
         Residential Tenancy Agreement
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 24px" }}>
         {([ ["Landlord", "Mapleleaf Properties Inc."], ["Unit Address", "1204 – 123 King St W"], ["City / Postal", "Toronto, ON  M5X 1C4"], ["Monthly Rent", "$2,850.00"], ["Term Commencement", "September 1, 2026"], ["Term End Date", "August 31, 2027"] ] as [string, string][]).map(([label, val]) => (
           <div key={label}>
-            <div style={{ fontSize: 8, color: "#9a9590", textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: "'DM Sans', sans-serif", marginBottom: 1 }}>{label}</div>
-            <div style={{ fontSize: 10.5, color: "#181614", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{val}</div>
+            <div style={{ fontSize: 8, color: "#a8a08c", textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: "'Public Sans', sans-serif", marginBottom: 1 }}>{label}</div>
+            <div style={{ fontSize: 10.5, color: "#17140f", fontFamily: "'Public Sans', sans-serif", fontWeight: 600 }}>{val}</div>
           </div>
         ))}
       </div>
@@ -252,10 +252,10 @@ function BpSection({ n, h, text }: { n: string; h: string; text: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", gap: 7, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#181614", flexShrink: 0, minWidth: 16 }}>{n}.</span>
-        <span style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#181614" }}>{h}</span>
+        <span style={{ fontSize: 10, fontFamily: "'Public Sans', sans-serif", fontWeight: 700, color: "#17140f", flexShrink: 0, minWidth: 16 }}>{n}.</span>
+        <span style={{ fontSize: 10, fontFamily: "'Public Sans', sans-serif", fontWeight: 700, color: "#17140f" }}>{h}</span>
       </div>
-      <p style={{ margin: 0, fontSize: 10, fontFamily: "'DM Sans', sans-serif", color: "#3d3d3d", lineHeight: 1.72, paddingLeft: 23, textAlign: "justify" }}>{text}</p>
+      <p style={{ margin: 0, fontSize: 10, fontFamily: "'Public Sans', sans-serif", color: "#3d3d3d", lineHeight: 1.72, paddingLeft: 23, textAlign: "justify" }}>{text}</p>
     </div>
   );
 }
@@ -274,34 +274,34 @@ function ClauseSec({ clause, highlighted, flash }: { clause: Clause; highlighted
       style={{ marginBottom: 14, paddingLeft: highlighted ? 9 : 12, paddingTop: highlighted ? 7 : 0, paddingBottom: highlighted ? 7 : 0, borderLeft: `3px solid ${borderColor}`, background: bgColor, borderRadius: highlighted ? "0 5px 5px 0" : 0, transition: "background 0.5s ease, border-color 0.35s ease, padding 0.25s ease", position: "relative" }}
     >
       {highlighted && (
-        <div style={{ position: "absolute", top: 7, right: 0, fontSize: 8, padding: "2px 8px", background: bg, border: `1px solid ${bdr}`, borderRadius: "3px 0 0 3px", color: col, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", opacity: flash ? 1 : 0.75, transition: "opacity 0.5s" }}>
+        <div style={{ position: "absolute", top: 7, right: 0, fontSize: 8, padding: "2px 8px", background: bg, border: `1px solid ${bdr}`, borderRadius: "0", color: col, fontFamily: "'Public Sans', sans-serif", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", opacity: flash ? 1 : 0.75, transition: "opacity 0.5s" }}>
           {lbls[clause.risk_level] ?? clause.risk_level}
         </div>
       )}
       <div style={{ display: "flex", gap: 7, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: highlighted ? col : "#181614", flexShrink: 0, minWidth: 16, transition: "color 0.35s" }}>{clause.number}.</span>
-        <span style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: highlighted ? col : "#181614", transition: "color 0.35s" }}>{clause.heading}</span>
+        <span style={{ fontSize: 10, fontFamily: "'Public Sans', sans-serif", fontWeight: 700, color: highlighted ? col : "#17140f", flexShrink: 0, minWidth: 16, transition: "color 0.35s" }}>{clause.number}.</span>
+        <span style={{ fontSize: 10, fontFamily: "'Public Sans', sans-serif", fontWeight: 700, color: highlighted ? col : "#17140f", transition: "color 0.35s" }}>{clause.heading}</span>
       </div>
-      <p style={{ margin: 0, fontSize: 10, fontFamily: "'DM Sans', sans-serif", color: "#3d3d3d", lineHeight: 1.72, paddingLeft: 23, textAlign: "justify" }}>{clause.raw_text}</p>
+      <p style={{ margin: 0, fontSize: 10, fontFamily: "'Public Sans', sans-serif", color: "#3d3d3d", lineHeight: 1.72, paddingLeft: 23, textAlign: "justify" }}>{clause.raw_text}</p>
     </div>
   );
 }
 
 function SigSection() {
   return (
-    <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid #ddd8cf" }}>
-      <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#181614", marginBottom: 14 }}>24. Signatures</div>
-      <p style={{ margin: "0 0 20px", fontSize: 9.5, fontFamily: "'DM Sans', sans-serif", color: "#6b6560", lineHeight: 1.65 }}>
+    <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid #cfc6ab" }}>
+      <div style={{ fontSize: 10, fontFamily: "'Public Sans', sans-serif", fontWeight: 700, color: "#17140f", marginBottom: 14 }}>24. Signatures</div>
+      <p style={{ margin: "0 0 20px", fontSize: 9.5, fontFamily: "'Public Sans', sans-serif", color: "#6f6857", lineHeight: 1.65 }}>
         By signing below, both parties acknowledge they have read, understood, and agree to the terms of this Agreement.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
         {["Landlord", "Tenant"].map((party) => (
           <div key={party}>
-            <div style={{ fontSize: 8.5, color: "#9a9590", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 32 }}>{party}</div>
+            <div style={{ fontSize: 8.5, color: "#a8a08c", fontFamily: "'Public Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 32 }}>{party}</div>
             {["Signature", "Print Name", "Date"].map((lbl, i) => (
               <div key={lbl} style={{ marginTop: i > 0 ? 20 : 0 }}>
-                <div style={{ borderBottom: "1px solid #9a9590", marginBottom: 4 }} />
-                <div style={{ fontSize: 8.5, color: "#b0aaa4", fontFamily: "'DM Sans', sans-serif" }}>{lbl}</div>
+                <div style={{ borderBottom: "1px solid #a8a08c", marginBottom: 4 }} />
+                <div style={{ fontSize: 8.5, color: "#a8a08c", fontFamily: "'Public Sans', sans-serif" }}>{lbl}</div>
               </div>
             ))}
           </div>
@@ -351,26 +351,26 @@ function MockPDFViewer({ clauses, activeClauseId, sources = [], onCloseActiveCla
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, height: "100%" }}>
         <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
           <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
-            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-            <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
+            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fffdfa" strokeWidth="1.2" />
+            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fffdfa" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M9.5 0.5v3h3" stroke="#fffdfa" strokeWidth="1.2" />
           </svg>
-          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>KingSt_Lease_2026.pdf</span>
-          <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>6 pp.</span>
+          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'Public Sans', sans-serif", fontWeight: 500 }}>KingSt_Lease_2026.pdf</span>
+          <span style={{ fontSize: 10, color: "#666", fontFamily: "'Public Sans', sans-serif" }}>6 pp.</span>
           <div style={{ flex: 1 }} />
           {activeClause ? (
             <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
-              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>Clause {activeClause.number} — {activeClause.heading}</span>
+              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'Public Sans', sans-serif" }}>Clause {activeClause.number} — {activeClause.heading}</span>
             </div>
           ) : (
-            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>Click a clause to highlight</span>
+            <span style={{ fontSize: 10, color: "#555", fontFamily: "'Public Sans', sans-serif" }}>Click a clause to highlight</span>
           )}
         </div>
         <div ref={scrollRef} style={{ flex: 1, overflow: "auto", padding: "16px 12px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           {PAGES.map((page) => (
-            <div key={page.num} style={{ background: "#fff", width: "100%", maxWidth: 620, padding: "44px 48px 34px", boxShadow: "0 2px 12px rgba(0,0,0,0.42)", position: "relative" }}>
-              <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", fontSize: 8.5, color: "#c5bfb5", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.06em" }}>— {page.num} —</div>
+            <div key={page.num} style={{ background: "#fffdfa", width: "100%", maxWidth: 620, padding: "44px 48px 34px", boxShadow: "0 2px 12px rgba(0,0,0,0.42)", position: "relative" }}>
+              <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", fontSize: 8.5, color: "#cfc6ab", fontFamily: "'Public Sans', sans-serif", letterSpacing: "0.06em" }}>— {page.num} —</div>
               {page.sections.map((sec, i) => renderSection(sec, i))}
             </div>
           ))}
@@ -734,7 +734,7 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
           <circle cx="16" cy="16" r="14" stroke="#e87070" strokeWidth="2" />
           <path d="M16 10v8M16 22v1" stroke="#e87070" strokeWidth="2" strokeLinecap="round" />
         </svg>
-        <span style={{ color: "#e87070", fontSize: 12, fontFamily: "'DM Sans', sans-serif", textAlign: "center", maxWidth: 220 }}>{loadError}</span>
+        <span style={{ color: "#e87070", fontSize: 12, fontFamily: "'Public Sans', sans-serif", textAlign: "center", maxWidth: 220 }}>{loadError}</span>
       </div>
     );
   }
@@ -746,15 +746,15 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
         {/* Toolbar */}
         <div style={{ flexShrink: 0, height: 36, background: "#2c2c2c", borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "center", padding: "0 14px", gap: 10 }}>
           <svg width="13" height="14" viewBox="0 0 13 14" fill="none" style={{ opacity: 0.45, flexShrink: 0 }}>
-            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fff" strokeWidth="1.2" />
-            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
-            <path d="M9.5 0.5v3h3" stroke="#fff" strokeWidth="1.2" />
+            <rect x="0.5" y="0.5" width="9" height="13" rx="1" stroke="#fffdfa" strokeWidth="1.2" />
+            <path d="M9.5 0.5L12.5 3.5v9a1 1 0 01-1 1H3" stroke="#fffdfa" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M9.5 0.5v3h3" stroke="#fffdfa" strokeWidth="1.2" />
           </svg>
-          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'Public Sans', sans-serif", fontWeight: 500, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {filename}
           </span>
           {pageCount > 0 && (
-            <span style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', sans-serif" }}>
+            <span style={{ fontSize: 10, color: "#666", fontFamily: "'Public Sans', sans-serif" }}>
               {pageCount} pp.
             </span>
           )}
@@ -762,12 +762,12 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
           {activeClause ? (
             <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 3, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: riskColor(activeClause.risk_level) }} />
-              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif" }}>
+              <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'Public Sans', sans-serif" }}>
                 Clause {activeClause.number} — {activeClause.heading}
               </span>
             </div>
           ) : (
-            <span style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>
+            <span style={{ fontSize: 10, color: "#555", fontFamily: "'Public Sans', sans-serif" }}>
               Click a clause to highlight
             </span>
           )}
@@ -779,7 +779,7 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
           style={{ flex: 1, overflow: "auto", padding: "16px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}
         >
           {pageCount === 0 && (
-            <div style={{ color: "#666", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginTop: 60 }}>
+            <div style={{ color: "#666", fontSize: 13, fontFamily: "'Public Sans', sans-serif", marginTop: 60 }}>
               Loading PDF…
             </div>
           )}
@@ -794,7 +794,7 @@ function RealPDFViewer({ pdfUrl, clauses, activeClauseId, filename, leaseId, sou
                 data-page={pageNum}
                 style={{
                   position: "relative",
-                  background: "#fff",
+                  background: "#fffdfa",
                   boxShadow: "0 2px 12px rgba(0,0,0,0.42)",
                   width: "100%",
                   overflow: "hidden",
@@ -895,20 +895,20 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
         width: activeClauseId ? "340px" : "0px",
         minWidth: activeClauseId ? "340px" : "0px",
         height: "100%",
-        background: "#191715",
-        borderLeft: activeClauseId ? "1px solid #2d2b28" : "0px solid transparent",
+        background: "#151209",
+        borderLeft: activeClauseId ? "1px solid #1c1811" : "0px solid transparent",
         display: "flex",
         flexDirection: "column",
         transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s",
         overflow: "hidden",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
       }}
     >
       {/* Header */}
       <div
         style={{
           padding: "16px 20px",
-          borderBottom: "1px solid #2d2b28",
+          borderBottom: "1px solid #1c1811",
           flexShrink: 0,
         }}
       >
@@ -925,10 +925,11 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
               margin: 0,
               fontSize: "14px",
               fontWeight: 600,
-              color: "#ebe8e2",
+              color: "#e9e4d5",
               textTransform: "uppercase",
               letterSpacing: "0.06em",
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
             }}
           >
             Grounding Evidence
@@ -941,12 +942,12 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
               cursor: "pointer",
               padding: "4px",
               display: "flex",
-              color: "#7a7570",
+              color: "#a8a08c",
               fontSize: "14px",
               transition: "color 0.15s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ebe8e2")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#7a7570")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#e9e4d5")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#a8a08c")}
           >
             ✕
           </button>
@@ -954,7 +955,7 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
         <div
           style={{
             fontSize: "11px",
-            color: "#9a9590",
+            color: "#a8a08c",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -987,7 +988,7 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
               actLower.includes("o. reg") ||
               actLower.includes("o.reg");
             const badgeText = isStatute ? "RTA / Statute" : "LTB Precedent";
-            const badgeColor = isStatute ? "#f59e0b" : "#3b82f6";
+            const badgeColor = isStatute ? "#93690f" : "#1f3a52";
             const badgeBg = isStatute ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)";
             const badgeBorder = isStatute ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(59,130,246,0.2)";
 
@@ -995,9 +996,9 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
               <div
                 key={source.id}
                 style={{
-                  background: "#22201d",
-                  border: "1px solid #302e2a",
-                  borderRadius: "8px",
+                  background: "#1c1811",
+                  border: "1px solid #1c1811",
+                  borderRadius: "0",
                   padding: "16px",
                   display: "flex",
                   flexDirection: "column",
@@ -1005,11 +1006,11 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                   transition: "transform 0.2s ease, border-color 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#45423c";
+                  e.currentTarget.style.borderColor = "#2b2720";
                   e.currentTarget.style.transform = "translateY(-1px)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#302e2a";
+                  e.currentTarget.style.borderColor = "#1c1811";
                   e.currentTarget.style.transform = "translateY(0)";
                 }}
               >
@@ -1020,7 +1021,7 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                       fontSize: "9px",
                       fontWeight: 600,
                       padding: "2px 6px",
-                      borderRadius: "4px",
+                      borderRadius: "0",
                       color: badgeColor,
                       background: badgeBg,
                       border: badgeBorder,
@@ -1031,7 +1032,7 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                     {badgeText}
                   </span>
                   {source.relevance_score > 0 && (
-                    <span style={{ fontSize: "10px", color: "#7a7570", fontWeight: 500 }}>
+                    <span style={{ fontSize: "10px", color: "#a8a08c", fontWeight: 500 }}>
                       Match: {Math.round(source.relevance_score * 100)}%
                     </span>
                   )}
@@ -1042,7 +1043,7 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                   style={{
                     fontSize: "13px",
                     fontWeight: 600,
-                    color: "#ebe8e2",
+                    color: "#e9e4d5",
                     lineHeight: 1.4,
                   }}
                 >
@@ -1055,11 +1056,11 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
                   style={{
                     fontSize: "11px",
                     lineHeight: "1.6",
-                    color: "#b0aaa4",
-                    background: "#181614",
+                    color: "#a8a08c",
+                    background: "#17140f",
                     padding: "10px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #23211f",
+                    borderRadius: "0",
+                    border: "1px solid #1c1811",
                     maxHeight: "160px",
                     overflowY: "auto",
                     textAlign: "justify",
@@ -1114,14 +1115,14 @@ function GroundingDrawer({ activeClauseId, clauses, sources, onClose }: Groundin
               opacity: 0.75,
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7a7570" strokeWidth="1.5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a8a08c" strokeWidth="1.5">
               <path d="M4 19.5v-15A2.5 2.5 0 016.5 2H20v20H6.5a2.5 2.5 0 01-2.5-2.5z" />
               <path d="M6 6h10M6 10h10" />
             </svg>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#ebe8e2" }}>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#e9e4d5" }}>
               No direct database grounding
             </div>
-            <div style={{ fontSize: "11px", color: "#7a7570", lineHeight: 1.5, maxWidth: "220px" }}>
+            <div style={{ fontSize: "11px", color: "#a8a08c", lineHeight: 1.5, maxWidth: "220px" }}>
               This clause was assessed using the model's standard Ontario tenancy rules. No specific RTA statute section or LTB case was direct-matched.
             </div>
           </div>

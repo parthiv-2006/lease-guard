@@ -7,8 +7,8 @@
  * warm-dark glassmorphism panel. Users type questions about their specific
  * lease and receive streaming, RAG-grounded answers with source citation pills.
  *
- * Design language: matches GroundingDrawer — #191715 bg, #22201d cards,
- * cubic-bezier slide transitions, Cormorant Garamond headers.
+ * Design language: matches GroundingDrawer — #151209 bg, #1c1811 cards,
+ * cubic-bezier slide transitions, Newsreader headers.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -62,7 +62,7 @@ function SourcePill({ source }: { source: ChatSource }) {
 
   const pillBg = isStatute ? "rgba(245,158,11,0.15)" : "rgba(59,130,246,0.15)";
   const pillBorder = isStatute ? "rgba(245,158,11,0.35)" : "rgba(59,130,246,0.35)";
-  const pillColor = isStatute ? "#f59e0b" : "#60a5fa";
+  const pillColor = isStatute ? "#93690f" : "#60a5fa";
 
   const popoverContent = isStatute
     ? `${source.act_name} ${source.section_number} — ${source.section_title}`
@@ -78,12 +78,12 @@ function SourcePill({ source }: { source: ChatSource }) {
           alignItems: "center",
           gap: "4px",
           padding: "2px 8px",
-          borderRadius: "100px",
+          borderRadius: "0",
           background: pillBg,
           border: `1px solid ${pillBorder}`,
           color: pillColor,
           fontSize: "10px",
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Public Sans', sans-serif",
           fontWeight: 600,
           letterSpacing: "0.04em",
           cursor: "pointer",
@@ -119,15 +119,15 @@ function SourcePill({ source }: { source: ChatSource }) {
               bottom: "calc(100% + 6px)",
               left: "50%",
               transform: "translateX(-50%)",
-              background: "#2a2723",
+              background: "#1c1811",
               border: `1px solid ${pillBorder}`,
-              borderRadius: "8px",
+              borderRadius: "0",
               padding: "10px 12px",
               width: "240px",
               fontSize: "11px",
-              color: "#ebe8e2",
+              color: "#e9e4d5",
               lineHeight: 1.5,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
               zIndex: 999,
               boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
               animation: "fadeUpChat 0.12s ease",
@@ -136,7 +136,7 @@ function SourcePill({ source }: { source: ChatSource }) {
             <div style={{ color: pillColor, fontWeight: 600, marginBottom: "4px", fontSize: "10px" }}>
               {isStatute ? "RTA Statute" : "LTB Precedent"}
             </div>
-            <div style={{ color: "#c5bfb5" }}>{popoverContent}</div>
+            <div style={{ color: "#cfc6ab" }}>{popoverContent}</div>
             {source.url && (
               <a
                 href={source.url}
@@ -191,7 +191,7 @@ function ErrorBubble({ msg }: { msg: ChatMessage }) {
         style={{
           maxWidth: "92%",
           padding: "12px 14px",
-          borderRadius: "12px 12px 12px 4px",
+          borderRadius: "0",
           background: "rgba(245,158,11,0.08)",
           border: "1px solid rgba(245,158,11,0.25)",
           display: "flex",
@@ -212,8 +212,8 @@ function ErrorBubble({ msg }: { msg: ChatMessage }) {
             style={{
               fontSize: "12px",
               fontWeight: 600,
-              color: "#f59e0b",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#93690f",
+              fontFamily: "'Public Sans', sans-serif",
               letterSpacing: "0.01em",
             }}
           >
@@ -225,8 +225,8 @@ function ErrorBubble({ msg }: { msg: ChatMessage }) {
           style={{
             margin: 0,
             fontSize: "12px",
-            color: "#c5bfb5",
-            fontFamily: "'DM Sans', sans-serif",
+            color: "#cfc6ab",
+            fontFamily: "'Public Sans', sans-serif",
             lineHeight: 1.55,
           }}
         >
@@ -257,11 +257,11 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           maxWidth: "88%",
           padding: "10px 13px",
           borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-          background: isUser ? "#181614" : "#22201d",
-          border: isUser ? "1px solid #2e2b28" : "1px solid #2e2b28",
-          color: isUser ? "#ebe8e2" : "#c5bfb5",
+          background: isUser ? "#17140f" : "#1c1811",
+          border: isUser ? "1px solid #1c1811" : "1px solid #1c1811",
+          color: isUser ? "#e9e4d5" : "#cfc6ab",
           fontSize: "13px",
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Public Sans', sans-serif",
           lineHeight: 1.55,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
@@ -277,7 +277,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
                   width: "6px",
                   height: "6px",
                   borderRadius: "50%",
-                  background: "#6b6560",
+                  background: "#6f6857",
                   animation: `chatDot 1.2s ease-in-out ${i * 0.2}s infinite`,
                 }}
               />
@@ -294,7 +294,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
               display: "inline-block",
               width: "2px",
               height: "13px",
-              background: "#6b6560",
+              background: "#6f6857",
               marginLeft: "2px",
               verticalAlign: "text-bottom",
               animation: "chatCursor 0.8s step-end infinite",
@@ -349,10 +349,10 @@ function injectChatCSS() {
     }
     #lg-chat-input:focus {
       outline: none;
-      border-color: #4a4744 !important;
+      border-color: #4a4438 !important;
     }
     #lg-chat-input::placeholder {
-      color: #4a4744;
+      color: #4a4438;
     }
   `;
   document.head.appendChild(style);
@@ -545,12 +545,12 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
   }
 
   const riskColors: Record<string, string> = {
-    critical: "#f87171",
-    high: "#fb923c",
-    medium: "#fbbf24",
-    low: "#4ade80",
+    critical: "#c65950",
+    high: "#c17f42",
+    medium: "#c99a2e",
+    low: "#7ec98f",
   };
-  const riskColor = riskColors[report.overall.risk_level] ?? "#9a9590";
+  const riskColor = riskColors[report.overall.risk_level] ?? "#a8a08c";
 
   return (
     <>
@@ -576,12 +576,12 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             alignItems: "center",
             gap: "9px",
             padding: "11px 18px",
-            borderRadius: "100px",
-            background: "#191715",
-            border: "1px solid #3a3532",
-            color: "#ebe8e2",
+            borderRadius: "0",
+            background: "#151209",
+            border: "1px solid #4a4438",
+            color: "#e9e4d5",
             fontSize: "13px",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Public Sans', sans-serif",
             fontWeight: 500,
             cursor: "pointer",
             boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
@@ -590,14 +590,14 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             letterSpacing: "0.01em",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#22201d";
-            e.currentTarget.style.borderColor = "#5a5550";
+            e.currentTarget.style.background = "#1c1811";
+            e.currentTarget.style.borderColor = "#6f6857";
             e.currentTarget.style.transform = "translateY(-1px)";
             e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.4)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#191715";
-            e.currentTarget.style.borderColor = "#3a3532";
+            e.currentTarget.style.background = "#151209";
+            e.currentTarget.style.borderColor = "#4a4438";
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.35)";
           }}
@@ -606,7 +606,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
             <path
               d="M10 2C5.58 2 2 5.24 2 9.2c0 2.08.93 3.95 2.43 5.26L3.5 17.5l3.28-1.38A8.38 8.38 0 0010 16.4c4.42 0 8-3.24 8-7.2C18 5.24 14.42 2 10 2z"
-              fill="#ebe8e2"
+              fill="#e9e4d5"
               fillOpacity={0.85}
             />
           </svg>
@@ -636,9 +636,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
           width: "400px",
           height: "560px",
           zIndex: 200,
-          background: "#191715",
-          borderRadius: "16px",
-          border: "1px solid #2e2b28",
+          background: "#151209",
+          borderRadius: "0",
+          border: "1px solid #1c1811",
           boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
           display: "flex",
           flexDirection: "column",
@@ -654,7 +654,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
         <div
           style={{
             padding: "14px 16px",
-            borderBottom: "1px solid #2e2b28",
+            borderBottom: "1px solid #1c1811",
             display: "flex",
             alignItems: "center",
             gap: "10px",
@@ -666,9 +666,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             style={{
               width: "30px",
               height: "30px",
-              borderRadius: "8px",
-              background: "#22201d",
-              border: "1px solid #3a3532",
+              borderRadius: "0",
+              background: "#1c1811",
+              border: "1px solid #4a4438",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -678,7 +678,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
               <path
                 d="M10 2C5.58 2 2 5.24 2 9.2c0 2.08.93 3.95 2.43 5.26L3.5 17.5l3.28-1.38A8.38 8.38 0 0010 16.4c4.42 0 8-3.24 8-7.2C18 5.24 14.42 2 10 2z"
-                fill="#9a9590"
+                fill="#a8a08c"
               />
             </svg>
           </div>
@@ -686,10 +686,11 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: "#ebe8e2",
+                color: "#e9e4d5",
                 letterSpacing: "0.01em",
                 lineHeight: 1.2,
               }}
@@ -699,8 +700,8 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             <div
               style={{
                 fontSize: "10px",
-                color: "#5a5550",
-                fontFamily: "'DM Sans', sans-serif",
+                color: "#6f6857",
+                fontFamily: "'Public Sans', sans-serif",
                 marginTop: "1px",
               }}
             >
@@ -715,9 +716,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
               alignItems: "center",
               gap: "5px",
               padding: "3px 8px",
-              borderRadius: "100px",
+              borderRadius: "0",
               background: "rgba(255,255,255,0.04)",
-              border: "1px solid #2e2b28",
+              border: "1px solid #1c1811",
               flexShrink: 0,
             }}
           >
@@ -734,7 +735,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
               style={{
                 fontSize: "10px",
                 color: riskColor,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
@@ -757,12 +758,12 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#5a5550",
-              borderRadius: "4px",
+              color: "#6f6857",
+              borderRadius: "0",
               transition: "color 0.12s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ebe8e2")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#5a5550")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#e9e4d5")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#6f6857")}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path
@@ -786,7 +787,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             flexDirection: "column",
             gap: "12px",
             scrollbarWidth: "thin",
-            scrollbarColor: "#3a3532 transparent",
+            scrollbarColor: "#4a4438 transparent",
           }}
         >
           {messages.length === 0 ? (
@@ -807,9 +808,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                 style={{
                   width: "52px",
                   height: "52px",
-                  borderRadius: "14px",
-                  background: "#22201d",
-                  border: "1px solid #3a3532",
+                  borderRadius: "0",
+                  background: "#1c1811",
+                  border: "1px solid #4a4438",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -818,13 +819,13 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 3C7.03 3 3 6.69 3 11.2c0 2.5 1.11 4.74 2.91 6.31L4.5 21l3.93-1.65A10 10 0 0012 19.4c4.97 0 9-3.69 9-8.2C21 6.69 16.97 3 12 3z"
-                    fill="#3a3532"
-                    stroke="#5a5550"
+                    fill="#4a4438"
+                    stroke="#6f6857"
                     strokeWidth="1"
                   />
                   <path
                     d="M8 10.5h8M8 13.5h5"
-                    stroke="#6b6560"
+                    stroke="#6f6857"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   />
@@ -835,8 +836,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                 <div
                   style={{
                     fontSize: "13px",
-                    fontFamily: "'Cormorant Garamond', serif",
-                    color: "#9a9590",
+                    fontFamily: "'Newsreader', serif",
+                    fontStyle: "italic",
+                    color: "#a8a08c",
                     fontWeight: 600,
                     marginBottom: "4px",
                   }}
@@ -846,8 +848,8 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                 <div
                   style={{
                     fontSize: "11px",
-                    color: "#4a4744",
-                    fontFamily: "'DM Sans', sans-serif",
+                    color: "#4a4438",
+                    fontFamily: "'Public Sans', sans-serif",
                     lineHeight: 1.5,
                     maxWidth: "220px",
                     margin: "0 auto",
@@ -877,26 +879,26 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                     style={{
                       width: "100%",
                       padding: "9px 13px",
-                      borderRadius: "10px",
-                      background: "#22201d",
-                      border: "1px solid #2e2b28",
-                      color: "#9a9590",
+                      borderRadius: "0",
+                      background: "#1c1811",
+                      border: "1px solid #1c1811",
+                      color: "#a8a08c",
                       fontSize: "12px",
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Public Sans', sans-serif",
                       textAlign: "left",
                       cursor: "pointer",
                       transition: "all 0.15s",
                       lineHeight: 1.4,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#2a2723";
-                      e.currentTarget.style.borderColor = "#3a3532";
-                      e.currentTarget.style.color = "#c5bfb5";
+                      e.currentTarget.style.background = "#1c1811";
+                      e.currentTarget.style.borderColor = "#4a4438";
+                      e.currentTarget.style.color = "#cfc6ab";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#22201d";
-                      e.currentTarget.style.borderColor = "#2e2b28";
-                      e.currentTarget.style.color = "#9a9590";
+                      e.currentTarget.style.background = "#1c1811";
+                      e.currentTarget.style.borderColor = "#1c1811";
+                      e.currentTarget.style.color = "#a8a08c";
                     }}
                   >
                     <span style={{ marginRight: "7px", opacity: 0.5 }}>→</span>
@@ -915,8 +917,8 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
         <div
           style={{
             padding: "5px 14px",
-            borderTop: "1px solid #2e2b28",
-            borderBottom: "1px solid #2e2b28",
+            borderTop: "1px solid #1c1811",
+            borderBottom: "1px solid #1c1811",
             flexShrink: 0,
           }}
         >
@@ -924,8 +926,8 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             style={{
               margin: 0,
               fontSize: "9.5px",
-              color: "#3a3532",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#4a4438",
+              fontFamily: "'Public Sans', sans-serif",
               textAlign: "center",
               lineHeight: 1.4,
             }}
@@ -941,7 +943,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             display: "flex",
             gap: "8px",
             alignItems: "center",
-            background: "#191715",
+            background: "#151209",
             flexShrink: 0,
           }}
         >
@@ -959,12 +961,12 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             style={{
               flex: 1,
               padding: "9px 13px",
-              borderRadius: "10px",
-              background: "#22201d",
-              border: "1px solid #2e2b28",
-              color: "#ebe8e2",
+              borderRadius: "0",
+              background: "#1c1811",
+              border: "1px solid #1c1811",
+              color: "#e9e4d5",
               fontSize: "13px",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
               outline: "none",
               transition: "border-color 0.12s",
               opacity: isStreaming ? 0.5 : 1,
@@ -978,9 +980,9 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             style={{
               width: "36px",
               height: "36px",
-              borderRadius: "10px",
+              borderRadius: "0",
               background:
-                isStreaming || !input.trim() ? "#22201d" : "#ebe8e2",
+                isStreaming || !input.trim() ? "#1c1811" : "#e9e4d5",
               border: "none",
               cursor: isStreaming || !input.trim() ? "not-allowed" : "pointer",
               display: "flex",
@@ -991,11 +993,11 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
             }}
             onMouseEnter={(e) => {
               if (!isStreaming && input.trim())
-                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.background = "#fffdfa";
             }}
             onMouseLeave={(e) => {
               if (!isStreaming && input.trim())
-                e.currentTarget.style.background = "#ebe8e2";
+                e.currentTarget.style.background = "#e9e4d5";
             }}
           >
             {isStreaming ? (
@@ -1011,7 +1013,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
                   cx="8"
                   cy="8"
                   r="6"
-                  stroke="#5a5550"
+                  stroke="#6f6857"
                   strokeWidth="2"
                   strokeDasharray="25 13"
                 />
@@ -1021,7 +1023,7 @@ export function LeaseChat({ leaseId, report }: LeaseChatProps) {
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M3 8h10M9 4l4 4-4 4"
-                  stroke={input.trim() ? "#181614" : "#4a4744"}
+                  stroke={input.trim() ? "#17140f" : "#4a4438"}
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"

@@ -67,16 +67,19 @@ const MOCK_REPORT_ROW: {
   created_at: string;
   expires_at: string;
   share_token: string | null;
+  share_hide_address?: boolean;
   overall_risk_score: number;
   overall_risk_level: string;
   executive_summary: string;
   full_report_json: typeof MOCK_REPORT_JSON;
+  property_address?: string | null;
 } = {
   id: "report-uuid",
   lease_id: VALID_ID,
   created_at: "2026-05-16T10:00:00Z",
   expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
   share_token: null,
+  share_hide_address: false,
   overall_risk_score: 6.5,
   overall_risk_level: "medium",
   executive_summary: "This lease contains several provisions worth reviewing.",
@@ -212,6 +215,28 @@ describe("GET /api/report/[id]", () => {
     expect(body.error).toBe("invalid_token");
   });
 
+  it("redacts the address for a non-owner viewer when share_hide_address is set", async () => {
+    mockFoundReport({
+      share_token: SHARE_TOKEN,
+      share_hide_address: true,
+      property_address: "123 King St W",
+    });
+    const res = await GET(makeGet(VALID_ID, SHARE_TOKEN), makeParams(VALID_ID));
+    const body = await res.json();
+    expect(body._lease.property_address).toBeNull();
+  });
+
+  it("does not redact the address when share_hide_address is false", async () => {
+    mockFoundReport({
+      share_token: SHARE_TOKEN,
+      share_hide_address: false,
+      property_address: "123 King St W",
+    });
+    const res = await GET(makeGet(VALID_ID, SHARE_TOKEN), makeParams(VALID_ID));
+    const body = await res.json();
+    expect(body._lease.property_address).toBe("123 King St W");
+  });
+
   it("accepts the correct share token without error", async () => {
     mockFoundReport({ share_token: SHARE_TOKEN });
     const res = await GET(
@@ -326,11 +351,16 @@ describe("POST /api/report/[id]", () => {
   });
 
   it("generates a share link for action=share", async () => {
-    // Mock the update chain
+    // Mock the pre-read (existing share_token lookup) and the update chain
+    const mockSelect = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { share_token: null }, error: null }),
+      }),
+    });
     mockUpdate.mockReturnValue({
       eq: jest.fn().mockResolvedValue({ error: null }),
     });
-    mockFrom.mockReturnValue({ update: mockUpdate });
+    mockFrom.mockReturnValue({ select: mockSelect, update: mockUpdate });
 
     const res = await POST(
       makePost(VALID_ID, { action: "share" }),
@@ -344,11 +374,37 @@ describe("POST /api/report/[id]", () => {
     expect(typeof body.consent_notice).toBe("string");
   });
 
+  it("reuses the existing share token when one is already set", async () => {
+    const mockSelect = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { share_token: SHARE_TOKEN }, error: null }),
+      }),
+    });
+    mockUpdate.mockReturnValue({
+      eq: jest.fn().mockResolvedValue({ error: null }),
+    });
+    mockFrom.mockReturnValue({ select: mockSelect, update: mockUpdate });
+
+    const res = await POST(
+      makePost(VALID_ID, { action: "share", hide_address: true }),
+      makeParams(VALID_ID)
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.share_url).toContain(SHARE_TOKEN);
+    expect(body.hide_address).toBe(true);
+  });
+
   it("returns 500 when the DB update fails", async () => {
+    const mockSelect = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { share_token: null }, error: null }),
+      }),
+    });
     mockUpdate.mockReturnValue({
       eq: jest.fn().mockResolvedValue({ error: { message: "DB error" } }),
     });
-    mockFrom.mockReturnValue({ update: mockUpdate });
+    mockFrom.mockReturnValue({ select: mockSelect, update: mockUpdate });
 
     const res = await POST(
       makePost(VALID_ID, { action: "share" }),

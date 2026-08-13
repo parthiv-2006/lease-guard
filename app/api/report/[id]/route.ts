@@ -131,6 +131,17 @@ export async function GET(
   // and should not be exposed in the API response.
   const { user_id: _uid, ...safeLeaseRow } = (leaseRow as Record<string, unknown> & { user_id?: unknown }) ?? {};
 
+  // Redact the address for anyone who isn't the owner, when the owner has
+  // opted to hide it on the share link (set via POST { action: "share",
+  // hide_address: true }). The owner viewing their own report directly
+  // always sees the real address.
+  const isOwnerViewing = Boolean(authUser && leaseRow?.user_id && leaseRow.user_id === authUser.id);
+  if (data.share_hide_address && !isOwnerViewing) {
+    safeLeaseRow.property_address = null;
+    safeLeaseRow.property_unit = null;
+    safeLeaseRow.property_postal_code = null;
+  }
+
   const report = {
     ...(data.full_report_json as object),
     disclaimer: DISCLAIMER,
@@ -179,17 +190,28 @@ export async function POST(
     );
   }
 
+  const hideAddress = body?.hide_address === true;
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Reuse the existing token if one was already minted — only the
+  // hide_address preference needs updating on repeat calls (e.g. toggling
+  // the "hide address" checkbox after the link already exists).
+  const { data: existing } = await supabase
+    .from("reports")
+    .select("share_token")
+    .eq("lease_id", id)
+    .single();
+
   const { v4: uuidv4 } = await import("uuid");
-  const shareToken = uuidv4().replace(/-/g, "");
+  const shareToken = existing?.share_token ?? uuidv4().replace(/-/g, "");
 
   const { error } = await supabase
     .from("reports")
-    .update({ share_token: shareToken })
+    .update({ share_token: shareToken, share_hide_address: hideAddress })
     .eq("lease_id", id);
 
   if (error) {
@@ -203,6 +225,7 @@ export async function POST(
   return NextResponse.json({
     share_url: `${baseUrl}/report/${id}?token=${shareToken}`,
     expires_in_days: 90,
+    hide_address: hideAddress,
     consent_notice:
       "Anyone with this link can view your report for 90 days. The report contains excerpts from your lease.",
   });

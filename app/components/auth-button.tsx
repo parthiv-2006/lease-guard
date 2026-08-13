@@ -51,13 +51,13 @@ export function AuthButton() {
         href="/sign-in"
         style={{
           fontSize: "13px",
-          color: "#6b6560",
+          color: "#6f6857",
           textDecoration: "none",
           fontWeight: 400,
           letterSpacing: "0.01em",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#181614")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "#6b6560")}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "#17140f")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "#6f6857")}
       >
         Sign in
       </Link>
@@ -86,8 +86,8 @@ export function AuthButton() {
             width: "26px",
             height: "26px",
             borderRadius: "50%",
-            background: "#181614",
-            color: "#fff",
+            background: "#17140f",
+            color: "#fffdfa",
             fontSize: "11px",
             fontWeight: 600,
             display: "flex",
@@ -111,7 +111,7 @@ export function AuthButton() {
         >
           <path
             d="M2 4l4 4 4-4"
-            stroke="#6b6560"
+            stroke="#6f6857"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -131,9 +131,9 @@ export function AuthButton() {
               position: "absolute",
               top: "calc(100% + 8px)",
               right: 0,
-              background: "#fff",
-              border: "1px solid #e8e4dc",
-              borderRadius: "8px",
+              background: "#fffdfa",
+              border: "1px solid #e0d9c6",
+              borderRadius: "0",
               boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
               minWidth: "180px",
               zIndex: 50,
@@ -144,14 +144,14 @@ export function AuthButton() {
             <div
               style={{
                 padding: "10px 14px",
-                borderBottom: "1px solid #e8e4dc",
+                borderBottom: "1px solid #e0d9c6",
               }}
             >
               <p
                 style={{
                   margin: 0,
                   fontSize: "11px",
-                  color: "#9a9590",
+                  color: "#a8a08c",
                   letterSpacing: "0.03em",
                   textTransform: "uppercase",
                 }}
@@ -162,7 +162,7 @@ export function AuthButton() {
                 style={{
                   margin: "2px 0 0",
                   fontSize: "13px",
-                  color: "#181614",
+                  color: "#17140f",
                   fontWeight: 500,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -181,12 +181,12 @@ export function AuthButton() {
                 display: "block",
                 padding: "9px 14px",
                 fontSize: "13px",
-                color: "#181614",
+                color: "#17140f",
                 textDecoration: "none",
-                borderBottom: "1px solid #e8e4dc",
+                borderBottom: "1px solid #e0d9c6",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#f6f3ee")
+                (e.currentTarget.style.background = "#f7f4ee")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.background = "transparent")
@@ -204,19 +204,19 @@ export function AuthButton() {
                 textAlign: "left",
                 padding: "9px 14px",
                 fontSize: "13px",
-                color: "#6b6560",
+                color: "#6f6857",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f6f3ee";
-                e.currentTarget.style.color = "#b91c1c";
+                e.currentTarget.style.background = "#f7f4ee";
+                e.currentTarget.style.color = "#9c2b23";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#6b6560";
+                e.currentTarget.style.color = "#6f6857";
               }}
             >
               Sign out
@@ -243,16 +243,16 @@ export function SignOutButton() {
       onClick={signOut}
       style={{
         background: "none",
-        border: "1px solid #e8e4dc",
-        borderRadius: "6px",
+        border: "1px solid #e0d9c6",
+        borderRadius: "0",
         padding: "5px 12px",
         fontSize: "12px",
-        color: "#6b6560",
+        color: "#6f6857",
         cursor: "pointer",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = "#b91c1c")}
-      onMouseLeave={(e) => (e.currentTarget.style.color = "#6b6560")}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "#9c2b23")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "#6f6857")}
     >
       Sign out
     </button>

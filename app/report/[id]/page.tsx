@@ -36,7 +36,7 @@ const NAV_ITEMS: Array<{
     label: "Red Flags",
     icon: "flag",
     countKey: "red_flag_count",
-    color: "#c2410c",
+    color: "#a15a1f",
   },
   { id: "clauses", label: "Clause Explorer", icon: "clauses" },
   {
@@ -50,7 +50,7 @@ const NAV_ITEMS: Array<{
     label: "Missing Protections",
     icon: "shield",
     countKey: "missing_count",
-    color: "#b45309",
+    color: "#93690f",
   },
   {
     id: "contradictions",
@@ -76,19 +76,24 @@ function ShareModal({
   const [shareUrl, setShareUrl] = useState<string | null>(
     report.share_url ?? null
   );
+  const [hideAddress, setHideAddress] = useState(false);
+  const [hideAddressSynced, setHideAddressSynced] = useState(false);
 
-  async function getOrCreateShareLink() {
-    if (shareUrl) return shareUrl;
+  // Always POSTs — the server reuses the existing token and only updates
+  // hide_address, so this is safe to call again after the link already exists
+  // (e.g. when the checkbox is toggled post-generation).
+  async function mintOrUpdateShareLink(hide: boolean) {
     setGenerating(true);
     try {
       const res = await fetch(`/api/report/${report.lease.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "share" }),
+        body: JSON.stringify({ action: "share", hide_address: hide }),
       });
       const data = await res.json();
       const url = data.share_url ?? `${window.location.origin}/report/${report.lease.id}`;
       setShareUrl(url);
+      setHideAddressSynced(true);
       return url;
     } catch {
       return `${window.location.origin}/report/${report.lease.id}`;
@@ -102,11 +107,18 @@ function ShareModal({
     `${typeof window !== "undefined" ? window.location.origin : ""}/report/${report.lease.id}`;
 
   function copy() {
-    getOrCreateShareLink().then((url) => {
+    const needsSync = !shareUrl || !hideAddressSynced;
+    const urlPromise = needsSync ? mintOrUpdateShareLink(hideAddress) : Promise.resolve(shareUrl!);
+    urlPromise.then((url) => {
       navigator.clipboard.writeText(url).catch(() => {});
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  function onToggleHideAddress(checked: boolean) {
+    setHideAddress(checked);
+    setHideAddressSynced(false);
   }
 
   return (
@@ -125,18 +137,18 @@ function ShareModal({
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: "12px",
+          background: "#fffdfa",
+          borderRadius: "0",
           padding: "0",
           width: "540px",
           maxWidth: "94vw",
-          border: "1px solid #e8e4dc",
+          border: "1px solid #e0d9c6",
           boxShadow: "0 24px 80px rgba(0,0,0,0.22)",
           overflow: "hidden",
         }}
       >
         {/* OG image preview */}
-        <div style={{ position: "relative", background: "#0f0e0d" }}>
+        <div style={{ position: "relative", background: "#151209" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/report/${report.lease.id}/opengraph-image`}
@@ -156,11 +168,11 @@ function ShareModal({
               gap: "6px",
               background: "rgba(246,243,238,0.95)",
               border: "1px solid rgba(0,0,0,0.12)",
-              borderRadius: "7px",
+              borderRadius: "0",
               padding: "7px 14px",
               fontSize: "12px",
               fontWeight: 600,
-              color: "#181614",
+              color: "#17140f",
               textDecoration: "none",
               backdropFilter: "blur(4px)",
               boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
@@ -184,9 +196,10 @@ function ShareModal({
               style={{
                 margin: 0,
                 fontSize: "17px",
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
                 fontWeight: 600,
-                color: "#181614",
+                color: "#17140f",
               }}
             >
               Share this report
@@ -201,16 +214,16 @@ function ShareModal({
                 display: "flex",
               }}
             >
-              <Icon name="close" size={16} color="#9a9590" />
+              <Icon name="close" size={16} color="#a8a08c" />
             </button>
           </div>
 
           <div
             style={{
               padding: "10px 14px",
-              background: "#f6f3ee",
-              border: "1px solid #e8e4dc",
-              borderRadius: "7px",
+              background: "#f7f4ee",
+              border: "1px solid #e0d9c6",
+              borderRadius: "0",
               marginBottom: "10px",
               display: "flex",
               gap: "10px",
@@ -221,8 +234,8 @@ function ShareModal({
               style={{
                 flex: 1,
                 fontSize: "12px",
-                fontFamily: "'JetBrains Mono', monospace",
-                color: "#5c5751",
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: "#4a4438",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -235,14 +248,14 @@ function ShareModal({
               disabled={generating}
               style={{
                 padding: "5px 14px",
-                borderRadius: "5px",
+                borderRadius: "0",
                 cursor: generating ? "wait" : "pointer",
                 fontSize: "12px",
                 fontWeight: 500,
                 flexShrink: 0,
-                background: copied ? "#f0fdf4" : "#181614",
-                border: `1px solid ${copied ? "#bbf7d0" : "#181614"}`,
-                color: copied ? "#15803d" : "#fff",
+                background: copied ? "#e3efe0" : "#17140f",
+                border: `1px solid ${copied ? "#b8d4bb" : "#17140f"}`,
+                color: copied ? "#2f6b3a" : "#fffdfa",
                 transition: "all 0.15s",
               }}
             >
@@ -250,19 +263,177 @@ function ShareModal({
             </button>
           </div>
 
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "8px",
+              marginBottom: "10px",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={hideAddress}
+              onChange={(e) => onToggleHideAddress(e.target.checked)}
+              style={{ marginTop: "2px", width: "14px", height: "14px", accentColor: "#9c2b23", cursor: "pointer" }}
+            />
+            <span style={{ fontSize: "12px", color: "#4a4438", lineHeight: 1.5 }}>
+              Hide the unit address from anyone with this link
+              {hideAddress && !hideAddressSynced && (
+                <span style={{ color: "#8a4a17" }}> — click Copy link to save this</span>
+              )}
+            </span>
+          </label>
+
           <div
             style={{
               padding: "10px 12px",
-              background: "#f9f6f0",
-              border: "1px solid #e8e4dc",
-              borderRadius: "7px",
+              background: "#f7f4ee",
+              border: "1px solid #e0d9c6",
+              borderRadius: "0",
               fontSize: "11px",
-              color: "#9a9590",
+              color: "#a8a08c",
               lineHeight: 1.5,
             }}
           >
             Anyone with this link can view your report for 90 days. No personal information is shared.
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Export preview modal ─────────────────────────────────────────────────────
+// A confirmation step before generating the PDF. exportReportPDF always
+// includes the same fixed sections (cover, high/medium-risk clauses, missing
+// protections, contradictions) — there's no partial-section export today, so
+// this lists what's included rather than offering toggles that don't exist.
+
+function ExportPreviewModal({
+  report,
+  onClose,
+  onConfirm,
+}: {
+  report: Report;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const highRiskCount = report.clauses.filter((c) => c.risk_level === "critical" || c.risk_level === "high").length;
+  const medRiskCount = report.clauses.filter((c) => c.risk_level === "medium").length;
+
+  const sections = [
+    "Cover page — property, risk score, executive summary",
+    `Clause analysis — ${highRiskCount + medRiskCount} clause${highRiskCount + medRiskCount !== 1 ? "s" : ""} (high/medium risk)`,
+    `Missing protections — ${report.missing_protections.length}`,
+    `Contradictions — ${report.contradictions.length}`,
+  ];
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        style={{
+          background: "#fffdfa",
+          width: "460px",
+          maxWidth: "94vw",
+          border: "1px solid #17140f",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.22)",
+          padding: "24px 24px 20px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "17px",
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 600,
+              color: "#17140f",
+            }}
+          >
+            Export PDF
+          </h3>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex" }}
+          >
+            <Icon name="close" size={16} color="#a8a08c" />
+          </button>
+        </div>
+
+        <div
+          style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#a8a08c",
+            marginBottom: "10px",
+          }}
+        >
+          Included in this export
+        </div>
+        <div style={{ border: "1px solid #e0d9c6", marginBottom: "18px" }}>
+          {sections.map((s, i) => (
+            <div
+              key={s}
+              style={{
+                padding: "10px 14px",
+                fontSize: "13px",
+                color: "#4a4438",
+                borderTop: i > 0 ? "1px solid #e0d9c6" : "none",
+              }}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              border: "1px solid #17140f",
+              background: "#151209",
+              color: "#f4efe4",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif",
+            }}
+          >
+            Download PDF
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "10px 18px",
+              border: "1px solid #cfc6ab",
+              background: "transparent",
+              color: "#4a4438",
+              fontSize: "13px",
+              cursor: "pointer",
+              fontFamily: "'Public Sans', sans-serif",
+            }}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -279,6 +450,9 @@ function ReportSidebar({
   isMobile,
   sidebarOpen,
   onClose,
+  collapsed,
+  onToggleCollapse,
+  onExportClick,
 }: {
   activePanel: PanelId;
   onNavigate: (panel: PanelId) => void;
@@ -287,23 +461,28 @@ function ReportSidebar({
   isMobile?: boolean;
   sidebarOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  onExportClick?: () => void;
 }) {
   const { lease, overall } = report;
+  const isCollapsed = !isMobile && collapsed;
 
   const riskAccent =
-    overall.risk_level === "critical" ? "#f87171"
-    : overall.risk_level === "high"   ? "#fb923c"
-    : overall.risk_level === "medium" ? "#fbbf24"
-    : "#4ade80";
+    overall.risk_level === "critical" ? "#c65950"
+    : overall.risk_level === "high"   ? "#c17f42"
+    : overall.risk_level === "medium" ? "#c99a2e"
+    : "#7ec98f";
 
   const filledSegments = Math.round((overall.risk_score / 10) * 5);
+  const sidebarWidth = isCollapsed ? "64px" : "300px";
 
   return (
     <div
       style={{
-        width: "300px",
-        minWidth: "300px",
-        background: "#0f0e0d",
+        width: sidebarWidth,
+        minWidth: sidebarWidth,
+        background: "#151209",
         display: "flex",
         flexDirection: "column",
         height: "100vh",
@@ -311,36 +490,112 @@ function ReportSidebar({
         top: 0,
         left: isMobile ? (sidebarOpen ? 0 : -300) : undefined,
         overflow: "auto",
-        borderRight: "1px solid #1a1816",
+        borderRight: "1px solid #1c1811",
         flexShrink: 0,
         zIndex: isMobile ? 100 : undefined,
-        transition: isMobile ? "left 0.25s ease" : undefined,
+        transition: isMobile ? "left 0.25s ease" : "width 0.2s ease, min-width 0.2s ease",
         boxShadow: isMobile && sidebarOpen ? "4px 0 32px rgba(0,0,0,0.6)" : undefined,
       }}
     >
       {/* Brand */}
-      <div style={{ padding: "20px 24px 18px" }}>
+      <div
+        style={{
+          padding: isCollapsed ? "20px 0 18px" : "20px 24px 18px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: isCollapsed ? "center" : "space-between",
+        }}
+      >
         <div
           style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Newsreader', serif",
+            fontStyle: "italic",
             fontWeight: 600,
-            fontSize: "16px",
-            color: "#ebe8e2",
+            fontSize: isCollapsed ? "18px" : "16px",
+            color: "#e9e4d5",
             letterSpacing: "0.04em",
           }}
         >
-          LeaseGuard
+          {isCollapsed ? "LG" : "LeaseGuard"}
         </div>
+        {!isMobile && !isCollapsed && (
+          <button
+            onClick={onToggleCollapse}
+            title="Collapse sidebar"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              display: "flex",
+              color: "#6f6857",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#e9e4d5"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "#6f6857"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
+      {!isMobile && isCollapsed && (
+        <button
+          onClick={onToggleCollapse}
+          title="Expand sidebar"
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            color: "#6f6857",
+            marginBottom: "10px",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#e9e4d5"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#6f6857"; }}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
+
+      {/* Collapsed: compact risk badge only */}
+      {isCollapsed && (
+        <div style={{ padding: "0 0 18px", borderBottom: "1px solid #1c1811", marginBottom: "10px", display: "flex", justifyContent: "center" }}>
+          <div
+            title={`${lease.address} — ${overall.risk_score.toFixed(1)} ${overall.risk_level}`}
+            style={{
+              width: "36px",
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: `1.5px solid ${riskAccent}`,
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
+              fontWeight: 700,
+              fontSize: "14px",
+              color: riskAccent,
+            }}
+          >
+            {overall.risk_score.toFixed(1)}
+          </div>
+        </div>
+      )}
 
       {/* Property + Risk hero */}
-      <div style={{ padding: "0 24px 22px", borderBottom: "1px solid #1a1816" }}>
+      {!isCollapsed && (
+      <div style={{ padding: "0 24px 22px", borderBottom: "1px solid #1c1811" }}>
         {/* Property label */}
         <div style={{
           fontSize: "9px",
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "#2a2725",
+          color: "#a8a08c",
           fontWeight: 700,
           marginBottom: "5px",
         }}>
@@ -349,7 +604,7 @@ function ReportSidebar({
         <div style={{
           fontSize: "13px",
           fontWeight: 500,
-          color: "#c8c3ba",
+          color: "#cfc6ab",
           lineHeight: 1.4,
           marginBottom: "2px",
         }}>
@@ -357,7 +612,7 @@ function ReportSidebar({
         </div>
         <div style={{
           fontSize: "11px",
-          color: "#353230",
+          color: "#a8a08c",
           marginBottom: "24px",
           letterSpacing: "0.02em",
         }}>
@@ -369,7 +624,7 @@ function ReportSidebar({
           fontSize: "9px",
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "#2a2725",
+          color: "#a8a08c",
           fontWeight: 700,
           marginBottom: "10px",
         }}>
@@ -378,7 +633,8 @@ function ReportSidebar({
 
         <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", marginBottom: "16px" }}>
           <span style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Newsreader', serif",
+            fontStyle: "italic",
             fontSize: "56px",
             fontWeight: 700,
             lineHeight: 0.85,
@@ -400,7 +656,7 @@ function ReportSidebar({
             </div>
             <div style={{
               fontSize: "9px",
-              color: "#2a2725",
+              color: "#a8a08c",
               letterSpacing: "0.04em",
             }}>
               out of 10
@@ -416,8 +672,8 @@ function ReportSidebar({
               style={{
                 flex: 1,
                 height: "3px",
-                borderRadius: "2px",
-                background: seg <= filledSegments ? riskAccent : "#1a1816",
+                borderRadius: "0",
+                background: seg <= filledSegments ? riskAccent : "#1c1811",
                 opacity: seg <= filledSegments ? (0.35 + (seg / 5) * 0.65) : 1,
               }}
             />
@@ -425,11 +681,12 @@ function ReportSidebar({
         </div>
 
         {/* Metadata */}
-        <div style={{ fontSize: "10px", color: "#2a2725", letterSpacing: "0.03em" }}>
+        <div style={{ fontSize: "10px", color: "#a8a08c", letterSpacing: "0.03em" }}>
           {lease.page_count > 0 && `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `}
           {lease.extraction_method === "ocr" ? "Scanned PDF" : "Digital PDF"}
         </div>
       </div>
+      )}
 
       {/* Nav */}
       <nav
@@ -446,12 +703,14 @@ function ReportSidebar({
             <button
               key={item.id}
               onClick={() => { onNavigate(item.id); if (isMobile) onClose?.(); }}
+              title={isCollapsed ? item.label : undefined}
               style={{
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: isCollapsed ? "center" : "flex-start",
                 gap: "9px",
-                padding: "8px 24px",
+                padding: isCollapsed ? "10px 0" : "8px 24px",
                 background: active ? "rgba(235,232,226,0.05)" : "transparent",
                 border: "none",
                 cursor: "pointer",
@@ -475,29 +734,31 @@ function ReportSidebar({
                   transform: "translateY(-50%)",
                   width: "2px",
                   height: "18px",
-                  borderRadius: "2px 0 0 2px",
-                  background: "#ebe8e2",
+                  borderRadius: "0",
+                  background: "#e9e4d5",
                 }} />
               )}
               <Icon
                 name={item.icon}
                 size={14}
-                color={active ? "#ebe8e2" : "#2a2725"}
+                color={active ? "#e9e4d5" : isCollapsed ? "#a8a08c" : "#1c1811"}
               />
-              <span
-                style={{
-                  fontSize: "13px",
-                  color: active ? "#ebe8e2" : "#4a4744",
-                  fontFamily: "'DM Sans', sans-serif",
-                  flex: 1,
-                  fontWeight: active ? 500 : 400,
-                  letterSpacing: "0.01em",
-                  transition: "color 0.12s",
-                }}
-              >
-                {item.label}
-              </span>
-              {count != null && count > 0 && (
+              {!isCollapsed && (
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: active ? "#e9e4d5" : "#4a4438",
+                    fontFamily: "'Public Sans', sans-serif",
+                    flex: 1,
+                    fontWeight: active ? 500 : 400,
+                    letterSpacing: "0.01em",
+                    transition: "color 0.12s",
+                  }}
+                >
+                  {item.label}
+                </span>
+              )}
+              {!isCollapsed && count != null && count > 0 && (
                 <span
                   style={{
                     fontSize: "10px",
@@ -506,9 +767,9 @@ function ReportSidebar({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: "4px",
-                    background: "#181614",
-                    color: item.color ?? "#3a3532",
+                    borderRadius: "0",
+                    background: "#17140f",
+                    color: item.color ?? "#4a4438",
                     fontWeight: 600,
                     letterSpacing: "0.02em",
                     padding: "0 5px",
@@ -516,6 +777,19 @@ function ReportSidebar({
                 >
                   {count}
                 </span>
+              )}
+              {isCollapsed && count != null && count > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "16px",
+                    width: "5px",
+                    height: "5px",
+                    borderRadius: "50%",
+                    background: item.color ?? "#a15a1f",
+                  }}
+                />
               )}
             </button>
           );
@@ -525,8 +799,8 @@ function ReportSidebar({
       {/* Actions */}
       <div
         style={{
-          padding: "14px 16px",
-          borderTop: "1px solid #1a1816",
+          padding: isCollapsed ? "14px 8px" : "14px 16px",
+          borderTop: "1px solid #1c1811",
           display: "flex",
           flexDirection: "column",
           gap: "6px",
@@ -535,62 +809,64 @@ function ReportSidebar({
         {/* Share — inverted primary */}
         <button
           onClick={onShare}
+          title={isCollapsed ? "Share Report" : undefined}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "7px",
-            padding: "9px 12px",
-            borderRadius: "6px",
+            padding: isCollapsed ? "9px 0" : "9px 12px",
+            borderRadius: "0",
             cursor: "pointer",
-            background: "#ebe8e2",
+            background: "#e9e4d5",
             border: "none",
-            color: "#0f0e0d",
+            color: "#151209",
             fontSize: "12px",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Public Sans', sans-serif",
             fontWeight: 600,
             width: "100%",
             letterSpacing: "0.02em",
             transition: "background 0.15s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#d5d1ca")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#ebe8e2")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#e9e4d5")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#e9e4d5")}
         >
-          <Icon name="share" size={13} color="#0f0e0d" />
-          Share Report
+          <Icon name="share" size={13} color="#151209" />
+          {!isCollapsed && "Share Report"}
         </button>
         {/* Export — subtle ghost secondary */}
         <button
+          title={isCollapsed ? "Export PDF" : undefined}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "7px",
-            padding: "8px 12px",
-            borderRadius: "6px",
+            padding: isCollapsed ? "8px 0" : "8px 12px",
+            borderRadius: "0",
             cursor: "pointer",
             background: "transparent",
-            border: "1px solid #1e1c1a",
-            color: "#3a3532",
+            border: "1px solid #1c1811",
+            color: "#4a4438",
             fontSize: "12px",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Public Sans', sans-serif",
             fontWeight: 400,
             width: "100%",
             letterSpacing: "0.02em",
             transition: "all 0.15s",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#2e2b29";
-            e.currentTarget.style.color = "#7a7570";
+            e.currentTarget.style.borderColor = "#1c1811";
+            e.currentTarget.style.color = "#a8a08c";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#1e1c1a";
-            e.currentTarget.style.color = "#3a3532";
+            e.currentTarget.style.borderColor = "#1c1811";
+            e.currentTarget.style.color = "#4a4438";
           }}
-          onClick={() => exportReportPDF(report)}
+          onClick={onExportClick ?? (() => exportReportPDF(report))}
         >
-          <Icon name="export" size={13} color="#3a3532" />
-          Export PDF
+          <Icon name="export" size={13} color="#4a4438" />
+          {!isCollapsed && "Export PDF"}
         </button>
       </div>
     </div>
@@ -603,12 +879,14 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   const router = useRouter();
   const [activePanel, setActivePanel] = useState<PanelId>("overview");
   const [showShare, setShowShare] = useState(false);
+  const [showExportPreview, setShowExportPreview] = useState(false);
   const [showCopilot, setShowCopilot] = useState(false);
   const [splitScreen, setSplitScreen] = useState(false);
   const [activeClauseId, setActiveClauseId] = useState<string | null>(null);
   const [pdfWidthPct, setPdfWidthPct] = useState(48);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -674,7 +952,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         display: "flex",
         height: "100vh",
         overflow: "hidden",
-        background: "#f6f3ee",
+        background: "#f7f4ee",
       }}
     >
       {/* Mobile backdrop */}
@@ -698,6 +976,9 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         isMobile={isMobile}
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+        onExportClick={() => setShowExportPreview(true)}
       />
 
       {/* Right column */}
@@ -715,11 +996,11 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         <div
           style={{
             height: "52px",
-            borderBottom: "1px solid #e8e4dc",
+            borderBottom: "1px solid #e0d9c6",
             display: "flex",
             alignItems: "center",
             padding: "0 24px",
-            background: "#f6f3ee",
+            background: "#f7f4ee",
             gap: "14px",
             flexShrink: 0,
             position: "sticky",
@@ -735,17 +1016,17 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                 alignItems: "center",
                 gap: "5px",
                 background: "none",
-                border: "1px solid #e8e4dc",
-                borderRadius: "5px",
+                border: "1px solid #e0d9c6",
+                borderRadius: "0",
                 cursor: "pointer",
                 padding: "5px 10px",
                 fontSize: "12px",
-                color: "#181614",
+                color: "#17140f",
                 flexShrink: 0,
               }}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M2 4h12M2 8h12M2 12h12" stroke="#181614" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M2 4h12M2 8h12M2 12h12" stroke="#17140f" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               Menu
             </button>
@@ -754,20 +1035,20 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             href="/dashboard"
             style={{
               fontSize: "12px",
-              color: "#9a9590",
+              color: "#a8a08c",
               textDecoration: "none",
               flexShrink: 0,
             }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "#181614")
+              (e.currentTarget.style.color = "#17140f")
             }
             onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "#9a9590")
+              (e.currentTarget.style.color = "#a8a08c")
             }
           >
             Dashboard
           </Link>
-          <span style={{ fontSize: "12px", color: "#ddd8cf" }}>·</span>
+          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>·</span>
           <button
             onClick={() => router.push("/")}
             style={{
@@ -778,14 +1059,14 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
               border: "none",
               cursor: "pointer",
               fontSize: "12px",
-              color: "#9a9590",
+              color: "#a8a08c",
               padding: 0,
             }}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path
                 d="M10 4L6 8l4 4"
-                stroke="#9a9590"
+                stroke="#a8a08c"
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -793,11 +1074,11 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             </svg>
             New analysis
           </button>
-          <span style={{ fontSize: "12px", color: "#ddd8cf" }}>/</span>
+          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>/</span>
           <span
             style={{
               fontSize: "12px",
-              color: "#6b6560",
+              color: "#6f6857",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -806,7 +1087,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             {report.lease.filename}
           </span>
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: "11px", color: "#b0aaa4", flexShrink: 0 }}>
+          <span style={{ fontSize: "11px", color: "#a8a08c", flexShrink: 0 }}>
             Corpus: {report.overall.corpus_version}
             {report.overall.corpus_date && ` · ${report.overall.corpus_date}`}
           </span>
@@ -820,28 +1101,28 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
               alignItems: "center",
               gap: "6px",
               padding: "5px 12px",
-              borderRadius: "5px",
+              borderRadius: "0",
               cursor: "pointer",
               fontSize: "11px",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
               fontWeight: 500,
-              background: splitScreen ? "#181614" : "transparent",
-              border: `1px solid ${splitScreen ? "#181614" : "#ddd8cf"}`,
-              color: splitScreen ? "#fff" : "#6b6560",
+              background: splitScreen ? "#17140f" : "transparent",
+              border: `1px solid ${splitScreen ? "#17140f" : "#cfc6ab"}`,
+              color: splitScreen ? "#fffdfa" : "#6f6857",
               transition: "all 0.15s",
               letterSpacing: "0.02em",
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
               if (!splitScreen) {
-                e.currentTarget.style.borderColor = "#9a9590";
-                e.currentTarget.style.color = "#181614";
+                e.currentTarget.style.borderColor = "#a8a08c";
+                e.currentTarget.style.color = "#17140f";
               }
             }}
             onMouseLeave={(e) => {
               if (!splitScreen) {
-                e.currentTarget.style.borderColor = "#ddd8cf";
-                e.currentTarget.style.color = "#6b6560";
+                e.currentTarget.style.borderColor = "#cfc6ab";
+                e.currentTarget.style.color = "#6f6857";
               }
             }}
           >
@@ -850,7 +1131,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
               height="14"
               viewBox="0 0 16 16"
               fill="none"
-              stroke={splitScreen ? "#fff" : "#6b6560"}
+              stroke={splitScreen ? "#fffdfa" : "#6f6857"}
               strokeWidth="1.5"
             >
               <rect x="1" y="2" width="5.5" height="12" rx="1" />
@@ -900,7 +1181,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                 position: "relative",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#ddd8cf")
+                (e.currentTarget.style.background = "#cfc6ab")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.background = "transparent")
@@ -926,7 +1207,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                       width: 3,
                       height: 3,
                       borderRadius: "50%",
-                      background: "#c5bfb5",
+                      background: "#cfc6ab",
                     }}
                   />
                 ))}
@@ -942,8 +1223,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                   <div
                     style={{
                       padding: "7px 24px",
-                      background: "#f6f9ff",
-                      borderBottom: "1px solid #dbeafe",
+                      background: "#eef3f6",
+                      borderBottom: "1px solid #c7d9e6",
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
@@ -955,7 +1236,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                       height="12"
                       viewBox="0 0 16 16"
                       fill="none"
-                      stroke="#1d4ed8"
+                      stroke="#1f3a52"
                       strokeWidth="1.5"
                     >
                       <rect x="1" y="2" width="5.5" height="12" rx="1" />
@@ -964,8 +1245,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                     <span
                       style={{
                         fontSize: "11px",
-                        color: "#1d4ed8",
-                        fontFamily: "'DM Sans', sans-serif",
+                        color: "#1f3a52",
+                        fontFamily: "'Public Sans', sans-serif",
                       }}
                     >
                       Clause {c.number}: {c.heading} highlighted in PDF
@@ -977,9 +1258,9 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "#9a9590",
+                        color: "#a8a08c",
                         fontSize: "11px",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Public Sans', sans-serif",
                         padding: "0 2px",
                       }}
                     >
@@ -1013,9 +1294,9 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         <footer
           style={{
             padding: "10px 24px",
-            borderTop: "1px solid #e8e4dc",
+            borderTop: "1px solid #e0d9c6",
             fontSize: "11px",
-            color: "#b0aaa4",
+            color: "#a8a08c",
             textAlign: "center",
             flexShrink: 0,
             display: "flex",
@@ -1023,14 +1304,14 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             justifyContent: "center",
             alignItems: "center",
             flexWrap: "wrap",
-            background: "#f6f3ee",
+            background: "#f7f4ee",
           }}
         >
           <span>Educational information only — not legal advice.</span>
-          <span style={{ color: "#ddd8cf" }}>·</span>
+          <span style={{ color: "#cfc6ab" }}>·</span>
           <Link
             href="/privacy"
-            style={{ color: "#b0aaa4", textDecoration: "underline" }}
+            style={{ color: "#a8a08c", textDecoration: "underline" }}
           >
             Privacy Policy
           </Link>
@@ -1041,6 +1322,17 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         <ShareModal
           onClose={() => setShowShare(false)}
           report={report}
+        />
+      )}
+
+      {showExportPreview && (
+        <ExportPreviewModal
+          report={report}
+          onClose={() => setShowExportPreview(false)}
+          onConfirm={() => {
+            exportReportPDF(report);
+            setShowExportPreview(false);
+          }}
         />
       )}
 
@@ -1066,8 +1358,8 @@ function LoadingState() {
         display: "flex",
         height: "100vh",
         overflow: "hidden",
-        background: "#f6f3ee",
-        fontFamily: "'DM Sans', sans-serif",
+        background: "#f7f4ee",
+        fontFamily: "'Public Sans', sans-serif",
       }}
     >
       {/* Sidebar skeleton */}
@@ -1075,28 +1367,28 @@ function LoadingState() {
         style={{
           width: "256px",
           minWidth: "256px",
-          background: "#131110",
+          background: "#151209",
           display: "flex",
           flexDirection: "column",
           height: "100vh",
-          borderRight: "1px solid #252220",
+          borderRight: "1px solid #1c1811",
           padding: "20px",
           gap: "16px",
         }}
       >
         {/* Brand */}
-        <div style={{ width: "100px", height: "18px", background: "#252220", borderRadius: "4px", marginBottom: "8px" }} />
+        <div style={{ width: "100px", height: "18px", background: "#1c1811", borderRadius: "0", marginBottom: "8px" }} />
         {/* Address lines */}
-        <div style={{ width: "80%", height: "14px", background: "#252220", borderRadius: "4px" }} />
-        <div style={{ width: "50%", height: "12px", background: "#252220", borderRadius: "4px" }} />
+        <div style={{ width: "80%", height: "14px", background: "#1c1811", borderRadius: "0" }} />
+        <div style={{ width: "50%", height: "12px", background: "#1c1811", borderRadius: "0" }} />
         {/* Risk badge */}
-        <div style={{ width: "90px", height: "24px", background: "#252220", borderRadius: "4px" }} />
-        <div style={{ height: "1px", background: "#252220", margin: "4px 0" }} />
+        <div style={{ width: "90px", height: "24px", background: "#1c1811", borderRadius: "0" }} />
+        <div style={{ height: "1px", background: "#1c1811", margin: "4px 0" }} />
         {/* Nav items */}
         {[90, 70, 80, 75, 65, 55, 60, 50].map((w, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: 15, height: 15, background: "#252220", borderRadius: "3px", flexShrink: 0 }} />
-            <div style={{ width: `${w}%`, height: "12px", background: "#252220", borderRadius: "3px" }} />
+            <div style={{ width: 15, height: 15, background: "#1c1811", borderRadius: "0", flexShrink: 0 }} />
+            <div style={{ width: `${w}%`, height: "12px", background: "#1c1811", borderRadius: "0" }} />
           </div>
         ))}
       </div>
@@ -1107,8 +1399,8 @@ function LoadingState() {
         <div
           style={{
             height: "52px",
-            borderBottom: "1px solid #e8e4dc",
-            background: "#f6f3ee",
+            borderBottom: "1px solid #e0d9c6",
+            background: "#f7f4ee",
             display: "flex",
             alignItems: "center",
             padding: "0 24px",
@@ -1116,10 +1408,10 @@ function LoadingState() {
           }}
         >
           <div className="skeleton" style={{ width: "70px", height: "12px" }} />
-          <div style={{ width: "1px", height: "16px", background: "#e8e4dc" }} />
+          <div style={{ width: "1px", height: "16px", background: "#e0d9c6" }} />
           <div className="skeleton" style={{ width: "90px", height: "12px" }} />
           <div style={{ flex: 1 }} />
-          <div className="skeleton" style={{ width: "80px", height: "28px", borderRadius: "6px" }} />
+          <div className="skeleton" style={{ width: "80px", height: "28px", borderRadius: "0" }} />
         </div>
 
         {/* Content skeleton */}
@@ -1127,7 +1419,7 @@ function LoadingState() {
           {/* Panel header */}
           <div className="skeleton" style={{ width: "160px", height: "28px", marginBottom: "8px" }} />
           <div className="skeleton" style={{ width: "340px", height: "13px", marginBottom: "28px" }} />
-          <div style={{ height: "1px", background: "#e8e4dc", marginBottom: "28px" }} />
+          <div style={{ height: "1px", background: "#e0d9c6", marginBottom: "28px" }} />
 
           {/* Overview arc placeholder */}
           <div style={{ display: "flex", gap: "32px", marginBottom: "36px" }}>
@@ -1143,7 +1435,7 @@ function LoadingState() {
           {/* Stat cards placeholder */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "8px" }} />
+              <div key={i} className="skeleton" style={{ height: "80px", borderRadius: "0" }} />
             ))}
           </div>
 
@@ -1152,7 +1444,7 @@ function LoadingState() {
             <div
               key={i}
               className="skeleton"
-              style={{ height: "64px", borderRadius: "8px", marginBottom: "10px" }}
+              style={{ height: "64px", borderRadius: "0", marginBottom: "10px" }}
             />
           ))}
         </div>
@@ -1173,11 +1465,11 @@ function ErrorState({
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f3ee",
+        background: "#f7f4ee",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Public Sans', sans-serif",
         flexDirection: "column",
         gap: "16px",
       }}
@@ -1185,9 +1477,9 @@ function ErrorState({
       <div
         style={{
           padding: "24px 32px",
-          background: "#fef2f2",
-          border: "1px solid #fecaca",
-          borderRadius: "10px",
+          background: "#f4d9d6",
+          border: "1px solid #e3b0a8",
+          borderRadius: "0",
           maxWidth: "480px",
           textAlign: "center",
         }}
@@ -1196,23 +1488,23 @@ function ErrorState({
           style={{
             fontSize: "15px",
             fontWeight: 600,
-            color: "#b91c1c",
+            color: "#9c2b23",
             marginBottom: "8px",
           }}
         >
           Could not load report
         </div>
-        <div style={{ fontSize: "13px", color: "#6b6560" }}>{message}</div>
+        <div style={{ fontSize: "13px", color: "#6f6857" }}>{message}</div>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
         <button
           onClick={onRetry}
           style={{
             padding: "10px 20px",
-            borderRadius: "6px",
-            border: "1px solid #181614",
-            background: "#181614",
-            color: "#fff",
+            borderRadius: "0",
+            border: "1px solid #17140f",
+            background: "#17140f",
+            color: "#fffdfa",
             fontSize: "13px",
             cursor: "pointer",
           }}
@@ -1223,10 +1515,10 @@ function ErrorState({
           onClick={() => router.push("/")}
           style={{
             padding: "10px 20px",
-            borderRadius: "6px",
-            border: "1px solid #ddd8cf",
-            background: "#fff",
-            color: "#181614",
+            borderRadius: "0",
+            border: "1px solid #cfc6ab",
+            background: "#fffdfa",
+            color: "#17140f",
             fontSize: "13px",
             cursor: "pointer",
           }}

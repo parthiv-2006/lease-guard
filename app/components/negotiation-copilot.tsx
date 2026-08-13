@@ -145,12 +145,12 @@ Landlord Signature: ________________________  Date: ______________`
         style={{
           width: "560px",
           maxWidth: "95vw",
-          background: "#fdfcfa",
+          background: "#fffdfa",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           boxShadow: "-10px 0 40px rgba(0,0,0,0.08)",
-          borderLeft: "1px solid #e8e4dc",
+          borderLeft: "1px solid #e0d9c6",
           position: "relative",
           animation: "slideIn 0.3s ease-out",
         }}
@@ -166,11 +166,11 @@ Landlord Signature: ________________________  Date: ______________`
         <div
           style={{
             padding: "20px 24px",
-            borderBottom: "1px solid #e8e4dc",
+            borderBottom: "1px solid #e0d9c6",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "#f6f3ee",
+            background: "#f7f4ee",
           }}
         >
           <div>
@@ -178,14 +178,15 @@ Landlord Signature: ________________________  Date: ______________`
               style={{
                 margin: 0,
                 fontSize: "18px",
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
                 fontWeight: 600,
-                color: "#181614",
+                color: "#17140f",
               }}
             >
               Negotiation Copilot
             </h3>
-            <span style={{ fontSize: "11px", color: "#9a9590" }}>
+            <span style={{ fontSize: "11px", color: "#a8a08c" }}>
               Ontario Residential Tenancies Act grounding
             </span>
           </div>
@@ -200,10 +201,10 @@ Landlord Signature: ________________________  Date: ______________`
               borderRadius: "50%",
               transition: "background 0.15s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#e8e4dc")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#e0d9c6")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <Icon name="close" size={16} color="#6b6560" />
+            <Icon name="close" size={16} color="#6f6857" />
           </button>
         </div>
 
@@ -220,7 +221,7 @@ Landlord Signature: ________________________  Date: ______________`
                       display: "block",
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: "#6b6560",
+                      color: "#6f6857",
                       marginBottom: "6px",
                       textTransform: "uppercase",
                       letterSpacing: "0.04em",
@@ -236,12 +237,12 @@ Landlord Signature: ________________________  Date: ______________`
                     style={{
                       width: "100%",
                       padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd8cf",
+                      borderRadius: "0",
+                      border: "1px solid #cfc6ab",
                       fontSize: "13px",
-                      background: "#fff",
-                      color: "#181614",
-                      fontFamily: "'DM Sans', sans-serif",
+                      background: "#fffdfa",
+                      color: "#17140f",
+                      fontFamily: "'Public Sans', sans-serif",
                     }}
                   />
                 </div>
@@ -251,7 +252,7 @@ Landlord Signature: ________________________  Date: ______________`
                       display: "block",
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: "#6b6560",
+                      color: "#6f6857",
                       marginBottom: "6px",
                       textTransform: "uppercase",
                       letterSpacing: "0.04em",
@@ -267,12 +268,12 @@ Landlord Signature: ________________________  Date: ______________`
                     style={{
                       width: "100%",
                       padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd8cf",
+                      borderRadius: "0",
+                      border: "1px solid #cfc6ab",
                       fontSize: "13px",
-                      background: "#fff",
-                      color: "#181614",
-                      fontFamily: "'DM Sans', sans-serif",
+                      background: "#fffdfa",
+                      color: "#17140f",
+                      fontFamily: "'Public Sans', sans-serif",
                     }}
                   />
                 </div>
@@ -285,7 +286,7 @@ Landlord Signature: ________________________  Date: ______________`
                     display: "block",
                     fontSize: "11px",
                     fontWeight: 600,
-                    color: "#6b6560",
+                    color: "#6f6857",
                     marginBottom: "8px",
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
@@ -307,15 +308,15 @@ Landlord Signature: ________________________  Date: ______________`
                         onClick={() => setTone(t)}
                         style={{
                           padding: "8px 4px",
-                          borderRadius: "6px",
-                          border: active ? "1.5px solid #181614" : "1px solid #ddd8cf",
-                          background: active ? "#181614" : "#fff",
-                          color: active ? "#fff" : "#6b6560",
+                          borderRadius: "0",
+                          border: active ? "1.5px solid #17140f" : "1px solid #cfc6ab",
+                          background: active ? "#17140f" : "#fffdfa",
+                          color: active ? "#fffdfa" : "#6f6857",
                           fontSize: "12px",
                           fontWeight: 500,
                           cursor: "pointer",
                           transition: "all 0.15s",
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'Public Sans', sans-serif",
                         }}
                       >
                         {labels[t]}
@@ -323,7 +324,7 @@ Landlord Signature: ________________________  Date: ______________`
                     );
                   })}
                 </div>
-                <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#9a9590" }}>
+                <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#a8a08c" }}>
                   {tone === "cooperative" &&
                     "Stresses friendly partnership and aligning lease with standard regulations."}
                   {tone === "formal" &&
@@ -340,7 +341,7 @@ Landlord Signature: ________________________  Date: ______________`
                     display: "block",
                     fontSize: "11px",
                     fontWeight: 600,
-                    color: "#6b6560",
+                    color: "#6f6857",
                     marginBottom: "8px",
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
@@ -350,11 +351,11 @@ Landlord Signature: ________________________  Date: ______________`
                 </label>
                 <div
                   style={{
-                    border: "1px solid #e8e4dc",
-                    borderRadius: "8px",
+                    border: "1px solid #e0d9c6",
+                    borderRadius: "0",
                     maxHeight: "300px",
                     overflow: "auto",
-                    background: "#fff",
+                    background: "#fffdfa",
                   }}
                 >
                   {negotiationPoints.map((n) => {
@@ -368,9 +369,9 @@ Landlord Signature: ________________________  Date: ______________`
                           alignItems: "flex-start",
                           gap: "10px",
                           padding: "10px 14px",
-                          borderBottom: "1px solid #f6f3ee",
+                          borderBottom: "1px solid #f7f4ee",
                           cursor: "pointer",
-                          background: isSelected ? "#faf9f6" : "#fff",
+                          background: isSelected ? "#f0ebdf" : "#fffdfa",
                           transition: "background 0.12s",
                         }}
                       >
@@ -389,7 +390,7 @@ Landlord Signature: ________________________  Date: ______________`
                               marginBottom: "2px",
                             }}
                           >
-                            <span style={{ fontSize: "12px", fontWeight: 600, color: "#181614" }}>
+                            <span style={{ fontSize: "12px", fontWeight: 600, color: "#17140f" }}>
                               {n.clause_label}
                             </span>
                             <span
@@ -397,25 +398,25 @@ Landlord Signature: ________________________  Date: ______________`
                                 fontSize: "9px",
                                 textTransform: "uppercase",
                                 padding: "1px 5px",
-                                borderRadius: "100px",
+                                borderRadius: "0",
                                 background:
                                   n.priority === "high"
-                                    ? "#fef2f2"
+                                    ? "#f4d9d6"
                                     : n.priority === "medium"
-                                    ? "#fffbeb"
-                                    : "#f0fdf4",
+                                    ? "#f3ecd3"
+                                    : "#e3efe0",
                                 color:
                                   n.priority === "high"
-                                    ? "#b91c1c"
+                                    ? "#9c2b23"
                                     : n.priority === "medium"
-                                    ? "#b45309"
-                                    : "#15803d",
+                                    ? "#93690f"
+                                    : "#2f6b3a",
                                 border: `1px solid ${
                                   n.priority === "high"
-                                    ? "#fecaca"
+                                    ? "#e3b0a8"
                                     : n.priority === "medium"
-                                    ? "#fde68a"
-                                    : "#bbf7d0"
+                                    ? "#dfd0a0"
+                                    : "#b8d4bb"
                                 }`,
                               }}
                             >
@@ -425,7 +426,7 @@ Landlord Signature: ________________________  Date: ______________`
                           <div
                             style={{
                               fontSize: "11px",
-                              color: "#6b6560",
+                              color: "#6f6857",
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -444,10 +445,10 @@ Landlord Signature: ________________________  Date: ______________`
                 <div
                   style={{
                     padding: "10px 14px",
-                    background: "#fef2f2",
-                    border: "1px solid #fecaca",
-                    borderRadius: "6px",
-                    color: "#b91c1c",
+                    background: "#f4d9d6",
+                    border: "1px solid #e3b0a8",
+                    borderRadius: "0",
+                    color: "#9c2b23",
                     fontSize: "12px",
                   }}
                 >
@@ -460,19 +461,19 @@ Landlord Signature: ________________________  Date: ______________`
                 style={{
                   width: "100%",
                   padding: "12px",
-                  borderRadius: "8px",
-                  background: "#181614",
-                  border: "1px solid #181614",
-                  color: "#fff",
+                  borderRadius: "0",
+                  background: "#17140f",
+                  border: "1px solid #17140f",
+                  color: "#fffdfa",
                   fontWeight: 600,
                   fontSize: "14px",
                   cursor: "pointer",
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "'Public Sans', sans-serif",
                   marginTop: "8px",
                   transition: "background 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#2a2825")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#181614")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1c1811")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#17140f")}
               >
                 Generate Proposal
               </button>
@@ -493,16 +494,16 @@ Landlord Signature: ________________________  Date: ______________`
                 style={{
                   width: 36,
                   height: 36,
-                  border: "2px solid #e8e4dc",
-                  borderTopColor: "#181614",
+                  border: "2px solid #e0d9c6",
+                  borderTopColor: "#17140f",
                   borderRadius: "50%",
                   animation: "spin 0.8s linear infinite",
                 }}
               />
-              <span style={{ fontSize: "14px", color: "#6b6560", fontWeight: 500 }}>
+              <span style={{ fontSize: "14px", color: "#6f6857", fontWeight: 500 }}>
                 Generating proposal...
               </span>
-              <span style={{ fontSize: "11px", color: "#b0aaa4", textAlign: "center", maxWidth: "260px" }}>
+              <span style={{ fontSize: "11px", color: "#a8a08c", textAlign: "center", maxWidth: "260px" }}>
                 Analyzing selected violations & scripting compliance edits.
               </span>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -514,7 +515,7 @@ Landlord Signature: ________________________  Date: ______________`
               <div
                 style={{
                   display: "flex",
-                  borderBottom: "1px solid #e8e4dc",
+                  borderBottom: "1px solid #e0d9c6",
                   gap: "16px",
                   marginBottom: "8px",
                 }}
@@ -525,13 +526,13 @@ Landlord Signature: ________________________  Date: ______________`
                     padding: "8px 12px 10px",
                     background: "none",
                     border: "none",
-                    borderBottom: activeTab === "email" ? "2.5px solid #181614" : "2.5px solid transparent",
-                    color: activeTab === "email" ? "#181614" : "#9a9590",
+                    borderBottom: activeTab === "email" ? "2.5px solid #17140f" : "2.5px solid transparent",
+                    color: activeTab === "email" ? "#17140f" : "#a8a08c",
                     fontWeight: activeTab === "email" ? 600 : 400,
                     fontSize: "13px",
                     cursor: "pointer",
                     transition: "all 0.15s",
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Public Sans', sans-serif",
                   }}
                 >
                   Email Proposal
@@ -542,13 +543,13 @@ Landlord Signature: ________________________  Date: ______________`
                     padding: "8px 12px 10px",
                     background: "none",
                     border: "none",
-                    borderBottom: activeTab === "addendum" ? "2.5px solid #181614" : "2.5px solid transparent",
-                    color: activeTab === "addendum" ? "#181614" : "#9a9590",
+                    borderBottom: activeTab === "addendum" ? "2.5px solid #17140f" : "2.5px solid transparent",
+                    color: activeTab === "addendum" ? "#17140f" : "#a8a08c",
                     fontWeight: activeTab === "addendum" ? 600 : 400,
                     fontSize: "13px",
                     cursor: "pointer",
                     transition: "all 0.15s",
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Public Sans', sans-serif",
                   }}
                 >
                   Lease Amendment Addendum
@@ -565,7 +566,7 @@ Landlord Signature: ________________________  Date: ______________`
                       alignItems: "center",
                     }}
                   >
-                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#a8a08c", textTransform: "uppercase" }}>
                       Email Content
                     </span>
                     <div style={{ display: "flex", gap: "8px" }}>
@@ -579,9 +580,9 @@ Landlord Signature: ________________________  Date: ______________`
                           landlordName,
                           propertyAddress,
                         })}
-                        style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "5px", cursor: "pointer", fontSize: "11px", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, background: "#fff", border: "1px solid #ddd8cf", color: "#5c5751", transition: "all 0.15s" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "0", cursor: "pointer", fontSize: "11px", fontFamily: "'Public Sans', sans-serif", fontWeight: 500, background: "#fffdfa", border: "1px solid #cfc6ab", color: "#4a4438", transition: "all 0.15s" }}
                       >
-                        <Icon name="export" size={12} color="#5c5751" />
+                        <Icon name="export" size={12} color="#4a4438" />
                         Save PDF
                       </button>
                     </div>
@@ -589,16 +590,16 @@ Landlord Signature: ________________________  Date: ______________`
 
                   <div
                     style={{
-                      background: "#fff",
-                      border: "1px solid #e8e4dc",
-                      borderRadius: "6px",
+                      background: "#fffdfa",
+                      border: "1px solid #e0d9c6",
+                      borderRadius: "0",
                       padding: "16px",
                       fontSize: "13px",
                       lineHeight: 1.6,
-                      color: "#181614",
+                      color: "#17140f",
                     }}
                   >
-                    <div style={{ borderBottom: "1px solid #f6f3ee", paddingBottom: "10px", marginBottom: "12px" }}>
+                    <div style={{ borderBottom: "1px solid #f7f4ee", paddingBottom: "10px", marginBottom: "12px" }}>
                       <strong>Subject:</strong> {result.email_subject}
                     </div>
                     <div style={{ whiteSpace: "pre-wrap" }}>{result.email_body}</div>
@@ -616,7 +617,7 @@ Landlord Signature: ________________________  Date: ______________`
                       alignItems: "center",
                     }}
                   >
-                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#9a9590", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#a8a08c", textTransform: "uppercase" }}>
                       Amendment Sheet
                     </span>
                     <div style={{ display: "flex", gap: "8px" }}>
@@ -636,18 +637,18 @@ Landlord Signature: ________________________  Date: ______________`
                           alignItems: "center",
                           gap: "5px",
                           padding: "5px 12px",
-                          borderRadius: "5px",
+                          borderRadius: "0",
                           cursor: "pointer",
                           fontSize: "11px",
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'Public Sans', sans-serif",
                           fontWeight: 500,
-                          background: "#fff",
-                          border: "1px solid #ddd8cf",
-                          color: "#5c5751",
+                          background: "#fffdfa",
+                          border: "1px solid #cfc6ab",
+                          color: "#4a4438",
                           transition: "all 0.15s",
                         }}
                       >
-                        <Icon name="export" size={12} color="#5c5751" />
+                        <Icon name="export" size={12} color="#4a4438" />
                         Save PDF
                       </button>
                     </div>
@@ -655,9 +656,9 @@ Landlord Signature: ________________________  Date: ______________`
 
                   <div
                     style={{
-                      background: "#fff",
-                      border: "1px solid #ddd8cf",
-                      borderRadius: "6px",
+                      background: "#fffdfa",
+                      border: "1px solid #cfc6ab",
+                      borderRadius: "0",
                       padding: "24px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
                       fontFamily: "Georgia, serif",
@@ -680,7 +681,7 @@ Landlord Signature: ________________________  Date: ______________`
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "28px" }}>
                       {result.addendum_clauses.map((c, i) => (
-                        <div key={i} style={{ borderLeft: "2px solid #ddd8cf", paddingLeft: "12px" }}>
+                        <div key={i} style={{ borderLeft: "2px solid #cfc6ab", paddingLeft: "12px" }}>
                           <strong style={{ display: "block", marginBottom: "4px", fontSize: "12px" }}>
                             AMENDMENT TO CLAUSE {c.original_number} ({c.heading})
                           </strong>
@@ -696,16 +697,16 @@ Landlord Signature: ________________________  Date: ______________`
                       IN WITNESS WHEREOF, the parties hereto have executed this Addendum.
                     </p>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "24px", fontSize: "11px", fontFamily: "'DM Sans', sans-serif" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "24px", fontSize: "11px", fontFamily: "'Public Sans', sans-serif" }}>
                       <div>
                         <div>____________________________________</div>
                         <div style={{ marginTop: "4px" }}>Tenant Signature</div>
-                        <div style={{ marginTop: "4px", color: "#9a9590" }}>Date: __________________</div>
+                        <div style={{ marginTop: "4px", color: "#a8a08c" }}>Date: __________________</div>
                       </div>
                       <div>
                         <div>____________________________________</div>
                         <div style={{ marginTop: "4px" }}>Landlord Signature</div>
-                        <div style={{ marginTop: "4px", color: "#9a9590" }}>Date: __________________</div>
+                        <div style={{ marginTop: "4px", color: "#a8a08c" }}>Date: __________________</div>
                       </div>
                     </div>
                   </div>
@@ -719,21 +720,21 @@ Landlord Signature: ________________________  Date: ______________`
                   gap: "10px",
                   marginTop: "auto",
                   paddingTop: "14px",
-                  borderTop: "1px solid #e8e4dc",
+                  borderTop: "1px solid #e0d9c6",
                 }}
               >
                 <button
                   onClick={() => setResult(null)}
                   style={{
                     padding: "10px 18px",
-                    borderRadius: "6px",
-                    border: "1px solid #ddd8cf",
-                    background: "#fff",
-                    color: "#6b6560",
+                    borderRadius: "0",
+                    border: "1px solid #cfc6ab",
+                    background: "#fffdfa",
+                    color: "#6f6857",
                     fontSize: "13px",
                     fontWeight: 500,
                     cursor: "pointer",
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Public Sans', sans-serif",
                   }}
                 >
                   Adjust Config
@@ -742,14 +743,14 @@ Landlord Signature: ________________________  Date: ______________`
                   onClick={onClose}
                   style={{
                     padding: "10px 18px",
-                    borderRadius: "6px",
-                    border: "1px solid #181614",
-                    background: "#181614",
-                    color: "#fff",
+                    borderRadius: "0",
+                    border: "1px solid #17140f",
+                    background: "#17140f",
+                    color: "#fffdfa",
                     fontSize: "13px",
                     fontWeight: 500,
                     cursor: "pointer",
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Public Sans', sans-serif",
                     marginLeft: "auto",
                   }}
                 >

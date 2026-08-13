@@ -1,6 +1,6 @@
 "use client";
 
-// LeaseGuard — Shared UI components
+// LeaseGuard — Shared UI components (v2 "case-file" editorial system)
 // RiskArc, RiskBadge, ClauseTypeTag, SectionHeader, CopyButton,
 // FeedbackBar, Icon, StatCard, Collapsible
 
@@ -11,32 +11,32 @@ import type { RiskLevel } from "./types";
 
 export function riskColor(level: RiskLevel | string): string {
   const map: Record<string, string> = {
-    critical: "#b91c1c",
-    high: "#c2410c",
-    medium: "#b45309",
-    low: "#15803d",
+    critical: "#9c2b23",
+    high: "#a15a1f",
+    medium: "#93690f",
+    low: "#2f6b3a",
   };
-  return map[level] ?? "#6b7280";
+  return map[level] ?? "#6f6857";
 }
 
 export function riskBg(level: RiskLevel | string): string {
   const map: Record<string, string> = {
-    critical: "#fef2f2",
-    high: "#fff7ed",
-    medium: "#fffbeb",
-    low: "#f0fdf4",
+    critical: "#f4d9d6",
+    high: "#f3e2c9",
+    medium: "#f3ecd3",
+    low: "#e3efe0",
   };
-  return map[level] ?? "#f9fafb";
+  return map[level] ?? "#f0ebdf";
 }
 
 export function riskBorder(level: RiskLevel | string): string {
   const map: Record<string, string> = {
-    critical: "#fecaca",
-    high: "#fed7aa",
-    medium: "#fde68a",
-    low: "#bbf7d0",
+    critical: "#e3b0a8",
+    high: "#e3cd8f",
+    medium: "#dfd0a0",
+    low: "#b8d4bb",
   };
-  return map[level] ?? "#e5e7eb";
+  return map[level] ?? "#e0d9c6";
 }
 
 export function scoreToLevel(score: number): RiskLevel {
@@ -129,7 +129,7 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
       <path
         d={trackPath}
         fill="none"
-        stroke="#e8e4dc"
+        stroke="#e0d9c6"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
       />
@@ -155,7 +155,8 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
         dominantBaseline="middle"
         fill={col}
         fontSize={size * 0.26}
-        fontFamily="'Cormorant Garamond', serif"
+        fontFamily="'Newsreader', serif"
+        fontStyle="italic"
         fontWeight="600"
         style={{
           opacity: animated ? 1 : 0,
@@ -168,9 +169,9 @@ export function RiskArc({ score, size = 140, strokeWidth = 9 }: RiskArcProps) {
         x={cx}
         y={cy + size * 0.18}
         textAnchor="middle"
-        fill="#9a9590"
+        fill="#6f6857"
         fontSize={size * 0.09}
-        fontFamily="'DM Sans', sans-serif"
+        fontFamily="'IBM Plex Mono', monospace"
         letterSpacing="0.08em"
         style={{
           opacity: animated ? 1 : 0,
@@ -206,16 +207,16 @@ export function RiskBadge({ level, score, small }: RiskBadgeProps) {
         display: "inline-flex",
         alignItems: "center",
         gap: "5px",
-        padding: small ? "2px 7px" : "3px 9px",
+        padding: small ? "2px 8px" : "3px 10px",
         background: bg,
         border: `1px solid ${border}`,
-        borderRadius: "4px",
         fontSize: small ? "10px" : "11px",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'IBM Plex Mono', monospace",
         fontWeight: 500,
+        textTransform: "uppercase",
         color: col,
         whiteSpace: "nowrap",
-        letterSpacing: "0.03em",
+        letterSpacing: "0.06em",
       }}
     >
       <span
@@ -241,14 +242,13 @@ export function ClauseTypeTag({ type }: { type: string }) {
       style={{
         display: "inline-block",
         padding: "2px 8px",
-        background: "#f0ede6",
-        border: "1px solid #ddd8cf",
-        borderRadius: "3px",
+        background: "#f0ebdf",
+        border: "1px solid #cfc6ab",
         fontSize: "10px",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'IBM Plex Mono', monospace",
         fontWeight: 500,
-        color: "#5c5751",
-        letterSpacing: "0.04em",
+        color: "#4a4438",
+        letterSpacing: "0.05em",
       }}
     >
       {CLAUSE_TYPE_LABELS[type] ?? type}
@@ -291,7 +291,6 @@ export function SectionHeader({
               style={{
                 width: 3,
                 height: 22,
-                borderRadius: "2px",
                 background: accentColor,
                 flexShrink: 0,
                 alignSelf: "center",
@@ -301,10 +300,11 @@ export function SectionHeader({
           <h2
             style={{
               margin: 0,
-              fontSize: "22px",
-              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "30px",
+              fontFamily: "'Newsreader', serif",
+              fontStyle: "italic",
               fontWeight: 600,
-              color: "#181614",
+              color: "#17140f",
               letterSpacing: "-0.01em",
             }}
           >
@@ -314,8 +314,8 @@ export function SectionHeader({
             <span
               style={{
                 fontSize: "12px",
-                fontFamily: "'DM Sans', sans-serif",
-                color: "#9a9590",
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: "#a8a08c",
                 fontWeight: 400,
               }}
             >
@@ -330,8 +330,8 @@ export function SectionHeader({
           style={{
             margin: "6px 0 0",
             fontSize: "13px",
-            color: "#6b6560",
-            fontFamily: "'DM Sans', sans-serif",
+            color: "#6f6857",
+            fontFamily: "'Public Sans', sans-serif",
             lineHeight: 1.5,
             paddingLeft: accentColor ? "13px" : 0,
           }}
@@ -342,9 +342,9 @@ export function SectionHeader({
       <div
         style={{
           height: accentColor ? "2px" : "1px",
-          background: accentColor ?? "#e8e4dc",
+          background: accentColor ?? "#e0d9c6",
           marginTop: "16px",
-          opacity: accentColor ? 0.35 : 1,
+          opacity: accentColor ? 0.4 : 1,
         }}
       />
     </div>
@@ -376,23 +376,23 @@ export function CopyButton({
         alignItems: "center",
         gap: "5px",
         padding: "5px 12px",
-        borderRadius: "5px",
         cursor: "pointer",
         fontSize: "11px",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'IBM Plex Mono', monospace",
         fontWeight: 500,
-        background: copied ? "#f0fdf4" : "#f6f3ee",
-        border: `1px solid ${copied ? "#bbf7d0" : "#ddd8cf"}`,
-        color: copied ? "#15803d" : "#5c5751",
+        background: copied ? "#e3efe0" : "#f7f4ee",
+        border: `1px solid ${copied ? "#b8d4bb" : "#cfc6ab"}`,
+        color: copied ? "#2f6b3a" : "#4a4438",
         transition: "all 0.15s",
-        letterSpacing: "0.02em",
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
       }}
     >
       {copied ? (
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
           <path
             d="M3 8l3.5 3.5L13 4.5"
-            stroke="#15803d"
+            stroke="#2f6b3a"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -400,10 +400,10 @@ export function CopyButton({
         </svg>
       ) : (
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-          <rect x="5" y="5" width="9" height="9" rx="1.5" stroke="#9a9590" strokeWidth="1.5" />
+          <rect x="5" y="5" width="9" height="9" rx="1" stroke="#6f6857" strokeWidth="1.5" />
           <path
             d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"
-            stroke="#9a9590"
+            stroke="#6f6857"
             strokeWidth="1.5"
           />
         </svg>
@@ -454,15 +454,15 @@ export function FeedbackBar({ leaseId, clauseId }: { leaseId: string; clauseId: 
         alignItems: "center",
         gap: "10px",
         padding: "8px 0 0",
-        borderTop: "1px solid #e8e4dc",
+        borderTop: "1px solid #e0d9c6",
         marginTop: "12px",
       }}
     >
       <span
         style={{
           fontSize: "11px",
-          color: "#9a9590",
-          fontFamily: "'DM Sans', sans-serif",
+          color: "#a8a08c",
+          fontFamily: "'Public Sans', sans-serif",
         }}
       >
         Was this analysis accurate?
@@ -478,30 +478,29 @@ export function FeedbackBar({ leaseId, clauseId }: { leaseId: string; clauseId: 
           onClick={() => handleVote(v)}
           style={{
             padding: "3px 10px",
-            borderRadius: "4px",
             cursor: "pointer",
             fontSize: "11px",
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Public Sans', sans-serif",
             fontWeight: 500,
             background:
               vote === v
                 ? v === "up"
-                  ? "#f0fdf4"
-                  : "#fef2f2"
+                  ? "#e3efe0"
+                  : "#f4d9d6"
                 : "transparent",
             border: `1px solid ${
               vote === v
                 ? v === "up"
-                  ? "#bbf7d0"
-                  : "#fecaca"
-                : "#ddd8cf"
+                  ? "#b8d4bb"
+                  : "#e3b0a8"
+                : "#cfc6ab"
             }`,
             color:
               vote === v
                 ? v === "up"
-                  ? "#15803d"
-                  : "#b91c1c"
-                : "#6b6560",
+                  ? "#2f6b3a"
+                  : "#9c2b23"
+                : "#4a4438",
             transition: "all 0.15s",
           }}
         >
@@ -514,12 +513,11 @@ export function FeedbackBar({ leaseId, clauseId }: { leaseId: string; clauseId: 
           onChange={(e) => handleReasonSelect(e.target.value)}
           style={{
             padding: "3px 8px",
-            borderRadius: "4px",
-            border: "1px solid #ddd8cf",
+            border: "1px solid #cfc6ab",
             fontSize: "11px",
-            fontFamily: "'DM Sans', sans-serif",
-            background: "#fff",
-            color: "#6b6560",
+            fontFamily: "'Public Sans', sans-serif",
+            background: "#fffdfa",
+            color: "#4a4438",
             cursor: "pointer",
           }}
           defaultValue=""
@@ -536,8 +534,8 @@ export function FeedbackBar({ leaseId, clauseId }: { leaseId: string; clauseId: 
         <span
           style={{
             fontSize: "11px",
-            color: "#15803d",
-            fontFamily: "'DM Sans', sans-serif",
+            color: "#2f6b3a",
+            fontFamily: "'Public Sans', sans-serif",
             fontWeight: 500,
           }}
         >
@@ -691,24 +689,22 @@ export function StatCard({ value, label, color, onClick }: StatCardProps) {
       onMouseEnter={() => onClick && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: "#fff",
-        border: `1px solid ${hovered ? "#c5bfb5" : "#e8e4dc"}`,
-        borderRadius: "8px",
+        background: "#fffdfa",
+        border: `1px solid ${hovered ? "#17140f" : "#e0d9c6"}`,
         padding: "16px 20px",
         cursor: onClick ? "pointer" : "default",
         transition: "border-color 0.15s, box-shadow 0.15s, transform 0.12s ease",
-        boxShadow: hovered
-          ? "0 4px 14px rgba(24,22,20,0.10), 0 1px 4px rgba(24,22,20,0.06)"
-          : "0 1px 3px rgba(24,22,20,0.07), 0 1px 2px rgba(24,22,20,0.04)",
+        boxShadow: hovered ? "0 8px 20px rgba(23,20,15,0.10)" : "none",
         transform: hovered && onClick ? "translateY(-1px)" : "translateY(0)",
       }}
     >
       <div
         style={{
-          fontSize: "28px",
-          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: "30px",
+          fontFamily: "'Newsreader', serif",
+          fontStyle: "italic",
           fontWeight: 600,
-          color: color ?? "#181614",
+          color: color ?? "#17140f",
           lineHeight: 1,
         }}
       >
@@ -717,10 +713,10 @@ export function StatCard({ value, label, color, onClick }: StatCardProps) {
       <div
         style={{
           fontSize: "11px",
-          fontFamily: "'DM Sans', sans-serif",
-          color: "#9a9590",
-          marginTop: "4px",
-          letterSpacing: "0.05em",
+          fontFamily: "'IBM Plex Mono', monospace",
+          color: "#a8a08c",
+          marginTop: "6px",
+          letterSpacing: "0.07em",
           textTransform: "uppercase",
         }}
       >
@@ -750,11 +746,9 @@ export function Collapsible({
   return (
     <div
       style={{
-        border: "1px solid #e8e4dc",
-        borderRadius: "8px",
+        border: "1px solid #e0d9c6",
         overflow: "hidden",
-        borderLeft: accentColor ? `3px solid ${accentColor}` : "1px solid #e8e4dc",
-        boxShadow: "0 1px 3px rgba(24,22,20,0.06), 0 1px 2px rgba(24,22,20,0.04)",
+        borderLeft: accentColor ? `3px solid ${accentColor}` : "1px solid #e0d9c6",
       }}
     >
       <button
@@ -765,12 +759,12 @@ export function Collapsible({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "14px 18px",
-          background: open ? "#faf9f6" : "#fff",
+          background: open ? "#f7f4ee" : "#fffdfa",
           border: "none",
           cursor: "pointer",
           textAlign: "left",
           gap: "12px",
-          borderBottom: open ? "1px solid #e8e4dc" : "none",
+          borderBottom: open ? "1px solid #e0d9c6" : "none",
           transition: "background 0.15s",
         }}
       >
@@ -782,7 +776,7 @@ export function Collapsible({
             flexShrink: 0,
           }}
         >
-          <Icon name="chevronDown" size={14} color="#9a9590" />
+          <Icon name="chevronDown" size={14} color="#a8a08c" />
         </span>
       </button>
       {open && <div style={{ padding: "18px" }}>{children}</div>}

@@ -40,9 +40,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         {/* Arc gauge card */}
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #e8e4dc",
-            borderRadius: "10px",
+            background: "#fffdfa",
+            border: "1px solid #e0d9c6",
+            borderRadius: "0",
             padding: "28px 20px",
             textAlign: "center",
             display: "flex",
@@ -56,10 +56,10 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
           <div
             style={{
               fontSize: "11px",
-              color: "#9a9590",
+              color: "#a8a08c",
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
             Overall Risk
@@ -67,8 +67,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
           <div
             style={{
               fontSize: "11px",
-              color: "#b0aaa4",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#a8a08c",
+              fontFamily: "'Public Sans', sans-serif",
               textAlign: "center",
               lineHeight: 1.4,
             }}
@@ -86,9 +86,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         {/* Executive summary */}
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #e8e4dc",
-            borderRadius: "10px",
+            background: "#fffdfa",
+            border: "1px solid #e0d9c6",
+            borderRadius: "0",
             padding: "28px",
             boxShadow: "0 1px 3px rgba(24,22,20,0.07), 0 1px 2px rgba(24,22,20,0.04)",
           }}
@@ -98,8 +98,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               fontSize: "11px",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "#9a9590",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#a8a08c",
+              fontFamily: "'Public Sans', sans-serif",
               fontWeight: 500,
               marginBottom: "12px",
             }}
@@ -110,9 +110,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             style={{
               margin: "0 0 20px",
               fontSize: "14px",
-              color: "#181614",
+              color: "#17140f",
               lineHeight: 1.7,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
             {overall.executive_summary}
@@ -120,8 +120,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
           <div
             style={{
               fontSize: "11px",
-              color: "#9a9590",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#a8a08c",
+              fontFamily: "'Public Sans', sans-serif",
               display: "flex",
               gap: "16px",
               flexWrap: "wrap",
@@ -158,25 +158,25 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         <StatCard
           value={overall.red_flag_count}
           label="Red Flags"
-          color="#c2410c"
+          color="#a15a1f"
           onClick={() => onNavigate("redflags")}
         />
         <StatCard
           value={overall.negotiation_count}
           label="Negotiation Points"
-          color="#181614"
+          color="#17140f"
           onClick={() => onNavigate("negotiation")}
         />
         <StatCard
           value={overall.missing_count}
           label="Missing Protections"
-          color="#b45309"
+          color="#93690f"
           onClick={() => onNavigate("missing")}
         />
         <StatCard
           value={overall.contradiction_count}
           label="Contradictions"
-          color="#6b6560"
+          color="#6f6857"
           onClick={() => onNavigate("contradictions")}
         />
       </div>
@@ -186,9 +186,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         <div
           style={{
             padding: "20px 24px",
-            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+            background: "linear-gradient(135deg, #e3efe0 0%, #e3efe0 100%)",
             border: "1px solid #86efac",
-            borderRadius: "10px",
+            borderRadius: "0",
             marginBottom: "28px",
             display: "flex",
             alignItems: "flex-start",
@@ -201,7 +201,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               width: 36,
               height: 36,
               borderRadius: "50%",
-              background: "#dcfce7",
+              background: "#e3efe0",
               border: "1.5px solid #86efac",
               display: "flex",
               alignItems: "center",
@@ -211,18 +211,19 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
           >
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M8 2l5 2.5v4C13 11.5 10.5 14 8 15 5.5 14 3 11.5 3 8.5v-4L8 2z"
-                stroke="#15803d" strokeWidth="1.5" fill="#bbf7d0" />
+                stroke="#2f6b3a" strokeWidth="1.5" fill="#b8d4bb" />
               <path d="M5.5 8.5l1.8 1.8 3.2-3.6"
-                stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                stroke="#2f6b3a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <div>
             <div
               style={{
                 fontSize: "17px",
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Newsreader', serif",
+                fontStyle: "italic",
                 fontWeight: 600,
-                color: "#14532d",
+                color: "#2f6b3a",
                 marginBottom: "4px",
                 letterSpacing: "-0.01em",
               }}
@@ -233,9 +234,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               style={{
                 margin: 0,
                 fontSize: "13px",
-                color: "#166534",
+                color: "#2f6b3a",
                 lineHeight: 1.55,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Public Sans', sans-serif",
               }}
             >
               No major red flags found. Your lease appears largely compliant with Ontario's
@@ -249,9 +250,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
       {/* Clause breakdown */}
       <div
         style={{
-          background: "#fff",
-          border: "1px solid #e8e4dc",
-          borderRadius: "10px",
+          background: "#fffdfa",
+          border: "1px solid #e0d9c6",
+          borderRadius: "0",
           overflow: "hidden",
           marginBottom: "32px",
         }}
@@ -259,7 +260,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         <div
           style={{
             padding: "16px 24px",
-            borderBottom: "1px solid #e8e4dc",
+            borderBottom: "1px solid #e0d9c6",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -269,8 +270,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             style={{
               fontSize: "13px",
               fontWeight: 500,
-              color: "#181614",
-              fontFamily: "'DM Sans', sans-serif",
+              color: "#17140f",
+              fontFamily: "'Public Sans', sans-serif",
             }}
           >
             Clause Breakdown — {overall.clause_count} clauses analysed
@@ -279,7 +280,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             onClick={() => onNavigate("clauses")}
             style={{
               fontSize: "12px",
-              color: "#6b6560",
+              color: "#6f6857",
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -289,7 +290,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               gap: "4px",
             }}
           >
-            View all <Icon name="chevronRight" size={13} color="#9a9590" />
+            View all <Icon name="chevronRight" size={13} color="#a8a08c" />
           </button>
         </div>
 
@@ -300,7 +301,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               display: "flex",
               gap: "2px",
               height: "8px",
-              borderRadius: "4px",
+              borderRadius: "0",
               overflow: "hidden",
               marginBottom: "10px",
             }}
@@ -333,7 +334,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                     style={{
                       width: 8,
                       height: 8,
-                      borderRadius: "2px",
+                      borderRadius: "0",
                       background: riskColor(level),
                       display: "inline-block",
                     }}
@@ -341,8 +342,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                   <span
                     style={{
                       fontSize: "12px",
-                      color: "#6b6560",
-                      fontFamily: "'DM Sans', sans-serif",
+                      color: "#6f6857",
+                      fontFamily: "'Public Sans', sans-serif",
                     }}
                   >
                     {count} {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -364,12 +365,12 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                 alignItems: "center",
                 gap: "16px",
                 padding: "12px 24px",
-                borderTop: "1px solid #f0ede6",
+                borderTop: "1px solid #f0ebdf",
                 cursor: "pointer",
                 transition: "background 0.12s",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#faf9f6")
+                (e.currentTarget.style.background = "#f0ebdf")
               }
               onMouseLeave={(e) =>
                 (e.currentTarget.style.background = "transparent")
@@ -380,15 +381,15 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                   width: 28,
                   height: 28,
                   borderRadius: "50%",
-                  background: "#f6f3ee",
-                  border: "1px solid #e8e4dc",
+                  background: "#f7f4ee",
+                  border: "1px solid #e0d9c6",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "11px",
                   fontWeight: 600,
-                  color: "#6b6560",
-                  fontFamily: "'DM Sans', sans-serif",
+                  color: "#6f6857",
+                  fontFamily: "'Public Sans', sans-serif",
                   flexShrink: 0,
                 }}
               >
@@ -399,8 +400,8 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                   style={{
                     fontSize: "13px",
                     fontWeight: 500,
-                    color: "#181614",
-                    fontFamily: "'DM Sans', sans-serif",
+                    color: "#17140f",
+                    fontFamily: "'Public Sans', sans-serif",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -409,11 +410,11 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                   {clause.heading}
                 </div>
                 <div
-                  style={{ fontSize: "11px", color: "#9a9590", marginTop: "2px" }}
+                  style={{ fontSize: "11px", color: "#a8a08c", marginTop: "2px" }}
                 >
                   {CLAUSE_TYPE_LABELS[clause.primary_type] ?? clause.primary_type}
                   {clause.is_potentially_unenforceable && (
-                    <span style={{ color: "#b91c1c", marginLeft: "8px" }}>
+                    <span style={{ color: "#9c2b23", marginLeft: "8px" }}>
                       · Potentially unenforceable
                     </span>
                   )}
@@ -434,9 +435,9 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         <div
           style={{
             padding: "16px 20px",
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "8px",
+            background: "#f4d9d6",
+            border: "1px solid #e3b0a8",
+            borderRadius: "0",
             display: "flex",
             gap: "12px",
             marginBottom: "20px",
@@ -449,10 +450,10 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             fill="none"
             style={{ flexShrink: 0, marginTop: "1px" }}
           >
-            <circle cx="8" cy="8" r="6.5" stroke="#b91c1c" strokeWidth="1.5" />
+            <circle cx="8" cy="8" r="6.5" stroke="#9c2b23" strokeWidth="1.5" />
             <path
               d="M8 5v3.5M8 11v.5"
-              stroke="#b91c1c"
+              stroke="#9c2b23"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
@@ -462,7 +463,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#b91c1c",
+                color: "#9c2b23",
                 marginBottom: "4px",
               }}
             >
@@ -471,7 +472,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
             <div
               style={{
                 fontSize: "13px",
-                color: "#6b6560",
+                color: "#6f6857",
                 lineHeight: 1.5,
               }}
             >
@@ -487,7 +488,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#b91c1c",
+                  color: "#9c2b23",
                   cursor: "pointer",
                   fontSize: "13px",
                   padding: 0,
@@ -507,16 +508,16 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
         style={{
           marginTop: "8px",
           padding: "14px 18px",
-          background: "#f6f3ee",
-          border: "1px solid #e8e4dc",
-          borderRadius: "8px",
+          background: "#f7f4ee",
+          border: "1px solid #e0d9c6",
+          borderRadius: "0",
           fontSize: "11px",
-          color: "#9a9590",
+          color: "#a8a08c",
           lineHeight: 1.5,
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Public Sans', sans-serif",
         }}
       >
-        <strong style={{ color: "#6b6560" }}>Legal disclaimer:</strong>{" "}
+        <strong style={{ color: "#6f6857" }}>Legal disclaimer:</strong>{" "}
         LeaseGuard provides educational information only and does not constitute
         legal advice. Every legal claim in this report is grounded in retrieved
         statute text (corpus version {overall.corpus_version}

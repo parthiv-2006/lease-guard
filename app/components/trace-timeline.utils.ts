@@ -38,10 +38,10 @@ export function toolCategory(toolName: string): ToolCategory {
 }
 
 export const CATEGORY_COLOR: Record<ToolCategory, string> = {
-  parse: "#1d4ed8",
-  classify: "#0369a1",
-  rag: "#b45309",
-  score: "#c2410c",
+  parse: "#1f3a52",
+  classify: "#1f3a52",
+  rag: "#93690f",
+  score: "#a15a1f",
   analyse: "#7c3aed",
   generate: "#374151",
   unknown: "#6b7280",
@@ -49,19 +49,19 @@ export const CATEGORY_COLOR: Record<ToolCategory, string> = {
 
 export const CATEGORY_BG: Record<ToolCategory, string> = {
   parse: "#eff6ff",
-  classify: "#f0f9ff",
-  rag: "#fffbeb",
-  score: "#fff7ed",
+  classify: "#eef3f6",
+  rag: "#f3ecd3",
+  score: "#f3e2c9",
   analyse: "#f5f3ff",
   generate: "#f9fafb",
   unknown: "#f3f4f6",
 };
 
 export const CATEGORY_BORDER: Record<ToolCategory, string> = {
-  parse: "#bfdbfe",
-  classify: "#bae6fd",
-  rag: "#fde68a",
-  score: "#fed7aa",
+  parse: "#c7d9e6",
+  classify: "#c7d9e6",
+  rag: "#dfd0a0",
+  score: "#e3cd8f",
   analyse: "#ddd6fe",
   generate: "#e5e7eb",
   unknown: "#e5e7eb",
