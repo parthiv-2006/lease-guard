@@ -50,12 +50,12 @@ const KEY_SECTIONS = [
       "Clauses allowing rent increases on less than 90 days notice or more frequently than annually.",
   },
   {
-    section: "s. 82",
+    section: "s. 14",
     title: "No pets clauses",
     summary:
       "A provision in a tenancy agreement that prohibits or restricts the presence of animals in or about the residential complex is void. Landlords cannot evict a tenant solely for having a pet, though damage caused by pets is the tenant’s responsibility.",
     voiding:
-      "Any no-pet clause — these are void under s. 82 of the RTA regardless of what the lease states.",
+      "Any no-pet clause — these are void under s. 14 of the RTA regardless of what the lease states.",
   },
 ];
 
