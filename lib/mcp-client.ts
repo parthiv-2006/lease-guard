@@ -65,11 +65,16 @@ const TOOL_TIMEOUT_MS = 120_000;
 
 /**
  * Timeout for the MCP initialize handshake — the first HTTP round-trip to a
- * cold instance, so it eats most of the cold-start cost. 20s was too tight
- * once we moved off an always-on host; 30s leaves headroom while keeping
- * (INIT + one TOOL_TIMEOUT) under the 3-minute pipeline timeout in agent.ts.
+ * cold instance, so it eats most of the cold-start cost. 30s was still too
+ * tight on Render's free tier: a real cold boot there (spun down after 15min
+ * idle) plus the handshake round-trip was observed exceeding 30s in
+ * production 2026-08-14, aborting every request whose container wasn't
+ * already warm. 60s leaves real headroom while keeping (INIT + one
+ * TOOL_TIMEOUT) under the 3-minute pipeline timeout in agent.ts.
+ * agent.ts also fires a /health pre-warm ping before this handshake so most
+ * of the cold-start cost is usually already paid by the time this runs.
  */
-const INIT_TIMEOUT_MS = 30_000;
+const INIT_TIMEOUT_MS = 60_000;
 
 /** Time to wait for graceful stdin.end() before SIGKILL (stdio mode). */
 const CLOSE_GRACE_MS = 2_000;

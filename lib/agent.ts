@@ -498,6 +498,38 @@ function extractLeaseAddress(rawText: string): {
   return { address, unit, city, postal_code };
 }
 
+/** Generous — this is purely a best-effort wake-up ping, never on the critical path for failure. */
+const PREWARM_TIMEOUT_MS = 60_000;
+
+/**
+ * Best-effort ping to the MCP server's /health route before the real MCP
+ * handshake. Only relevant in HTTP mode (MCP_SERVER_URL set) — stdio mode
+ * spawns a local subprocess and never sleeps. Never throws: a failed or
+ * timed-out prewarm just means McpClient.create() pays the cold-start cost
+ * itself, which is exactly what happened before this existed.
+ */
+async function prewarmMcpServer(leaseId: string): Promise<void> {
+  const mcpServerUrl = process.env.MCP_SERVER_URL;
+  if (!mcpServerUrl) return;
+
+  emitAnalysisEvent(leaseId, {
+    type: "log",
+    message: "Waking up the analysis engine — first request can take up to a minute...",
+    severity: "info",
+  });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PREWARM_TIMEOUT_MS);
+  try {
+    await fetch(`${mcpServerUrl}/health`, { signal: controller.signal });
+  } catch {
+    // Ignored — the real handshake in McpClient.create() will surface any
+    // genuine outage with its own timeout and error message.
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 /**
@@ -590,6 +622,13 @@ async function _runLeaseAnalysisPipeline(
 
   try {
     // ── 1. Start MCP server ────────────────────────────────────────────────
+    // On Render's free tier the MCP server spins down after 15min idle and
+    // cold-boots on the next request. Ping /health first (a plain HTTP route,
+    // no MCP handshake) so that cost is paid up front, with a friendly log
+    // line, instead of silently eating into the initialize handshake's
+    // timeout budget. Best-effort: if this fails or times out we still
+    // attempt the real handshake — McpClient.create() has its own timeout.
+    await prewarmMcpServer(leaseId);
     mcp = await McpClient.create(MCP_SERVER_PATH);
     const logger = new ToolCallLogger(supabase, leaseId);
 
