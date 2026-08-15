@@ -47,6 +47,14 @@ jest.mock("@supabase/supabase-js", () => ({
 // ── Prevent fire-and-forget analysis from running ────────────────────────────
 jest.mock("../lib/agent", () => ({ runLeaseAnalysis: jest.fn().mockResolvedValue(undefined) }));
 
+// next/server's after() requires Next's internal request-scoped AsyncLocalStorage,
+// which isn't present when calling the route handler directly in tests. Stand in
+// with immediate invocation — good enough to verify the route still calls it.
+jest.mock("next/server", () => {
+  const actual = jest.requireActual("next/server");
+  return { ...actual, after: jest.fn((task: () => unknown) => { void task(); }) };
+});
+
 import { NextRequest } from "next/server";
 import { POST } from "../app/api/upload/route";
 

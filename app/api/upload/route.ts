@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { waitUntil } from "@vercel/functions";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkDbUploadRateLimit } from "@/lib/upload-rate-limit";
@@ -147,19 +146,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Kick off analysis (fire-and-forget via waitUntil) ─────────────────────
-  // waitUntil keeps the Vercel Lambda alive after the 202 response is sent,
-  // allowing the analysis to run up to the maxDuration limit (60s on Hobby).
+  // ── Kick off analysis (fire-and-forget via after()) ────────────────────────
+  // next/server's after() keeps the Vercel function alive after the 202
+  // response is sent, up to maxDuration. Unlike @vercel/functions' waitUntil,
+  // after() is integrated with Next's request lifecycle so in-flight fetch()
+  // calls made during the background work are not aborted once the response
+  // is returned — using waitUntil here caused every prewarm/MCP-handshake
+  // fetch to fail with "This operation was aborted" as soon as the 202 was
+  // sent (seen in production 2026-08-15, reproduced by isolating that the
+  // same MCP client code runs cleanly outside the Vercel request context).
   // runLeaseAnalysis updates the lease row's status to "processing" → "complete"
   // or "failed". The client polls /api/job/[id] to track progress.
-  waitUntil(
-    runLeaseAnalysis(leaseId, storagePath).catch((err: unknown) => {
+  after(async () => {
+    try {
+      await runLeaseAnalysis(leaseId, storagePath);
+    } catch (err: unknown) {
       console.error(
         `[upload] Background analysis error for lease ${leaseId}:`,
         err instanceof Error ? err.message : String(err)
       );
-    })
-  );
+    }
+  });
 
   return NextResponse.json(
     { lease_id: leaseId, status: "processing" },
