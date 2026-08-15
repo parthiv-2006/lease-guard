@@ -128,8 +128,61 @@ export async function GET(
         }
       }, 20_000);
 
+      // DB poll fallback — the in-memory event bus (lib/analysis-events.ts)
+      // only delivers events within the same serverless instance. If this
+      // connection lands on a different instance than the one running the
+      // pipeline (routine on Vercel), it would otherwise never see a
+      // terminal event and would sit open until maxDuration force-kills it
+      // (seen in production: "Task timed out after 300 seconds" on this
+      // route). Poll the DB directly so a terminal status is always caught
+      // even with zero cross-instance events; the client's own SSE listener
+      // ignores duplicate terminal events since it closes on the first one.
+      const pollInterval = setInterval(() => {
+        if (closed) {
+          clearInterval(pollInterval);
+          return;
+        }
+        supabase
+          .from("leases")
+          .select("status, overall_risk_score, overall_risk_level, error_message")
+          .eq("id", id)
+          .single()
+          .then(
+            ({ data: polled }) => {
+              if (closed || !polled) return;
+              if (polled.status === "complete") {
+                send({
+                  type: "complete",
+                  message: `Analysis complete — risk score: ${polled.overall_risk_score?.toFixed(1)} (${polled.overall_risk_level})`,
+                  severity: "success",
+                  timestamp: Date.now(),
+                } satisfies AnalysisEvent);
+                unsub();
+                clearInterval(hbInterval);
+                clearInterval(pollInterval);
+                close();
+              } else if (polled.status === "failed") {
+                send({
+                  type: "error",
+                  message: (polled.error_message as string | null) ?? "Analysis failed.",
+                  severity: "critical",
+                  timestamp: Date.now(),
+                } satisfies AnalysisEvent);
+                unsub();
+                clearInterval(hbInterval);
+                clearInterval(pollInterval);
+                close();
+              }
+            },
+            () => {
+              /* transient — next poll tick will retry */
+            }
+          );
+      }, 4_000);
+
       req.signal.addEventListener("abort", () => {
         clearInterval(hbInterval);
+        clearInterval(pollInterval);
         unsub();
         close();
       });
