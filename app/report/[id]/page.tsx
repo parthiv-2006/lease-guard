@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -20,49 +20,9 @@ import type { Report, PanelId } from "../../components/types";
 import { PDFViewer } from "../../components/pdf-viewer";
 import { exportReportPDF } from "../../../lib/pdf-export";
 import { LeaseChat } from "../../components/lease-chat";
+import { ReportSidebar, useSidebarCollapsedState } from "../../components/sidebar";
 
-// ── Nav config ────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS: Array<{
-  id: PanelId;
-  label: string;
-  icon: string;
-  countKey?: keyof Report["overall"];
-  color?: string;
-}> = [
-  { id: "overview", label: "Overview", icon: "overview" },
-  {
-    id: "redflags",
-    label: "Red Flags",
-    icon: "flag",
-    countKey: "red_flag_count",
-    color: "#a15a1f",
-  },
-  { id: "clauses", label: "Clause Explorer", icon: "clauses" },
-  {
-    id: "negotiation",
-    label: "Negotiation Guide",
-    icon: "negotiate",
-    countKey: "negotiation_count",
-  },
-  {
-    id: "missing",
-    label: "Missing Protections",
-    icon: "shield",
-    countKey: "missing_count",
-    color: "#93690f",
-  },
-  {
-    id: "contradictions",
-    label: "Contradictions",
-    icon: "conflict",
-    countKey: "contradiction_count",
-  },
-  { id: "sources", label: "Sources", icon: "source" },
-  { id: "trace", label: "Agent Trace", icon: "trace" },
-];
-
-// ── Share Modal ───────────────────────────────────────────────────────────────
+// â”€â”€ Share Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ShareModal({
   onClose,
@@ -79,7 +39,7 @@ function ShareModal({
   const [hideAddress, setHideAddress] = useState(false);
   const [hideAddressSynced, setHideAddressSynced] = useState(false);
 
-  // Always POSTs — the server reuses the existing token and only updates
+  // Always POSTs â€” the server reuses the existing token and only updates
   // hide_address, so this is safe to call again after the link already exists
   // (e.g. when the checkbox is toggled post-generation).
   async function mintOrUpdateShareLink(hide: boolean) {
@@ -178,7 +138,7 @@ function ShareModal({
               boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
             }}
           >
-            View full report →
+            View full report â†’
           </a>
         </div>
 
@@ -259,7 +219,7 @@ function ShareModal({
                 transition: "all 0.15s",
               }}
             >
-              {generating ? "…" : copied ? "Copied!" : "Copy link"}
+              {generating ? "â€¦" : copied ? "Copied!" : "Copy link"}
             </button>
           </div>
 
@@ -281,7 +241,7 @@ function ShareModal({
             <span style={{ fontSize: "12px", color: "#4a4438", lineHeight: 1.5 }}>
               Hide the unit address from anyone with this link
               {hideAddress && !hideAddressSynced && (
-                <span style={{ color: "#8a4a17" }}> — click Copy link to save this</span>
+                <span style={{ color: "#8a4a17" }}> â€” click Copy link to save this</span>
               )}
             </span>
           </label>
@@ -305,10 +265,10 @@ function ShareModal({
   );
 }
 
-// ── Export preview modal ─────────────────────────────────────────────────────
+// â”€â”€ Export preview modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // A confirmation step before generating the PDF. exportReportPDF always
 // includes the same fixed sections (cover, high/medium-risk clauses, missing
-// protections, contradictions) — there's no partial-section export today, so
+// protections, contradictions) â€” there's no partial-section export today, so
 // this lists what's included rather than offering toggles that don't exist.
 
 function ExportPreviewModal({
@@ -324,10 +284,10 @@ function ExportPreviewModal({
   const medRiskCount = report.clauses.filter((c) => c.risk_level === "medium").length;
 
   const sections = [
-    "Cover page — property, risk score, executive summary",
-    `Clause analysis — ${highRiskCount + medRiskCount} clause${highRiskCount + medRiskCount !== 1 ? "s" : ""} (high/medium risk)`,
-    `Missing protections — ${report.missing_protections.length}`,
-    `Contradictions — ${report.contradictions.length}`,
+    "Cover page â€” property, risk score, executive summary",
+    `Clause analysis â€” ${highRiskCount + medRiskCount} clause${highRiskCount + medRiskCount !== 1 ? "s" : ""} (high/medium risk)`,
+    `Missing protections â€” ${report.missing_protections.length}`,
+    `Contradictions â€” ${report.contradictions.length}`,
   ];
 
   return (
@@ -440,440 +400,7 @@ function ExportPreviewModal({
   );
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-
-function ReportSidebar({
-  activePanel,
-  onNavigate,
-  report,
-  onShare,
-  isMobile,
-  sidebarOpen,
-  onClose,
-  collapsed,
-  onToggleCollapse,
-  onExportClick,
-}: {
-  activePanel: PanelId;
-  onNavigate: (panel: PanelId) => void;
-  report: Report;
-  onShare: () => void;
-  isMobile?: boolean;
-  sidebarOpen?: boolean;
-  onClose?: () => void;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
-  onExportClick?: () => void;
-}) {
-  const { lease, overall } = report;
-  const isCollapsed = !isMobile && collapsed;
-
-  const riskAccent =
-    overall.risk_level === "critical" ? "#c65950"
-    : overall.risk_level === "high"   ? "#c17f42"
-    : overall.risk_level === "medium" ? "#c99a2e"
-    : "#7ec98f";
-
-  const filledSegments = Math.round((overall.risk_score / 10) * 5);
-  const sidebarWidth = isCollapsed ? "64px" : "300px";
-
-  return (
-    <div
-      style={{
-        width: sidebarWidth,
-        minWidth: sidebarWidth,
-        background: "#151209",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        position: isMobile ? "fixed" : "sticky",
-        top: 0,
-        left: isMobile ? (sidebarOpen ? 0 : -300) : undefined,
-        overflow: "auto",
-        borderRight: "1px solid #1c1811",
-        flexShrink: 0,
-        zIndex: isMobile ? 100 : undefined,
-        transition: isMobile ? "left 0.25s ease" : "width 0.2s ease, min-width 0.2s ease",
-        boxShadow: isMobile && sidebarOpen ? "4px 0 32px rgba(0,0,0,0.6)" : undefined,
-      }}
-    >
-      {/* Brand */}
-      <div
-        style={{
-          padding: isCollapsed ? "20px 0 18px" : "20px 24px 18px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: isCollapsed ? "center" : "space-between",
-        }}
-      >
-        <div
-          style={{
-            fontFamily: "'Newsreader', serif",
-            fontStyle: "italic",
-            fontWeight: 600,
-            fontSize: isCollapsed ? "18px" : "16px",
-            color: "#e9e4d5",
-            letterSpacing: "0.04em",
-          }}
-        >
-          {isCollapsed ? "LG" : "LeaseGuard"}
-        </div>
-        {!isMobile && !isCollapsed && (
-          <button
-            onClick={onToggleCollapse}
-            title="Collapse sidebar"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-              display: "flex",
-              color: "#6f6857",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#e9e4d5"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#6f6857"; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-              <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
-      </div>
-      {!isMobile && isCollapsed && (
-        <button
-          onClick={onToggleCollapse}
-          title="Expand sidebar"
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "4px",
-            display: "flex",
-            justifyContent: "center",
-            width: "100%",
-            color: "#6f6857",
-            marginBottom: "10px",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#e9e4d5"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "#6f6857"; }}
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      )}
-
-      {/* Collapsed: compact risk badge only */}
-      {isCollapsed && (
-        <div style={{ padding: "0 0 18px", borderBottom: "1px solid #1c1811", marginBottom: "10px", display: "flex", justifyContent: "center" }}>
-          <div
-            title={`${lease.address} — ${overall.risk_score.toFixed(1)} ${overall.risk_level}`}
-            style={{
-              width: "36px",
-              height: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: `1.5px solid ${riskAccent}`,
-              fontFamily: "'Newsreader', serif",
-              fontStyle: "italic",
-              fontWeight: 700,
-              fontSize: "14px",
-              color: riskAccent,
-            }}
-          >
-            {overall.risk_score.toFixed(1)}
-          </div>
-        </div>
-      )}
-
-      {/* Property + Risk hero */}
-      {!isCollapsed && (
-      <div style={{ padding: "0 24px 22px", borderBottom: "1px solid #1c1811" }}>
-        {/* Property label */}
-        <div style={{
-          fontSize: "9px",
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "#a8a08c",
-          fontWeight: 700,
-          marginBottom: "5px",
-        }}>
-          Property
-        </div>
-        <div style={{
-          fontSize: "13px",
-          fontWeight: 500,
-          color: "#cfc6ab",
-          lineHeight: 1.4,
-          marginBottom: "2px",
-        }}>
-          {lease.address}
-        </div>
-        <div style={{
-          fontSize: "11px",
-          color: "#a8a08c",
-          marginBottom: "24px",
-          letterSpacing: "0.02em",
-        }}>
-          {lease.city}
-        </div>
-
-        {/* Risk score — typographic hero, no border */}
-        <div style={{
-          fontSize: "9px",
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "#a8a08c",
-          fontWeight: 700,
-          marginBottom: "10px",
-        }}>
-          Overall Risk
-        </div>
-
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", marginBottom: "16px" }}>
-          <span style={{
-            fontFamily: "'Newsreader', serif",
-            fontStyle: "italic",
-            fontSize: "56px",
-            fontWeight: 700,
-            lineHeight: 0.85,
-            color: riskAccent,
-            letterSpacing: "-0.03em",
-          }}>
-            {overall.risk_score.toFixed(1)}
-          </span>
-          <div style={{ paddingBottom: "5px" }}>
-            <div style={{
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: riskAccent,
-              marginBottom: "2px",
-            }}>
-              {overall.risk_level}
-            </div>
-            <div style={{
-              fontSize: "9px",
-              color: "#a8a08c",
-              letterSpacing: "0.04em",
-            }}>
-              out of 10
-            </div>
-          </div>
-        </div>
-
-        {/* 5-segment discrete bar */}
-        <div style={{ display: "flex", gap: "4px", marginBottom: "16px" }}>
-          {[1, 2, 3, 4, 5].map((seg) => (
-            <div
-              key={seg}
-              style={{
-                flex: 1,
-                height: "3px",
-                borderRadius: "0",
-                background: seg <= filledSegments ? riskAccent : "#1c1811",
-                opacity: seg <= filledSegments ? (0.35 + (seg / 5) * 0.65) : 1,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Metadata */}
-        <div style={{ fontSize: "10px", color: "#a8a08c", letterSpacing: "0.03em" }}>
-          {lease.page_count > 0 && `${lease.page_count} ${lease.page_count === 1 ? "page" : "pages"} · `}
-          {lease.extraction_method === "ocr" ? "Scanned PDF" : "Digital PDF"}
-        </div>
-      </div>
-      )}
-
-      {/* Nav */}
-      <nav
-        style={{ flex: 1, paddingTop: "10px", overflow: "auto" }}
-        aria-label="Report sections"
-      >
-        {NAV_ITEMS.map((item) => {
-          const active = activePanel === item.id;
-          const count =
-            item.countKey != null
-              ? (overall[item.countKey] as number)
-              : null;
-          return (
-            <button
-              key={item.id}
-              onClick={() => { onNavigate(item.id); if (isMobile) onClose?.(); }}
-              title={isCollapsed ? item.label : undefined}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: isCollapsed ? "center" : "flex-start",
-                gap: "9px",
-                padding: isCollapsed ? "10px 0" : "8px 24px",
-                background: active ? "rgba(235,232,226,0.05)" : "transparent",
-                border: "none",
-                cursor: "pointer",
-                textAlign: "left",
-                position: "relative",
-                transition: "background 0.12s",
-              }}
-              onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = "rgba(235,232,226,0.03)";
-              }}
-              onMouseLeave={(e) => {
-                if (!active) e.currentTarget.style.background = "transparent";
-              }}
-            >
-              {/* Right-edge active indicator */}
-              {active && (
-                <span style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: "2px",
-                  height: "18px",
-                  borderRadius: "0",
-                  background: "#e9e4d5",
-                }} />
-              )}
-              <Icon
-                name={item.icon}
-                size={14}
-                color={active ? "#e9e4d5" : isCollapsed ? "#a8a08c" : "#1c1811"}
-              />
-              {!isCollapsed && (
-                <span
-                  style={{
-                    fontSize: "13px",
-                    color: active ? "#e9e4d5" : "#4a4438",
-                    fontFamily: "'Public Sans', sans-serif",
-                    flex: 1,
-                    fontWeight: active ? 500 : 400,
-                    letterSpacing: "0.01em",
-                    transition: "color 0.12s",
-                  }}
-                >
-                  {item.label}
-                </span>
-              )}
-              {!isCollapsed && count != null && count > 0 && (
-                <span
-                  style={{
-                    fontSize: "10px",
-                    minWidth: "20px",
-                    height: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "0",
-                    background: "#17140f",
-                    color: item.color ?? "#4a4438",
-                    fontWeight: 600,
-                    letterSpacing: "0.02em",
-                    padding: "0 5px",
-                  }}
-                >
-                  {count}
-                </span>
-              )}
-              {isCollapsed && count != null && count > 0 && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "8px",
-                    right: "16px",
-                    width: "5px",
-                    height: "5px",
-                    borderRadius: "50%",
-                    background: item.color ?? "#a15a1f",
-                  }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Actions */}
-      <div
-        style={{
-          padding: isCollapsed ? "14px 8px" : "14px 16px",
-          borderTop: "1px solid #1c1811",
-          display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-        }}
-      >
-        {/* Share — inverted primary */}
-        <button
-          onClick={onShare}
-          title={isCollapsed ? "Share Report" : undefined}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "7px",
-            padding: isCollapsed ? "9px 0" : "9px 12px",
-            borderRadius: "0",
-            cursor: "pointer",
-            background: "#e9e4d5",
-            border: "none",
-            color: "#151209",
-            fontSize: "12px",
-            fontFamily: "'Public Sans', sans-serif",
-            fontWeight: 600,
-            width: "100%",
-            letterSpacing: "0.02em",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#e9e4d5")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#e9e4d5")}
-        >
-          <Icon name="share" size={13} color="#151209" />
-          {!isCollapsed && "Share Report"}
-        </button>
-        {/* Export — subtle ghost secondary */}
-        <button
-          title={isCollapsed ? "Export PDF" : undefined}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "7px",
-            padding: isCollapsed ? "8px 0" : "8px 12px",
-            borderRadius: "0",
-            cursor: "pointer",
-            background: "transparent",
-            border: "1px solid #1c1811",
-            color: "#4a4438",
-            fontSize: "12px",
-            fontFamily: "'Public Sans', sans-serif",
-            fontWeight: 400,
-            width: "100%",
-            letterSpacing: "0.02em",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#1c1811";
-            e.currentTarget.style.color = "#a8a08c";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#1c1811";
-            e.currentTarget.style.color = "#4a4438";
-          }}
-          onClick={onExportClick ?? (() => exportReportPDF(report))}
-        >
-          <Icon name="export" size={13} color="#4a4438" />
-          {!isCollapsed && "Export PDF"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Report shell ──────────────────────────────────────────────────────────────
+// â”€â”€ Report shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ReportShell({ report, reportId }: { report: Report; reportId: string }) {
   const router = useRouter();
@@ -886,7 +413,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   const [pdfWidthPct, setPdfWidthPct] = useState(48);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsedState();
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -979,6 +506,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
         onExportClick={() => setShowExportPreview(true)}
+        shortcutsDisabled={showShare || showExportPreview || showCopilot}
       />
 
       {/* Right column */}
@@ -1048,7 +576,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           >
             Dashboard
           </Link>
-          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>·</span>
+          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>Â·</span>
           <button
             onClick={() => router.push("/")}
             style={{
@@ -1089,7 +617,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: "11px", color: "#a8a08c", flexShrink: 0 }}>
             Corpus: {report.overall.corpus_version}
-            {report.overall.corpus_date && ` · ${report.overall.corpus_date}`}
+            {report.overall.corpus_date && ` Â· ${report.overall.corpus_date}`}
           </span>
 
           {/* Split-view toggle */}
@@ -1143,7 +671,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           <AuthButton />
         </div>
 
-        {/* Content area — split or normal */}
+        {/* Content area â€” split or normal */}
         {splitScreen ? (
           <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
@@ -1264,7 +792,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                         padding: "0 2px",
                       }}
                     >
-                      ✕
+                      âœ•
                     </button>
                   </div>
                 ) : null;
@@ -1290,7 +818,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           </div>
         )}
 
-        {/* Slim privacy footer — inside the right column so it sits at the bottom */}
+        {/* Slim privacy footer â€” inside the right column so it sits at the bottom */}
         <footer
           style={{
             padding: "10px 24px",
@@ -1307,8 +835,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             background: "#f7f4ee",
           }}
         >
-          <span>Educational information only — not legal advice.</span>
-          <span style={{ color: "#cfc6ab" }}>·</span>
+          <span>Educational information only â€” not legal advice.</span>
+          <span style={{ color: "#cfc6ab" }}>Â·</span>
           <Link
             href="/privacy"
             style={{ color: "#a8a08c", textDecoration: "underline" }}
@@ -1349,7 +877,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   );
 }
 
-// ── Loading / error states ────────────────────────────────────────────────────
+// â”€â”€ Loading / error states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function LoadingState() {
   return (
@@ -1530,7 +1058,7 @@ function ErrorState({
   );
 }
 
-// ── Page component ────────────────────────────────────────────────────────────
+// â”€â”€ Page component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function ReportPage() {
   const params = useParams();
@@ -1555,7 +1083,7 @@ export default function ReportPage() {
       }
       const data = await res.json();
 
-      // Normalise API response → Report shape expected by components
+      // Normalise API response â†’ Report shape expected by components
       // The API returns full_report_json spread at top-level.
       // If the response already has a nested `lease` + `overall` shape, use it directly.
       // Otherwise build the shape from the flat response.
@@ -1579,18 +1107,18 @@ export default function ReportPage() {
   return <ReportShell report={report} reportId={reportId} />;
 }
 
-// ── API response normaliser ───────────────────────────────────────────────────
+// â”€â”€ API response normaliser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // The API may return data in the nested lg-data.js shape OR a flat shape from
 // the DB row. This function coerces either into the Report interface.
 
-// ── Field-name helpers ────────────────────────────────────────────────────────
+// â”€â”€ Field-name helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-/** "rent payment" → "Rent Payment" */
+/** "rent payment" â†’ "Rent Payment" */
 function toTitleCase(s: string): string {
   return s.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Map RTA section number → compliant language template.
+/** Map RTA section number â†’ compliant language template.
  *  Used as a fallback when the DB column is null (pre-migration data).
  *  Keyed by the most specific section substring to avoid false matches. */
 const SECTION_TO_COMPLIANT: Record<string, string> = {
@@ -1644,7 +1172,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     return data as unknown as Report;
   }
 
-  // ── Clauses — from DB rows fetched by the report API ──────────────────────
+  // â”€â”€ Clauses â€” from DB rows fetched by the report API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const rawClauses = (data._clauses as Array<Record<string, unknown>>) ?? [];
   const clauses: Report["clauses"] = rawClauses
     .filter((c) => !String(c.clause_number ?? "").startsWith("synthetic"))
@@ -1672,7 +1200,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
       ),
   }));
 
-  // ── Negotiation points — add synthetic id + clause_label ─────────────────
+  // â”€â”€ Negotiation points â€” add synthetic id + clause_label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const rawNeg = (data.negotiation_points as Array<Record<string, unknown>>) ?? [];
   const negotiation_points: Report["negotiation_points"] = rawNeg.map((n, i) => ({
     id: (n.clause_id as string) ?? `neg-${i}`,
@@ -1690,7 +1218,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     your_rebuttal: (n.your_rebuttal as string) ?? "",
   }));
 
-  // ── Missing protections — map generate_report field names → UI shape ──────
+  // â”€â”€ Missing protections â€” map generate_report field names â†’ UI shape â”€â”€â”€â”€â”€â”€
   const rawMissing = (data.missing_protections as Array<Record<string, unknown>>) ?? [];
   const missing_protections: Report["missing_protections"] = rawMissing.map((m, i) => ({
     id: `missing-${i}`,
@@ -1707,13 +1235,13 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
       `Include a clause addressing ${((m.clause_type as string) ?? "this protection").replace(/_/g, " ")}.`,
   }));
 
-  // ── Contradictions — add synthetic id + labels ────────────────────────────
+  // â”€â”€ Contradictions â€” add synthetic id + labels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const rawContradictions = (data.contradictions as Array<Record<string, unknown>>) ?? [];
   const contradictions: Report["contradictions"] = rawContradictions.map((c, i) => {
     // Try DB UUID lookup first (new analyses store db_clause_id).
     // For older analyses that stored the internal pipeline id, fall back to
     // a label derived from contradiction_type (e.g. "entry_vs_quiet_enjoyment"
-    // → "Entry Rights" / "Quiet Enjoyment") rather than a garbled UUID.
+    // â†’ "Entry Rights" / "Quiet Enjoyment") rather than a garbled UUID.
     const foundA = clauses.find((cl) => cl.id === (c.clause_a_id as string));
     const foundB = clauses.find((cl) => cl.id === (c.clause_b_id as string));
     const ctType = (c.contradiction_type as string) ?? "";
@@ -1736,12 +1264,12 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     };
   });
 
-  // ── Sources — parse reference string → Source shape ───────────────────────
+  // â”€â”€ Sources â€” parse reference string â†’ Source shape â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const rawSources = (data.sources as Array<Record<string, unknown>>) ?? [];
   const sources: Report["sources"] = rawSources.map((s, i) => {
     const ref = (s.reference as string) ?? "";
-    // e.g. "Residential Tenancies Act, 2006 s.22 — Quiet enjoyment"
-    const sectionMatch = ref.match(/s\.(\S+)\s*[—–-]\s*(.+)/);
+    // e.g. "Residential Tenancies Act, 2006 s.22 â€” Quiet enjoyment"
+    const sectionMatch = ref.match(/s\.(\S+)\s*[â€”â€“-]\s*(.+)/);
     const sectionNum = sectionMatch?.[1] ?? "";
 
     // Dynamically match sources to clauses based on RTA section numbers and text references
@@ -1782,7 +1310,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     };
   });
 
-  // ── Lease — from DB lease row ─────────────────────────────────────────────
+  // â”€â”€ Lease â€” from DB lease row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const leaseRow = (data._lease as Record<string, unknown>) ?? {};
   const filePath = (leaseRow.file_path as string) ?? "";
   const filename = filePath.split("/").pop() ?? "lease.pdf";
@@ -1793,7 +1321,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
   const propertyCity    = (leaseRow.property_city    as string) ?? "";
 
   const displayAddress = propertyAddress
-    ? (propertyUnit ? `${propertyUnit} – ${propertyAddress}` : propertyAddress)
+    ? (propertyUnit ? `${propertyUnit} â€“ ${propertyAddress}` : propertyAddress)
     : "Rental Unit";
 
   const displayCity = propertyCity
