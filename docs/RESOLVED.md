@@ -174,3 +174,19 @@ raw_text = (raw_text
 **Was:** Parent sections in the statutes table (e.g. section 26) still contained their full subsection texts, causing them to compete weakly with the newly seeded individual subsection rows during vector/hybrid retrieval.
 **Root cause:** `build_corpus.py` previously skipped any sections that already existed in the database (`_section_exists`), preventing updates to parent rows once they were split into separate subsections.
 **Fix applied:** Replaced `_section_exists` in `scripts/build_corpus.py` with `_get_existing_section_text`. The script now compares the database row's `full_text` with the parsed chunk's text and automatically updates/re-embeds the row on text mismatch. Running the corpus build successfully updated and trimmed all parent RTA sections (e.g. s.26 now contains only its introductory sentence). Commit: `3848354`.
+
+---
+
+## [RESOLVED 2026-08-16] Mojibake Corruption in Report Page — Broke Sources Panel Citation Parsing
+
+**Was:** `app/report/[id]/page.tsx` had ~600 characters of double-encoded UTF-8 (em/en-dash, middot, box-drawing comment dividers, an arrow) scattered through comments and runtime strings — visible as garbled text in the property address, share modal, footer separators, and corpus-date separator. Discovered by reading the demo report's rendered page text.
+**Root cause:** The reference-parsing regex on the Sources panel (`ref.match(/s\.(\S+)\s*[—–-]\s*(.+)/)`) had its em/en-dash character class corrupted into three separate garbage characters, so it silently failed to match `[type]s\.\d+\s*—\s*[title]`-shaped citations from the API. Every source fell back to `section_title: ref` — the full raw citation string — instead of the parsed title. Confirmed with a targeted regex test in Node before and after the fix.
+**Fix applied:** Wrote a one-off Node script that reverses the corruption (each corrupted character's codepoint is looked up in a Windows-1252 upper-range table to recover its original byte, then the byte sequence is re-decoded as UTF-8) and applied it to the whole file. Verified no other `.ts`/`.tsx` file in the repo carries the same corruption. `tsc --noEmit` clean, 158/158 unit tests pass, Sources panel confirmed showing clean parsed titles (e.g. "Deemed renewal where no notice") instead of raw dumps. Commit: `69da287`.
+
+---
+
+## [RESOLVED 2026-08-16] City Falls Back to Full Jurisdiction Name ("Ontario, Canada") When Extraction Fails
+
+**Was:** On leases where `property_city` extraction fails (common for scanned/OCR leases — e.g. the demo `highlyFaultyLease.pdf`), the report displayed the full jurisdiction label ("Ontario, Canada") as if it were the city, producing addresses like "123 Danger Way, Ontario, Canada" with no real city. This is a recurrence of the same underlying pattern as archived issue #3 above (2026-05-20) — that fix addressed the *primary* extraction path, but never removed the jurisdiction fallback itself, which still fires whenever extraction fails on new uploads.
+**Root cause:** `normaliseApiResponse()` in `app/report/[id]/page.tsx` fell back to `data.jurisdiction` / `leaseRow.jurisdiction` ("Ontario, Canada") whenever `property_city` was empty.
+**Fix applied:** Removed the jurisdiction fallback — `displayCity` is now just `propertyCity`, left blank on extraction failure. `overview-panel.tsx` subtitle and `sidebar.tsx` Property block updated to omit the city line/comma gracefully when blank. Commits: `61ffffc`.
