@@ -99,6 +99,7 @@ const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
   { label: "Ontario RTA", href: "/ontario-rta" },
+  { label: "Rent Increase Checker", href: "/rent-increase-checker" },
   { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
   { label: "Privacy", href: "/privacy" },
 ];
