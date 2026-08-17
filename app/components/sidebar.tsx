@@ -625,12 +625,14 @@ export function ReportSidebar({
           <div style={{ fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: "5px" }}>
             Property
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 500, color: C.parchment, lineHeight: 1.4, marginBottom: "2px" }}>
+          <div style={{ fontSize: "13px", fontWeight: 500, color: C.parchment, lineHeight: 1.4, marginBottom: lease.city ? "2px" : "24px" }}>
             {lease.address}
           </div>
-          <div style={{ fontSize: "11px", color: C.muted, marginBottom: "24px", letterSpacing: "0.02em" }}>
-            {lease.city}
-          </div>
+          {lease.city && (
+            <div style={{ fontSize: "11px", color: C.muted, marginBottom: "24px", letterSpacing: "0.02em" }}>
+              {lease.city}
+            </div>
+          )}
 
           <div style={{ fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: C.muted, fontWeight: 700, marginBottom: "12px" }}>
             Overall Risk

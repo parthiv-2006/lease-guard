@@ -1324,10 +1324,10 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     ? (propertyUnit ? `${propertyUnit} – ${propertyAddress}` : propertyAddress)
     : "Rental Unit";
 
-  const displayCity = propertyCity
-    || (data.jurisdiction as string)
-    || (leaseRow.jurisdiction as string)
-    || "";
+  // Deliberately does NOT fall back to jurisdiction (e.g. "Ontario, Canada") —
+  // that's the province/country, not a city, and showing it as one misrepresents
+  // the address. Leave blank when extraction fails (common on scanned/OCR leases).
+  const displayCity = propertyCity;
 
   const lease: Report["lease"] = {
     id,

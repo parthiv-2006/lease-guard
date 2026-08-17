@@ -24,7 +24,7 @@ export function OverviewPanel({ report, onNavigate }: OverviewPanelProps) {
     <div>
       <SectionHeader
         title="Overview"
-        subtitle={`Analysis of ${lease.address}, ${lease.city}${lease.term ? `  ·  ${lease.term}` : ""}`}
+        subtitle={`Analysis of ${lease.address}${lease.city ? `, ${lease.city}` : ""}${lease.term ? `  ·  ${lease.term}` : ""}`}
       />
 
       {/* Main grid: gauge + summary */}
