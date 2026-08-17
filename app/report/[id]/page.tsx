@@ -22,7 +22,7 @@ import { exportReportPDF } from "../../../lib/pdf-export";
 import { LeaseChat } from "../../components/lease-chat";
 import { ReportSidebar, useSidebarCollapsedState } from "../../components/sidebar";
 
-// â”€â”€ Share Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Share Modal ───────────────────────────────────────────────────────────────
 
 function ShareModal({
   onClose,
@@ -39,7 +39,7 @@ function ShareModal({
   const [hideAddress, setHideAddress] = useState(false);
   const [hideAddressSynced, setHideAddressSynced] = useState(false);
 
-  // Always POSTs â€” the server reuses the existing token and only updates
+  // Always POSTs — the server reuses the existing token and only updates
   // hide_address, so this is safe to call again after the link already exists
   // (e.g. when the checkbox is toggled post-generation).
   async function mintOrUpdateShareLink(hide: boolean) {
@@ -138,7 +138,7 @@ function ShareModal({
               boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
             }}
           >
-            View full report â†’
+            View full report →
           </a>
         </div>
 
@@ -219,7 +219,7 @@ function ShareModal({
                 transition: "all 0.15s",
               }}
             >
-              {generating ? "â€¦" : copied ? "Copied!" : "Copy link"}
+              {generating ? "…" : copied ? "Copied!" : "Copy link"}
             </button>
           </div>
 
@@ -241,7 +241,7 @@ function ShareModal({
             <span style={{ fontSize: "12px", color: "#4a4438", lineHeight: 1.5 }}>
               Hide the unit address from anyone with this link
               {hideAddress && !hideAddressSynced && (
-                <span style={{ color: "#8a4a17" }}> â€” click Copy link to save this</span>
+                <span style={{ color: "#8a4a17" }}> — click Copy link to save this</span>
               )}
             </span>
           </label>
@@ -265,10 +265,10 @@ function ShareModal({
   );
 }
 
-// â”€â”€ Export preview modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Export preview modal ─────────────────────────────────────────────────────
 // A confirmation step before generating the PDF. exportReportPDF always
 // includes the same fixed sections (cover, high/medium-risk clauses, missing
-// protections, contradictions) â€” there's no partial-section export today, so
+// protections, contradictions) — there's no partial-section export today, so
 // this lists what's included rather than offering toggles that don't exist.
 
 function ExportPreviewModal({
@@ -284,10 +284,10 @@ function ExportPreviewModal({
   const medRiskCount = report.clauses.filter((c) => c.risk_level === "medium").length;
 
   const sections = [
-    "Cover page â€” property, risk score, executive summary",
-    `Clause analysis â€” ${highRiskCount + medRiskCount} clause${highRiskCount + medRiskCount !== 1 ? "s" : ""} (high/medium risk)`,
-    `Missing protections â€” ${report.missing_protections.length}`,
-    `Contradictions â€” ${report.contradictions.length}`,
+    "Cover page — property, risk score, executive summary",
+    `Clause analysis — ${highRiskCount + medRiskCount} clause${highRiskCount + medRiskCount !== 1 ? "s" : ""} (high/medium risk)`,
+    `Missing protections — ${report.missing_protections.length}`,
+    `Contradictions — ${report.contradictions.length}`,
   ];
 
   return (
@@ -400,7 +400,7 @@ function ExportPreviewModal({
   );
 }
 
-// â”€â”€ Report shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Report shell ──────────────────────────────────────────────────────────────
 
 function ReportShell({ report, reportId }: { report: Report; reportId: string }) {
   const router = useRouter();
@@ -576,7 +576,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           >
             Dashboard
           </Link>
-          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>Â·</span>
+          <span style={{ fontSize: "12px", color: "#cfc6ab" }}>·</span>
           <button
             onClick={() => router.push("/")}
             style={{
@@ -617,7 +617,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: "11px", color: "#a8a08c", flexShrink: 0 }}>
             Corpus: {report.overall.corpus_version}
-            {report.overall.corpus_date && ` Â· ${report.overall.corpus_date}`}
+            {report.overall.corpus_date && ` · ${report.overall.corpus_date}`}
           </span>
 
           {/* Split-view toggle */}
@@ -671,7 +671,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           <AuthButton />
         </div>
 
-        {/* Content area â€” split or normal */}
+        {/* Content area — split or normal */}
         {splitScreen ? (
           <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
@@ -792,7 +792,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
                         padding: "0 2px",
                       }}
                     >
-                      âœ•
+                      ✕
                     </button>
                   </div>
                 ) : null;
@@ -818,7 +818,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
           </div>
         )}
 
-        {/* Slim privacy footer â€” inside the right column so it sits at the bottom */}
+        {/* Slim privacy footer — inside the right column so it sits at the bottom */}
         <footer
           style={{
             padding: "10px 24px",
@@ -835,8 +835,8 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
             background: "#f7f4ee",
           }}
         >
-          <span>Educational information only â€” not legal advice.</span>
-          <span style={{ color: "#cfc6ab" }}>Â·</span>
+          <span>Educational information only — not legal advice.</span>
+          <span style={{ color: "#cfc6ab" }}>·</span>
           <Link
             href="/privacy"
             style={{ color: "#a8a08c", textDecoration: "underline" }}
@@ -877,7 +877,7 @@ function ReportShell({ report, reportId }: { report: Report; reportId: string })
   );
 }
 
-// â”€â”€ Loading / error states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Loading / error states ────────────────────────────────────────────────────
 
 function LoadingState() {
   return (
@@ -1058,7 +1058,7 @@ function ErrorState({
   );
 }
 
-// â”€â”€ Page component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Page component ────────────────────────────────────────────────────────────
 
 export default function ReportPage() {
   const params = useParams();
@@ -1083,7 +1083,7 @@ export default function ReportPage() {
       }
       const data = await res.json();
 
-      // Normalise API response â†’ Report shape expected by components
+      // Normalise API response → Report shape expected by components
       // The API returns full_report_json spread at top-level.
       // If the response already has a nested `lease` + `overall` shape, use it directly.
       // Otherwise build the shape from the flat response.
@@ -1107,18 +1107,18 @@ export default function ReportPage() {
   return <ReportShell report={report} reportId={reportId} />;
 }
 
-// â”€â”€ API response normaliser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── API response normaliser ───────────────────────────────────────────────────
 // The API may return data in the nested lg-data.js shape OR a flat shape from
 // the DB row. This function coerces either into the Report interface.
 
-// â”€â”€ Field-name helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Field-name helpers ────────────────────────────────────────────────────────
 
-/** "rent payment" â†’ "Rent Payment" */
+/** "rent payment" → "Rent Payment" */
 function toTitleCase(s: string): string {
   return s.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Map RTA section number â†’ compliant language template.
+/** Map RTA section number → compliant language template.
  *  Used as a fallback when the DB column is null (pre-migration data).
  *  Keyed by the most specific section substring to avoid false matches. */
 const SECTION_TO_COMPLIANT: Record<string, string> = {
@@ -1172,7 +1172,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     return data as unknown as Report;
   }
 
-  // â”€â”€ Clauses â€” from DB rows fetched by the report API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Clauses — from DB rows fetched by the report API ──────────────────────
   const rawClauses = (data._clauses as Array<Record<string, unknown>>) ?? [];
   const clauses: Report["clauses"] = rawClauses
     .filter((c) => !String(c.clause_number ?? "").startsWith("synthetic"))
@@ -1200,7 +1200,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
       ),
   }));
 
-  // â”€â”€ Negotiation points â€” add synthetic id + clause_label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Negotiation points — add synthetic id + clause_label ─────────────────
   const rawNeg = (data.negotiation_points as Array<Record<string, unknown>>) ?? [];
   const negotiation_points: Report["negotiation_points"] = rawNeg.map((n, i) => ({
     id: (n.clause_id as string) ?? `neg-${i}`,
@@ -1218,7 +1218,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     your_rebuttal: (n.your_rebuttal as string) ?? "",
   }));
 
-  // â”€â”€ Missing protections â€” map generate_report field names â†’ UI shape â”€â”€â”€â”€â”€â”€
+  // ── Missing protections — map generate_report field names → UI shape ──────
   const rawMissing = (data.missing_protections as Array<Record<string, unknown>>) ?? [];
   const missing_protections: Report["missing_protections"] = rawMissing.map((m, i) => ({
     id: `missing-${i}`,
@@ -1235,13 +1235,13 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
       `Include a clause addressing ${((m.clause_type as string) ?? "this protection").replace(/_/g, " ")}.`,
   }));
 
-  // â”€â”€ Contradictions â€” add synthetic id + labels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Contradictions — add synthetic id + labels ────────────────────────────
   const rawContradictions = (data.contradictions as Array<Record<string, unknown>>) ?? [];
   const contradictions: Report["contradictions"] = rawContradictions.map((c, i) => {
     // Try DB UUID lookup first (new analyses store db_clause_id).
     // For older analyses that stored the internal pipeline id, fall back to
     // a label derived from contradiction_type (e.g. "entry_vs_quiet_enjoyment"
-    // â†’ "Entry Rights" / "Quiet Enjoyment") rather than a garbled UUID.
+    // → "Entry Rights" / "Quiet Enjoyment") rather than a garbled UUID.
     const foundA = clauses.find((cl) => cl.id === (c.clause_a_id as string));
     const foundB = clauses.find((cl) => cl.id === (c.clause_b_id as string));
     const ctType = (c.contradiction_type as string) ?? "";
@@ -1264,12 +1264,12 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     };
   });
 
-  // â”€â”€ Sources â€” parse reference string â†’ Source shape â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Sources — parse reference string → Source shape ───────────────────────
   const rawSources = (data.sources as Array<Record<string, unknown>>) ?? [];
   const sources: Report["sources"] = rawSources.map((s, i) => {
     const ref = (s.reference as string) ?? "";
-    // e.g. "Residential Tenancies Act, 2006 s.22 â€” Quiet enjoyment"
-    const sectionMatch = ref.match(/s\.(\S+)\s*[â€”â€“-]\s*(.+)/);
+    // e.g. "Residential Tenancies Act, 2006 s.22 — Quiet enjoyment"
+    const sectionMatch = ref.match(/s\.(\S+)\s*[—–-]\s*(.+)/);
     const sectionNum = sectionMatch?.[1] ?? "";
 
     // Dynamically match sources to clauses based on RTA section numbers and text references
@@ -1310,7 +1310,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
     };
   });
 
-  // â”€â”€ Lease â€” from DB lease row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Lease — from DB lease row ─────────────────────────────────────────────
   const leaseRow = (data._lease as Record<string, unknown>) ?? {};
   const filePath = (leaseRow.file_path as string) ?? "";
   const filename = filePath.split("/").pop() ?? "lease.pdf";
@@ -1321,7 +1321,7 @@ function normaliseApiResponse(data: Record<string, unknown>, id: string): Report
   const propertyCity    = (leaseRow.property_city    as string) ?? "";
 
   const displayAddress = propertyAddress
-    ? (propertyUnit ? `${propertyUnit} â€“ ${propertyAddress}` : propertyAddress)
+    ? (propertyUnit ? `${propertyUnit} – ${propertyAddress}` : propertyAddress)
     : "Rental Unit";
 
   const displayCity = propertyCity
