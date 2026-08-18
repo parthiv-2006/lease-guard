@@ -17,7 +17,15 @@ const navLinks = [
 ];
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Use local date components, not toISOString() (UTC) — for users west of
+  // UTC (all of Canada), the UTC date rolls over to tomorrow several hours
+  // before local midnight, defaulting this field to the wrong day for a
+  // large chunk of the evening.
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 interface FormState {
