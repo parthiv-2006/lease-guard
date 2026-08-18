@@ -62,7 +62,15 @@ function diffInDays(later: Date, earlier: Date): number {
 
 function addMonths(date: Date, months: number): Date {
   const result = new Date(date.getTime());
-  result.setMonth(result.getMonth() + months);
+  const targetMonth = result.getMonth() + months;
+  result.setMonth(targetMonth);
+  // setMonth overflows into the following month when the origin day doesn't
+  // exist in the target month (e.g. Feb 29 + 12 months lands on Mar 1, not
+  // Feb 28). Clamp back to the last day of the intended month in that case.
+  const expectedMonth = ((targetMonth % 12) + 12) % 12;
+  if (result.getMonth() !== expectedMonth) {
+    result.setDate(0);
+  }
   return result;
 }
 

@@ -154,6 +154,20 @@ describe("checkRentIncrease", () => {
     expect(result.guidelineYear).toBe(2027);
   });
 
+  it("treats 12 months from a Feb 29 last-increase date as Feb 28 the following year, not March 1", () => {
+    const result = checkRentIncrease({
+      currentRent: 2000,
+      proposedRent: 2040,
+      noticeGivenDate: new Date("2024-11-01"),
+      effectiveDate: new Date("2025-02-28"),
+      lastIncreaseDate: new Date("2024-02-29"),
+      isNewBuildingExempt: false,
+      hasAgiApproval: false,
+    });
+    const frequencyCheck = result.checks.find((c) => c.id === "frequency");
+    expect(frequencyCheck?.status).toBe("pass");
+  });
+
   it("passes at exactly the guideline percentage", () => {
     const result = checkRentIncrease({
       currentRent: 2000,
