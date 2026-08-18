@@ -111,6 +111,10 @@ export default function RentIncreaseCheckerPage() {
       setError("Fill in all three dates.");
       return;
     }
+    if (new Date(form.effectiveDate).getTime() <= new Date(form.lastIncreaseDate).getTime()) {
+      setError("The effective date of the new rent must be after the date of the last increase.");
+      return;
+    }
 
     setLoading(true);
     try {
