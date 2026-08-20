@@ -12,6 +12,8 @@ const navLinks = [
   { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
   { label: "Ontario RTA", href: "/ontario-rta" },
   { label: "Rent Increase Checker", href: "/rent-increase-checker" },
+  { label: "Eviction Notice Checker", href: "/eviction-notice-checker" },
+  { label: "Deposit & Fees Checker", href: "/deposit-fees-checker" },
   { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
   { label: "Privacy", href: "/privacy" },
 ];
