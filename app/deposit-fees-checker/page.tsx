@@ -59,13 +59,13 @@ const sectionHeadingStyle: React.CSSProperties = {
 const VERDICT_COLOR: Record<FeeVerdict, string> = {
   legal: "#2f6b3a",
   conditional: "#9c7a1f",
-  illegal: "#9c2b23",
+  not_permitted: "#9c2b23",
 };
 
 const VERDICT_LABEL: Record<FeeVerdict, string> = {
   legal: "Legal",
   conditional: "Conditional",
-  illegal: "Not permitted",
+  not_permitted: "Not permitted",
 };
 
 interface DepositFormState {
@@ -415,7 +415,7 @@ export default function DepositFeesCheckerPage() {
         )}
 
         {/* Fee legality checklist */}
-        <h2 style={sectionHeadingStyle}>Illegal fees checklist</h2>
+        <h2 style={sectionHeadingStyle}>Prohibited fees checklist</h2>
         <p style={{ fontSize: 15, color: "#4a4438", lineHeight: 1.7, margin: "0 0 20px" }}>
           Check any fee or deposit your landlord has asked for, beyond rent and the last month&rsquo;s
           rent deposit, to see whether the RTA permits it.
