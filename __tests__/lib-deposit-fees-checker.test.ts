@@ -83,23 +83,23 @@ describe("checkFeeLegality", () => {
     expect(checkFeeLegality("key_deposit_refundable").verdict).toBe("conditional");
   });
 
-  it("marks a security/damage deposit as illegal", () => {
-    expect(checkFeeLegality("security_or_damage_deposit").verdict).toBe("illegal");
+  it("marks a security/damage deposit as not permitted", () => {
+    expect(checkFeeLegality("security_or_damage_deposit").verdict).toBe("not_permitted");
   });
 
-  it("marks a pet deposit as illegal", () => {
-    expect(checkFeeLegality("pet_deposit_or_fee").verdict).toBe("illegal");
+  it("marks a pet deposit as not permitted", () => {
+    expect(checkFeeLegality("pet_deposit_or_fee").verdict).toBe("not_permitted");
   });
 
-  it("marks an application fee as illegal", () => {
-    expect(checkFeeLegality("application_or_credit_check_fee").verdict).toBe("illegal");
+  it("marks an application fee as not permitted", () => {
+    expect(checkFeeLegality("application_or_credit_check_fee").verdict).toBe("not_permitted");
   });
 
   it("covers every fee type declared in allFeeTypes()", () => {
     for (const feeType of allFeeTypes()) {
       const result = checkFeeLegality(feeType);
       expect(result.feeType).toBe(feeType);
-      expect(["legal", "illegal", "conditional"]).toContain(result.verdict);
+      expect(["legal", "not_permitted", "conditional"]).toContain(result.verdict);
     }
   });
 });
