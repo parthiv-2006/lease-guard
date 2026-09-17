@@ -1,6 +1,6 @@
 /**
  * Deterministic rule engine for checking last-month's-rent deposit interest owed
- * and flagging illegal fees under Ontario's Residential Tenancies Act, 2006.
+ * and flagging fees the RTA does not permit, under Ontario's Residential Tenancies Act, 2006.
  * No LLM call — pure math and a static lookup table, same pattern as
  * lib/rent-increase-checker.ts and lib/eviction-notice-checker.ts.
  *
@@ -119,7 +119,7 @@ export type FeeType =
   | "admin_or_move_in_fee"
   | "post_dated_cheque_fee";
 
-export type FeeVerdict = "legal" | "illegal" | "conditional";
+export type FeeVerdict = "legal" | "not_permitted" | "conditional";
 
 export interface FeeCheckResult {
   feeType: FeeType;
@@ -143,31 +143,31 @@ const FEE_RULES: Record<FeeType, Omit<FeeCheckResult, "feeType">> = {
     citation: "RTA s.134(1); O. Reg. 516/06 s.17",
   },
   security_or_damage_deposit: {
-    verdict: "illegal",
+    verdict: "not_permitted",
     label: "Security or damage deposit",
     detail: "The RTA does not permit any security or damage deposit beyond the last month's rent deposit. A landlord cannot lawfully collect this, refundable or not.",
     citation: "RTA s.105(1)",
   },
   pet_deposit_or_fee: {
-    verdict: "illegal",
+    verdict: "not_permitted",
     label: "Pet deposit or pet fee",
     detail: "Not permitted under the RTA — the only lawful deposit is the last month's rent deposit, and lease clauses that prohibit pets outright are void, so a fee tied to allowing a pet has no lawful basis either.",
     citation: "RTA s.105(1), s.14",
   },
   application_or_credit_check_fee: {
-    verdict: "illegal",
+    verdict: "not_permitted",
     label: "Application or credit-check fee",
     detail: "A landlord cannot require a prospective tenant to pay a fee as a condition of granting a tenancy, unless specifically prescribed as exempt (which this is not).",
     citation: "RTA s.134(1)",
   },
   admin_or_move_in_fee: {
-    verdict: "illegal",
+    verdict: "not_permitted",
     label: "Administration / move-in fee",
     detail: "A generic administrative or move-in charge is not one of the prescribed exemptions and is prohibited as an additional charge.",
     citation: "RTA s.134(1)",
   },
   post_dated_cheque_fee: {
-    verdict: "illegal",
+    verdict: "not_permitted",
     label: "Fee for providing post-dated cheques / pre-authorized payment",
     detail: "A landlord cannot charge a fee simply for the method of rent payment a tenant chooses to offer or is asked to provide.",
     citation: "RTA s.134(1)",
