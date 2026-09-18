@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { TENANT_TOOLS } from "@/lib/tenant-tools";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base =
@@ -27,23 +28,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: `${base}/rent-increase-checker`,
+      url: `${base}/tools`,
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.8,
     },
-    {
-      url: `${base}/eviction-notice-checker`,
+    ...TENANT_TOOLS.map((tool) => ({
+      url: `${base}${tool.href}`,
       lastModified: now,
-      changeFrequency: "monthly",
+      changeFrequency: "monthly" as const,
       priority: 0.7,
-    },
-    {
-      url: `${base}/deposit-fees-checker`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
+    })),
     {
       url: `${base}/about`,
       lastModified: now,
