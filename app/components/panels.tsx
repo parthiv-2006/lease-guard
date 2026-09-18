@@ -20,6 +20,7 @@ import {
   riskBorder,
 } from "./shared";
 import type { Report, Clause, NegotiationPoint, RiskLevel } from "./types";
+import { toolsForClauseType } from "@/lib/tenant-tools";
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -511,6 +512,33 @@ function ClauseCard({ clause, leaseId, negotiation, defaultOpen, onClauseActivat
               </div>
             </div>
           )}
+
+          {/* Related tenant tools */}
+          {toolsForClauseType(clause.primary_type).map((tool) => (
+            <a
+              key={tool.slug}
+              href={tool.href}
+              data-testid="clause-tool-link"
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: "12px",
+                padding: "10px 14px",
+                marginBottom: "16px",
+                border: "1px solid #e0d9c6",
+                background: "#fffdfa",
+                color: "#17140f",
+                textDecoration: "none",
+                fontSize: "12px",
+              }}
+            >
+              <span>
+                <span style={{ fontWeight: 600 }}>Related tool:</span> {tool.question} Check it with the {tool.title}.
+              </span>
+              <span style={{ color: "#9c2b23", flexShrink: 0 }} aria-hidden="true">→</span>
+            </a>
+          ))}
 
           <FeedbackBar leaseId={leaseId} clauseId={clause.id} />
         </div>
