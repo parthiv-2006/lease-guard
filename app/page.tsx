@@ -4,7 +4,8 @@ import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthButton } from "./components/auth-button";
-import { NAV_LINKS, DEMO_LEASE_ID, isNavLinkActive } from "./components/site-nav";
+import { NAV_LINKS, DEMO_LEASE_ID, TOOLS_HUB_HREF, isNavLinkActive } from "./components/site-nav";
+import { TENANT_TOOLS } from "@/lib/tenant-tools";
 import { Reveal } from "./components/scroll-reveal";
 import { LeaseHeroAnimation } from "./components/lease-hero-animation";
 import { ScoreHero, SeverityRuler } from "./components/score-hero";
@@ -778,6 +779,61 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{t.label}</div>
                 <div style={{ fontSize: 13, color: "#6f6857", lineHeight: 1.6 }}>{t.detail}</div>
               </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Tenant tools */}
+      <Reveal style={{ borderTop: "1px solid #17140f", background: "#fffdfa" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(40px,5vw,64px) clamp(20px,4vw,48px)" }} data-testid="landing-tenant-tools">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              gap: 12,
+              marginBottom: 34,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#6f6857",
+              }}
+            >
+              No lease? Check one thing
+            </div>
+            <Link href={TOOLS_HUB_HREF} style={{ fontSize: 14, color: "#17140f", borderBottom: "1px solid #17140f", textDecoration: "none" }}>
+              All tenant tools →
+            </Link>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+              gap: "clamp(24px,3vw,44px) clamp(24px,4vw,56px)",
+            }}
+          >
+            {TENANT_TOOLS.map((tool) => (
+              <Link
+                key={tool.slug}
+                href={tool.href}
+                style={{ display: "block", borderTop: "1px solid #17140f", paddingTop: 16, color: "#17140f", textDecoration: "none" }}
+              >
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#9c2b23", marginBottom: 12 }}>
+                  RTA {tool.statuteRefs[0]}
+                  {tool.statuteRefs.length > 1 ? ` +${tool.statuteRefs.length - 1}` : ""}
+                </div>
+                <div style={{ fontSize: 19, fontWeight: 600, marginBottom: 8, fontFamily: "'Newsreader', serif", fontStyle: "italic" }}>
+                  {tool.question}
+                </div>
+                <div style={{ fontSize: 14, color: "#6f6857", lineHeight: 1.6 }}>{tool.blurb}</div>
+              </Link>
             ))}
           </div>
         </div>
