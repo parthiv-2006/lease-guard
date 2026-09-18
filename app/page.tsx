@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthButton } from "./components/auth-button";
+import { NAV_LINKS, DEMO_LEASE_ID, isNavLinkActive } from "./components/site-nav";
 import { Reveal } from "./components/scroll-reveal";
 import { LeaseHeroAnimation } from "./components/lease-hero-animation";
 import { ScoreHero, SeverityRuler } from "./components/score-hero";
@@ -27,8 +28,6 @@ function pctToStep(pct: number): number {
 interface LandingPageProps {
   onUploadSuccess: (leaseId: string, filename: string) => void;
 }
-
-const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
 
 function LandingPage({ onUploadSuccess }: LandingPageProps) {
   const pathname = usePathname();
@@ -169,17 +168,6 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
     { figure: "1 click", label: "Delete your lease and report", detail: "PIPEDA-compliant removal, on demand, with no account required to start." },
   ];
 
-  const navLinks = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
-    { label: "Ontario RTA", href: "/ontario-rta" },
-    { label: "Rent Increase Checker", href: "/rent-increase-checker" },
-    { label: "Eviction Notice Checker", href: "/eviction-notice-checker" },
-    { label: "Deposit & Fees Checker", href: "/deposit-fees-checker" },
-    { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
-    { label: "Privacy", href: "/privacy" },
-  ];
-
   return (
     <div
       style={{
@@ -223,8 +211,9 @@ function LandingPage({ onUploadSuccess }: LandingPageProps) {
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {showNav && (
             <nav style={{ display: "flex", gap: "clamp(14px,2.4vw,28px)", alignItems: "center" }}>
-              {navLinks.map(({ label, href, external }) => {
-                const isActive = !external && pathname === href;
+              {NAV_LINKS.map((link) => {
+                const { label, href, external } = link;
+                const isActive = isNavLinkActive(link, pathname);
                 return (
                   <a
                     key={label}

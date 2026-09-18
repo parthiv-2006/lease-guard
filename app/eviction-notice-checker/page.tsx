@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AuthButton } from "../components/auth-button";
+import { NAV_LINKS, isNavLinkActive } from "../components/site-nav";
 import type {
   EvictionCheckResult,
   CheckStatus,
@@ -12,19 +13,6 @@ import type {
   N13Ground,
   N12ServedBy,
 } from "@/lib/eviction-notice-checker";
-
-const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
-
-const navLinks = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
-  { label: "Ontario RTA", href: "/ontario-rta" },
-  { label: "Rent Increase Checker", href: "/rent-increase-checker" },
-  { label: "Eviction Notice Checker", href: "/eviction-notice-checker" },
-  { label: "Deposit & Fees Checker", href: "/deposit-fees-checker" },
-  { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
-  { label: "Privacy", href: "/privacy" },
-];
 
 function todayIso(): string {
   const d = new Date();
@@ -260,8 +248,9 @@ export default function EvictionNoticeCheckerPage() {
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <nav style={{ display: "flex", gap: "clamp(14px,2.4vw,28px)", alignItems: "center" }}>
-            {navLinks.map(({ label, href, external }) => {
-              const isActive = href === "/eviction-notice-checker";
+            {NAV_LINKS.map((link) => {
+              const { label, href, external } = link;
+              const isActive = isNavLinkActive(link, "/eviction-notice-checker");
               return (
                 <a
                   key={label}

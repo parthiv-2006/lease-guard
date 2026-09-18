@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AuthButton } from "../components/auth-button";
+import { NAV_LINKS, isNavLinkActive } from "../components/site-nav";
 
 export const metadata: Metadata = {
   title: "Ontario RTA — LeaseGuard",
@@ -93,19 +94,6 @@ const RESOURCES = [
   },
 ];
 
-const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
-
-const navLinks = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Sample Report", href: `/report/${DEMO_LEASE_ID}` },
-  { label: "Ontario RTA", href: "/ontario-rta" },
-  { label: "Rent Increase Checker", href: "/rent-increase-checker" },
-  { label: "Eviction Notice Checker", href: "/eviction-notice-checker" },
-  { label: "Deposit & Fees Checker", href: "/deposit-fees-checker" },
-  { label: "GitHub", href: "https://github.com/parthiv-2006/lease-guard", external: true },
-  { label: "Privacy", href: "/privacy" },
-];
-
 export default function OntarioRtaPage() {
   return (
     <div
@@ -150,8 +138,9 @@ export default function OntarioRtaPage() {
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <nav style={{ display: "flex", gap: "clamp(14px,2.4vw,28px)", alignItems: "center" }}>
-            {navLinks.map(({ label, href, external }) => {
-              const isActive = href === "/ontario-rta";
+            {NAV_LINKS.map((link) => {
+              const { label, href, external } = link;
+              const isActive = isNavLinkActive(link, "/ontario-rta");
               return (
                 <a
                   key={label}
