@@ -850,12 +850,12 @@ function resolveSourceUrl(source: Source): string | null {
     return "https://www.ontario.ca/laws/statute/06r17";
   }
 
-  // O. Reg. 516/06 — Maintenance Standards
+  // O. Reg. 516/06 — General
   if (actLower.includes("516/06") || actLower.includes("reg. 516")) {
     return "https://www.ontario.ca/laws/regulation/060516";
   }
 
-  // O. Reg. 517/06 — Rent Increase
+  // O. Reg. 517/06 — Maintenance Standards
   if (actLower.includes("517/06") || actLower.includes("reg. 517")) {
     return "https://www.ontario.ca/laws/regulation/060517";
   }

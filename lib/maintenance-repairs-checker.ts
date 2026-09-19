@@ -34,11 +34,6 @@
  *   - O. Reg. 517/06 s.43 — elevators kept in operation except for reasonable repair time
  *   - O. Reg. 517/06 s.46 — complex kept reasonably free of rodents, vermin and insects
  *
- * NOTE: the corpus labels O. Reg. 516/06 as "Maintenance Standards" and 517/06 as
- * "Rent Increase" — the act_name values are swapped. The section text is correct, so
- * citations here use the real regulation numbers (516/06 = General, 517/06 =
- * Maintenance Standards).
- *
  * The RTA sets no fixed repair deadline. The follow-up thresholds below are
  * LeaseGuard guidance for when to escalate, not statutory deadlines, and the UI
  * must say so.
