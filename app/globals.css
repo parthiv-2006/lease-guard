@@ -237,3 +237,16 @@ a {
   animation: skeleton-shimmer 1.8s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
+
+/* ── Site header nav (app/components/site-header.tsx) ─────────────────────
+   Full inline nav on wide screens; a Menu toggle below 760px so the header
+   never overflows a phone viewport. */
+.lg-nav-full { display: flex; }
+.lg-nav-toggle { display: none; }
+.lg-nav-menu { display: none; }
+
+@media (max-width: 759px) {
+  .lg-nav-full { display: none; }
+  .lg-nav-toggle { display: inline-block; }
+  .lg-nav-menu { display: flex; }
+}

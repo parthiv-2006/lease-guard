@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { AuthButton } from "../components/auth-button";
-import { NAV_LINKS, isNavLinkActive } from "../components/site-nav";
+import { SiteHeader } from "../components/site-header";
 import { checkFeeLegality, allFeeTypes, type FeeType, type FeeVerdict } from "@/lib/deposit-fees-checker";
 import type { DepositInterestResult } from "@/lib/deposit-fees-checker";
 
@@ -154,65 +152,7 @@ export default function DepositFeesCheckerPage() {
         fontFamily: "'Public Sans', sans-serif",
       }}
     >
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          padding: "0 clamp(20px,4vw,56px)",
-          height: 66,
-          borderBottom: "1px solid #17140f",
-          background: "rgba(247,244,238,0.92)",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          flexShrink: 0,
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            fontFamily: "'Newsreader', serif",
-            fontStyle: "italic",
-            fontWeight: 600,
-            fontSize: 22,
-            letterSpacing: "-0.01em",
-            color: "#17140f",
-            textDecoration: "none",
-          }}
-        >
-          LeaseGuard
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <nav style={{ display: "flex", gap: "clamp(14px,2.4vw,28px)", alignItems: "center" }}>
-            {NAV_LINKS.map((link) => {
-              const { label, href, external } = link;
-              const isActive = isNavLinkActive(link, "/deposit-fees-checker");
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  target={external ? "_blank" : undefined}
-                  rel={external ? "noopener noreferrer" : undefined}
-                  style={{
-                    fontSize: 14,
-                    color: isActive ? "#17140f" : "#4a4438",
-                    fontWeight: isActive ? 600 : 400,
-                    textDecoration: "none",
-                    borderBottom: isActive ? "1px solid #17140f" : "1px solid transparent",
-                    paddingBottom: 2,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label}
-                </a>
-              );
-            })}
-          </nav>
-          <AuthButton />
-        </div>
-      </header>
+      <SiteHeader currentPath="/deposit-fees-checker" />
 
       <main style={{ flex: 1, maxWidth: 820, width: "100%", margin: "0 auto", padding: "clamp(40px,6vw,64px) clamp(20px,4vw,24px) 80px" }}>
         {/* Hero */}
