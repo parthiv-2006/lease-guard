@@ -3,8 +3,8 @@
 build_regulations.py - Seed Ontario regulations and Standard Form of Lease into Supabase.
 
 Sources:
-  1. O. Reg. 516/06 — Maintenance Standards (fetched via Wayback Machine)
-  2. O. Reg. 517/06 — Rent Increase (fetched via Wayback Machine)
+  1. O. Reg. 516/06 — General (fetched via Wayback Machine)
+  2. O. Reg. 517/06 — Maintenance Standards (fetched via Wayback Machine)
   3. Ontario Standard Form of Lease PDF (scripts/source-docs/ontario_standard_lease.pdf)
 
 Usage:
@@ -56,18 +56,18 @@ JURISDICTION_CODE = "CA-ON"
 
 SOURCES = {
     "516": {
-        "act_name": "O. Reg. 516/06 — Maintenance Standards",
+        "act_name": "O. Reg. 516/06 — General",
         "canonical_url": "https://www.ontario.ca/laws/regulation/060516",
         "fetch_url": "https://web.archive.org/web/20220101000000*/https://www.ontario.ca/laws/regulation/060516",
         # More reliable snapshot
         "wayback_url": "https://web.archive.org/web/20221001120000/https://www.ontario.ca/laws/regulation/060516",
-        "default_clause_type": "maintenance_repairs",
+        "default_clause_type": "rent_increase",
     },
     "517": {
-        "act_name": "O. Reg. 517/06 — Rent Increase",
+        "act_name": "O. Reg. 517/06 — Maintenance Standards",
         "canonical_url": "https://www.ontario.ca/laws/regulation/060517",
         "wayback_url": "https://web.archive.org/web/20221001120000/https://www.ontario.ca/laws/regulation/060517",
-        "default_clause_type": "rent_increase",
+        "default_clause_type": "maintenance_repairs",
     },
     "form": {
         "act_name": "Ontario Standard Form of Lease",
@@ -79,11 +79,21 @@ SOURCES = {
 
 # Section-level clause type overrides per regulation.
 # These are sparse — only entries that differ from the source's default_clause_type.
-# For 516/06 everything is maintenance_repairs (same as default) so no overrides needed.
-# For 517/06 everything is rent_increase (same as default) so no overrides needed.
+# 516/06 (General) is mostly rent-calculation rules, so it defaults to rent_increase;
+# the overrides below cover the sections that govern something else.
+# 517/06 (Maintenance Standards) is maintenance_repairs throughout.
 REG_SECTION_MAPS: dict[str, dict[str, str]] = {
-    "516": {},  # all sections -> default (maintenance_repairs)
-    "517": {},  # all sections -> default (rent_increase)
+    "516": {
+        "4": "maintenance_repairs",    # heat as a vital service, 20 °C minimum
+        "8": "maintenance_repairs",    # abatement for work that interferes with enjoyment
+        "8.1": "maintenance_repairs",
+        "8.2": "maintenance_repairs",
+        "8.3": "maintenance_repairs",
+        "8.4": "maintenance_repairs",
+        "17": "security_deposit",      # exemptions from s.134 (key deposits, etc.)
+        "46": "early_termination",     # hours for retrieval of property after eviction
+    },
+    "517": {},  # all sections -> default (maintenance_repairs)
 }
 
 # Standard Form of Lease: fixed 17-section structure with known clause types.
@@ -458,7 +468,7 @@ def build_regulation(source_key: str) -> tuple[int, int, int]:
     if not sections:
         print(f"[warn] No sections parsed from {act_name}. HTML structure may differ.", file=sys.stderr)
         print("[warn] Attempting generic text extraction fallback...", file=sys.stderr)
-        sections = _fallback_parse(html, source)
+        sections = _fallback_parse(html, source, source_key=source_key)
 
     print(f"[regulation] Parsed {len(sections)} sections/chunks from {act_name}.", file=sys.stderr)
 
@@ -466,7 +476,7 @@ def build_regulation(source_key: str) -> tuple[int, int, int]:
     return _embed_and_store(client, sections)
 
 
-def _fallback_parse(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
+def _fallback_parse(html: str, source: dict[str, Any], source_key: str) -> list[dict[str, Any]]:
     """
     Generic fallback parser for regulation pages where class-based parsing fails.
     Extracts any paragraph containing a section-number pattern and groups text
@@ -494,7 +504,7 @@ def _fallback_parse(html: str, source: dict[str, Any]) -> list[dict[str, Any]]:
     def _flush():
         if current_sec_num and current_parts:
             text = " ".join(current_parts)
-            clause_type = REG_516_SECTION_MAP.get(current_sec_num, default_type)
+            clause_type = REG_SECTION_MAPS.get(source_key, {}).get(current_sec_num, default_type)
             for chunk in _chunk_text(
                 text, current_sec_num, canonical_url, act_name, clause_type,
                 section_title=f"Section {current_sec_num}",
