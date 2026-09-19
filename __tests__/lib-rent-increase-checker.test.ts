@@ -168,6 +168,22 @@ describe("checkRentIncrease", () => {
     expect(frequencyCheck?.status).toBe("pass");
   });
 
+  it("uses the effective date's own year guideline for a January 1 increase", () => {
+    // 2022 guideline is 1.2%; 2021 was 0%. A local-time year lookup in a timezone
+    // behind UTC would read 2022-01-01 as 2021 and wrongly fail this increase.
+    const result = checkRentIncrease({
+      currentRent: 2000,
+      proposedRent: 2024,
+      noticeGivenDate: new Date("2021-09-01"),
+      effectiveDate: new Date("2022-01-01"),
+      lastIncreaseDate: new Date("2020-12-01"),
+      isNewBuildingExempt: false,
+      hasAgiApproval: false,
+    });
+    expect(result.guidelineYear).toBe(2022);
+    expect(result.checks.find((c) => c.id === "guideline_cap")?.status).toBe("pass");
+  });
+
   it("passes at exactly the guideline percentage", () => {
     const result = checkRentIncrease({
       currentRent: 2000,

@@ -62,14 +62,17 @@ function diffInDays(later: Date, earlier: Date): number {
 
 function addMonths(date: Date, months: number): Date {
   const result = new Date(date.getTime());
-  const targetMonth = result.getMonth() + months;
-  result.setMonth(targetMonth);
-  // setMonth overflows into the following month when the origin day doesn't
+  // Dates arrive parsed from "YYYY-MM-DD" (UTC midnight), so month math must
+  // use UTC accessors too — local setMonth shifts the date by a day in any
+  // timezone behind UTC (e.g. Feb 29 UTC is still Feb 28 in Toronto).
+  const targetMonth = result.getUTCMonth() + months;
+  result.setUTCMonth(targetMonth);
+  // setUTCMonth overflows into the following month when the origin day doesn't
   // exist in the target month (e.g. Feb 29 + 12 months lands on Mar 1, not
   // Feb 28). Clamp back to the last day of the intended month in that case.
   const expectedMonth = ((targetMonth % 12) + 12) % 12;
-  if (result.getMonth() !== expectedMonth) {
-    result.setDate(0);
+  if (result.getUTCMonth() !== expectedMonth) {
+    result.setUTCDate(0);
   }
   return result;
 }
@@ -86,7 +89,7 @@ export function checkRentIncrease(input: RentIncreaseCheckInput): RentIncreaseCh
   } = input;
 
   const percentRequested = ((proposedRent - currentRent) / currentRent) * 100;
-  const guideline = getGuidelineForYear(effectiveDate.getFullYear());
+  const guideline = getGuidelineForYear(effectiveDate.getUTCFullYear());
 
   if (percentRequested <= 0) {
     return {
