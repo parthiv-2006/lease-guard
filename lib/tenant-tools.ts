@@ -50,6 +50,16 @@ export const TENANT_TOOLS: TenantTool[] = [
     statuteRefs: ["s. 105", "s. 106", "s. 134"],
     clauseTypes: ["security_deposit", "pets", "rent_payment"],
   },
+  {
+    slug: "maintenance-repairs-checker",
+    href: "/maintenance-repairs-checker",
+    title: "Maintenance & Repairs Checker",
+    question: "Is your landlord keeping up with repairs?",
+    blurb:
+      "Shows what the RTA and Ontario's maintenance standards require for heat, hot water, pests, mould and other repairs, and when to escalate to the Landlord and Tenant Board.",
+    statuteRefs: ["s. 20", "s. 21", "s. 29", "s. 30"],
+    clauseTypes: ["maintenance_repairs"],
+  },
 ];
 
 export function toolsForClauseType(clauseType: string): TenantTool[] {

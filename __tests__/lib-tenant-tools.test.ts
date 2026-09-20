@@ -43,6 +43,10 @@ describe("toolsForClauseType", () => {
     expect(toolsForClauseType("security_deposit").map((t) => t.slug)).toEqual(["deposit-fees-checker"]);
   });
 
+  it("maps maintenance clauses to the maintenance and repairs checker", () => {
+    expect(toolsForClauseType("maintenance_repairs").map((t) => t.slug)).toEqual(["maintenance-repairs-checker"]);
+  });
+
   it("returns nothing for clause types no tool covers", () => {
     expect(toolsForClauseType("parking_storage")).toEqual([]);
     expect(toolsForClauseType("unknown")).toEqual([]);
