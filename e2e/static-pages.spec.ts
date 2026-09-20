@@ -22,7 +22,9 @@ const STATIC_PAGES = [
   {
     path: "/privacy",
     titleMatch: /Privacy|LeaseGuard/i,
-    headingMatch: /Privacy Policy/i,
+    // The v2 design refactor replaced the literal "Privacy Policy" h1 with this
+    // headline; the document title still reads "Privacy Policy — LeaseGuard".
+    headingMatch: /Your lease is yours/i,
   },
   {
     path: "/terms",
