@@ -194,7 +194,8 @@ export function isWithinEntryWindow(at: Date): boolean {
   return minutes >= ENTRY_WINDOW_START_MIN && minutes <= ENTRY_WINDOW_END_MIN;
 }
 
-function formatClock(at: Date): string {
+/** Formats a wall-clock time as "9:05 p.m.". */
+export function formatClock(at: Date): string {
   const h = at.getUTCHours();
   const m = String(at.getUTCMinutes()).padStart(2, "0");
   const suffix = h < 12 ? "a.m." : "p.m.";

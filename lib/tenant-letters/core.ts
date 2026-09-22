@@ -11,6 +11,8 @@
  *                   notice specifying the reason, day, and a time between 8 a.m. and 8 p.m.
  *   - s.39        — a landlord may not recover possession unless the tenant has
  *                   vacated or the Board has ordered an eviction
+ *   - s.25, s.29(2) — entry only under s.26/s.27; one-year limit on a Board application
+ *                   (verified 2026-09-22, see lib/landlord-entry-checker.ts)
  *
  * Party details (names, addresses) are only ever held in the browser. Nothing
  * in this module persists or transmits them.
@@ -20,7 +22,8 @@ export type LetterKind =
   | "repair_request"
   | "rent_increase_dispute"
   | "deposit_interest_demand"
-  | "eviction_notice_response";
+  | "eviction_notice_response"
+  | "entry_objection";
 
 export interface LetterParties {
   tenantName: string;
