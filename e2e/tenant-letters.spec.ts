@@ -136,4 +136,20 @@ test.describe("Tenant letters", () => {
     await expect(preview).toContainText("Form N4 (non-payment of rent)");
     await expect(preview).toContainText("section 39 of the Act");
   });
+
+  test("entry checker writes an objection to an entry without notice", async ({ page }) => {
+    await page.goto("/landlord-entry-checker");
+    await page.locator("#entryReason").selectOption("repairs_or_work");
+    await page.locator("#entryDate").fill("2026-09-20");
+    await page.locator("#entryTime").fill("21:15");
+    await page.getByRole("button", { name: "Check this entry" }).click();
+    await expect(page.getByTestId("entry-check-result")).toBeVisible();
+
+    await fillParties(page);
+    const preview = await expectCompleteLetter(page);
+    await expect(preview).toContainText("Re: Entry into my unit on September 20, 2026");
+    await expect(preview).toContainText("on September 20, 2026 at 9:15 p.m.");
+    await expect(preview).toContainText("24 hours' written notice: No written notice was given.");
+    await expect(preview).toContainText("RTA s.29(1), (2)");
+  });
 });
