@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
+import { TENANT_TOOLS } from "@/lib/tenant-tools";
 
 export const metadata: Metadata = {
   title: "Ontario RTA — LeaseGuard",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     "Key tenant rights under the Ontario Residential Tenancies Act, 2006. What landlords can and cannot put in a lease.",
 };
 
-const KEY_SECTIONS = [
+const KEY_SECTIONS: Array<{ section: string; title: string; summary: string; voiding: string; toolSlug?: string }> = [
   {
     section: "s. 20",
     title: "Maintenance obligation",
@@ -16,14 +17,16 @@ const KEY_SECTIONS = [
       "The landlord must maintain the rental unit and the residential complex in a good state of repair and fit for habitation. This obligation exists regardless of what the lease says — a clause shifting all repairs to the tenant is void.",
     voiding:
       "Clauses requiring tenants to pay for all repairs or waive the landlord’s maintenance duty.",
+    toolSlug: "maintenance-repairs-checker",
   },
   {
-    section: "s. 27",
+    section: "s. 25–27",
     title: "Landlord’s right of entry",
     summary:
-      "A landlord may enter a rental unit only in specific circumstances and must give written notice at least 24 hours before entering — stating the reason and a time between 8 am and 8 pm. Emergency entry is permitted without notice.",
+      "A landlord may enter a rental unit only for the reasons the Act lists. Most entries — repairs, inspections, showing the unit to a buyer — need written notice at least 24 hours ahead, stating the reason, the day, and a time between 8 am and 8 pm. Entry without notice is limited to emergencies, entry the tenant agrees to at the door, cleaning the lease requires, and showings once the tenancy is ending.",
     voiding:
       "Clauses granting landlord unrestricted entry, entry without notice, or entry at any hour.",
+    toolSlug: "landlord-entry-checker",
   },
   {
     section: "s. 97",
@@ -40,6 +43,7 @@ const KEY_SECTIONS = [
       "The only deposit a landlord may collect is a last month’s rent (LMR) deposit. Security deposits, key deposits above key replacement cost, and pet deposits are prohibited. The LMR must be applied to the last rental period.",
     voiding:
       "Any clause requiring a security deposit, damage deposit, or pet deposit beyond the LMR.",
+    toolSlug: "deposit-fees-checker",
   },
   {
     section: "s. 116",
@@ -48,6 +52,7 @@ const KEY_SECTIONS = [
       "A landlord must give at least 90 days’ written notice before a rent increase. Increases may occur no more than once every 12 months. The increase must not exceed the provincial rent increase guideline (unless an LTB order permits otherwise).",
     voiding:
       "Clauses allowing rent increases on less than 90 days notice or more frequently than annually.",
+    toolSlug: "rent-increase-checker",
   },
   {
     section: "s. 14",
@@ -174,33 +179,45 @@ export default function OntarioRtaPage() {
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", marginBottom: 64 }}>
-          {KEY_SECTIONS.map((s) => (
-            <div
-              key={s.section}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(140px,180px) 1fr",
-                gap: 24,
-                padding: "26px 0",
-                borderTop: "1px solid #e0d9c6",
-              }}
-            >
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: "#9c2b23", marginBottom: 6 }}>
-                  RTA {s.section}
+          {KEY_SECTIONS.map((s) => {
+            const tool = TENANT_TOOLS.find((t) => t.slug === s.toolSlug);
+            return (
+              <div
+                key={s.section}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(140px,180px) 1fr",
+                  gap: 24,
+                  padding: "26px 0",
+                  borderTop: "1px solid #e0d9c6",
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: "#9c2b23", marginBottom: 6 }}>
+                    RTA {s.section}
+                  </div>
+                  <div style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontWeight: 600, fontSize: 19 }}>
+                    {s.title}
+                  </div>
                 </div>
-                <div style={{ fontFamily: "'Newsreader', serif", fontStyle: "italic", fontWeight: 600, fontSize: 19 }}>
-                  {s.title}
+                <div>
+                  <p style={{ margin: "0 0 14px", fontSize: 14, color: "#4a4438", lineHeight: 1.7 }}>{s.summary}</p>
+                  <div style={{ borderLeft: "2px solid #9c2b23", paddingLeft: 12, fontSize: 13, color: "#9c2b23", lineHeight: 1.6 }}>
+                    <strong>Void if lease says:</strong> {s.voiding}
+                  </div>
+                  {tool && (
+                    <Link
+                      href={tool.href}
+                      data-testid="rta-section-tool-link"
+                      style={{ display: "inline-block", marginTop: 14, fontSize: 14, fontWeight: 600, color: "#17140f" }}
+                    >
+                      {tool.question} Try the {tool.title} →
+                    </Link>
+                  )}
                 </div>
               </div>
-              <div>
-                <p style={{ margin: "0 0 14px", fontSize: 14, color: "#4a4438", lineHeight: 1.7 }}>{s.summary}</p>
-                <div style={{ borderLeft: "2px solid #9c2b23", paddingLeft: 12, fontSize: 13, color: "#9c2b23", lineHeight: 1.6 }}>
-                  <strong>Void if lease says:</strong> {s.voiding}
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 

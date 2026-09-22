@@ -74,6 +74,14 @@ test.describe("Landlord Entry Checker", () => {
     await expect(page.getByTestId("entry-checks")).toContainText("9:00 p.m. was outside");
   });
 
+  test("Ontario RTA reference links its entry section to the checker", async ({ page }) => {
+    await page.goto("/ontario-rta");
+    const links = page.getByTestId("rta-section-tool-link");
+    await expect(links).toHaveCount(4);
+    await page.getByRole("link", { name: /Try the Landlord Entry Checker/ }).click();
+    await expect(page).toHaveURL(/\/landlord-entry-checker$/);
+  });
+
   test("emergency entry needs no notice", async ({ page }) => {
     await page.goto("/landlord-entry-checker");
     await page.locator("#entryReason").selectOption("emergency");
