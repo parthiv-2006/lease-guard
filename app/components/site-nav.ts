@@ -4,6 +4,9 @@ export const DEMO_LEASE_ID = "ebf8bf97-563d-4b7d-859f-8ecf76905335";
 
 export const TOOLS_HUB_HREF = "/tools";
 
+/** Tenant letters hub — lives under the Tenant Tools nav item. */
+export const LETTERS_HREF = "/letters";
+
 export interface NavLink {
   label: string;
   href: string;
@@ -22,7 +25,11 @@ export const NAV_LINKS: NavLink[] = [
 export function isNavLinkActive(link: NavLink, currentPath: string): boolean {
   if (link.external) return false;
   if (link.href === TOOLS_HUB_HREF) {
-    return currentPath === TOOLS_HUB_HREF || TENANT_TOOLS.some((tool) => tool.href === currentPath);
+    return (
+      currentPath === TOOLS_HUB_HREF ||
+      currentPath === LETTERS_HREF ||
+      TENANT_TOOLS.some((tool) => tool.href === currentPath)
+    );
   }
   return link.href === currentPath;
 }
