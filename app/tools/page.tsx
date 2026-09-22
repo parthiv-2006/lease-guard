@@ -99,6 +99,43 @@ export default function TenantToolsPage() {
           ))}
         </div>
 
+        {/* Letters */}
+        <div
+          data-testid="tools-letters-cta"
+          style={{
+            border: "1px solid #17140f",
+            borderLeft: "3px solid #9c2b23",
+            background: "#fff",
+            padding: "18px 22px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            marginBottom: 20,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, maxWidth: 520 }}>
+            <strong>Need to put it in writing?</strong> Every checker can turn its result into a
+            letter to your landlord that cites the RTA, ready to copy, print, or save as a PDF.
+          </p>
+          <Link
+            href="/letters"
+            style={{
+              padding: "12px 24px",
+              border: "1px solid #17140f",
+              background: "#fff",
+              color: "#17140f",
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            See tenant letters
+          </Link>
+        </div>
+
         {/* CTA */}
         <div
           style={{
