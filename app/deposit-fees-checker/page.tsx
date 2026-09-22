@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SiteHeader } from "../components/site-header";
+import { LetterBuilder } from "../components/letter-builder";
 import { checkFeeLegality, allFeeTypes, type FeeType, type FeeVerdict } from "@/lib/deposit-fees-checker";
 import type { DepositInterestResult } from "@/lib/deposit-fees-checker";
+import type { LetterParties } from "@/lib/tenant-letters/core";
+import { buildDepositInterestDemandLetter, type DepositLetterDetails } from "@/lib/tenant-letters/deposit-interest-demand";
 
 function todayIso(): string {
   const d = new Date();
@@ -74,6 +77,16 @@ export default function DepositFeesCheckerPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkedFees, setCheckedFees] = useState<Set<FeeType>>(new Set());
+  // Inputs as they were when the interest result was produced.
+  const [submitted, setSubmitted] = useState<DepositLetterDetails | null>(null);
+
+  const buildLetter = useCallback(
+    (parties: LetterParties, letterDate: Date) =>
+      result && submitted
+        ? buildDepositInterestDemandLetter(result, submitted, Array.from(checkedFees, checkFeeLegality), parties, letterDate)
+        : null,
+    [result, submitted, checkedFees]
+  );
 
   function update<K extends keyof DepositFormState>(key: K, value: DepositFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -134,6 +147,11 @@ export default function DepositFeesCheckerPage() {
         return;
       }
       setResult(data as DepositInterestResult);
+      setSubmitted({
+        depositAmount,
+        depositPaidDate: new Date(form.depositPaidDate),
+        asOfDate: new Date(form.asOfDate),
+      });
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -403,6 +421,11 @@ export default function DepositFeesCheckerPage() {
             );
           })}
         </div>
+
+        <LetterBuilder
+          build={buildLetter}
+          intro="Ask your landlord in writing for the interest owed on your deposit, plus a refund of any charge you ticked above that the RTA does not permit. Tick or untick fees and the letter updates."
+        />
 
         <p style={{ marginTop: 24, fontSize: 12, color: "#6f6857", lineHeight: 1.6 }}>
           LeaseGuard provides educational information only and does not constitute legal advice.
