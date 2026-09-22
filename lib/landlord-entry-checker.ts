@@ -304,6 +304,16 @@ function addOneYear(at: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Formats a "YYYY-MM-DD" date for prose, e.g. "March 10, 2027". */
+function formatDeadline(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-CA", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 function buildNextSteps(verdict: EntryVerdict, applicationDeadline: string): string[] {
   if (verdict === "appears_permitted") {
     return [
@@ -314,7 +324,7 @@ function buildNextSteps(verdict: EntryVerdict, applicationDeadline: string): str
   return [
     "Write down the date, time, who entered, and what happened while it's fresh, and keep any notice, texts or emails.",
     "Tell your landlord in writing that the entry did not follow the Act, and ask that future entries do. A dated letter is strong evidence if it happens again.",
-    `You can apply to the Landlord and Tenant Board (Form T2) for an order about an entry the landlord was not permitted to make. You must apply within one year of the entry — by ${applicationDeadline}.`,
+    `You can apply to the Landlord and Tenant Board (Form T2) for an order about an entry the landlord was not permitted to make. You must apply within one year of the entry — by ${formatDeadline(applicationDeadline)}.`,
     "The Board can order a rent abatement, order the landlord not to repeat the conduct, or order the landlord to pay a fine.",
   ];
 }

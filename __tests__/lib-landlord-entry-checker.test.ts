@@ -164,7 +164,7 @@ describe("checkLandlordEntry — next steps and deadline", () => {
     const result = check({ reason: "other" });
     expect(result.applicationDeadline).toBe("2027-03-10");
     expect(result.nextSteps.join(" ")).toContain("Form T2");
-    expect(result.nextSteps.join(" ")).toContain("by 2027-03-10");
+    expect(result.nextSteps.join(" ")).toContain("by March 10, 2027");
   });
 
   it("clamps a Feb 29 entry's deadline to Feb 28", () => {

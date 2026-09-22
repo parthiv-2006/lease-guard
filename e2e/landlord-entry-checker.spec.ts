@@ -9,6 +9,7 @@ import { test, expect } from "@playwright/test";
  * - a notice given less than 24 hours ahead fails and points at a T2 application
  * - an entry at 9 p.m. fails the 8 a.m. to 8 p.m. window
  * - an emergency entry needs no notice
+ * - the Ontario RTA reference links its entry section to the checker
  */
 
 test.describe("Landlord Entry Checker", () => {
@@ -57,7 +58,7 @@ test.describe("Landlord Entry Checker", () => {
     await expect(page.getByTestId("entry-checks")).toContainText("only 18 hours");
     const steps = page.getByTestId("entry-next-steps");
     await expect(steps).toContainText("Form T2");
-    await expect(steps).toContainText("by 2027-03-10");
+    await expect(steps).toContainText("by March 10, 2027");
     await expect(page.getByTestId("entry-check-result")).not.toContainText(/illegal/i);
   });
 
