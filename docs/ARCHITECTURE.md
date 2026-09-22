@@ -14,6 +14,7 @@
 6. [Why Next.js API routes instead of FastAPI](#6-why-nextjs-api-routes-instead-of-fastapi)
 7. [Why Gemini REST instead of the Gemini SDK](#7-why-gemini-rest-instead-of-the-gemini-sdk)
 8. [Why PDF parsing is a Python subprocess](#8-why-pdf-parsing-is-a-python-subprocess)
+9. [Why tenant tools and letters are rule engines and templates, not LLM calls](#9-why-tenant-tools-and-letters-are-rule-engines-and-templates-not-llm-calls)
 
 ---
 
@@ -225,6 +226,20 @@ The subprocess script (`scripts/parse_pdf.py`) returns structured JSON with:
 
 ---
 
+## 9. Why tenant tools and letters are rule engines and templates, not LLM calls
+
+The five tenant tools (rent increase, eviction notice, deposit & fees, maintenance & repairs, landlord entry) each answer a narrow question whose answer is fully determined by the RTA: *was 90 days' notice given, was the entry at least 24 hours after the written notice, is the deposit over one month's rent.* That is date math and a lookup table, not judgment.
+
+**Why not an LLM:** the same reasons as risk scoring (§4) — plus these results go straight to a tenant who may act on them. A checker that says "your notice was 23.5 hours, the Act requires 24" must be right every time and testable at the boundary (exactly 24 hours, exactly 8:00 p.m., Feb 29 deadlines). Each engine in `lib/*-checker.ts` is pure TypeScript with its citations verified against the seeded `statutes` table and recorded in the file header.
+
+**Letters follow the same rule.** `lib/tenant-letters/` builds each letter from a fixed template: every legal reason in a letter is a failed check copied verbatim (with its citation) from the checker result, and the only extra citations are sections verified in the corpus. Generating letters with an LLM would reintroduce exactly the risk the rest of the system is built to avoid — a persuasive letter to a landlord that cites a section that doesn't say what the letter claims.
+
+**Privacy:** the tenant's and landlord's names and the rental address are only ever held in React state. Letters are assembled in the browser; nothing is persisted, logged, or sent to an API. That keeps the letter feature out of PIPEDA scope entirely.
+
+**Trade-off:** letters are less fluent than an LLM draft and can't adapt tone. The Negotiation Copilot (Groq) remains the place for tone-aware drafting, where the input is already-grounded negotiation points from the report.
+
+---
+
 ## Summary table
 
 | Decision | Chosen | Key reason |
@@ -237,3 +252,4 @@ The subprocess script (`scripts/parse_pdf.py`) returns structured JSON with:
 | Risk scoring | Deterministic TypeScript | Reproducible; testable; no LLM hallucination risk |
 | Backend | Next.js API routes | One deployment; TypeScript end-to-end; no FastAPI cold starts |
 | PDF parsing | Python subprocess | PyMuPDF + Tesseract handles OCR; JS libraries don't |
+| Tenant tools + letters | Rule engines + fixed templates | Boundary-exact, testable, citations verified; letter PII never leaves the browser |
