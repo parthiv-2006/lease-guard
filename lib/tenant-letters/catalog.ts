@@ -47,4 +47,12 @@ export const LETTER_CATALOG: LetterCatalogEntry[] = [
     checkerSlug: "eviction-notice-checker",
     statuteRefs: ["s. 39", "s. 48", "s. 59"],
   },
+  {
+    kind: "entry_objection",
+    title: "Entry objection",
+    whenToUse:
+      "Your landlord came in without 24 hours' written notice, outside 8 a.m. to 8 p.m., or for a reason the RTA doesn't list. Asks that future entries follow the Act and puts the entry on the record.",
+    checkerSlug: "landlord-entry-checker",
+    statuteRefs: ["s. 25", "s. 27", "s. 29"],
+  },
 ];

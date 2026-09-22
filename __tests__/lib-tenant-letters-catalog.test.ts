@@ -9,7 +9,7 @@ describe("LETTER_CATALOG", () => {
     const kinds = LETTER_CATALOG.map((e) => e.kind);
     expect(new Set(kinds).size).toBe(kinds.length);
     expect(kinds.sort()).toEqual(
-      ["deposit_interest_demand", "eviction_notice_response", "rent_increase_dispute", "repair_request"]
+      ["deposit_interest_demand", "entry_objection", "eviction_notice_response", "rent_increase_dispute", "repair_request"]
     );
   });
 

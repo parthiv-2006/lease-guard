@@ -1,10 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import { LETTER_CATALOG } from "../lib/tenant-letters/catalog";
 
 /**
  * e2e/tenant-letters.spec.ts — Tenant letter generation from each checker.
  *
  * Verifies that:
- * - the /letters hub lists all four letters and links to their checkers
+ * - the /letters hub lists every letter and links to their checkers
  * - each checker offers a letter under a result that warrants one, and the
  *   preview fills in the party details and cites the RTA
  * - a compliant rent increase does not offer a dispute letter
@@ -37,7 +38,7 @@ test.describe("Tenant letters", () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator("h1")).toHaveText("Put it in writing.");
     const cards = page.getByTestId("tenant-letter-card");
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(LETTER_CATALOG.length);
     await expect(cards.first()).toHaveAttribute("href", "/maintenance-repairs-checker");
 
     expect(errors).toHaveLength(0);
