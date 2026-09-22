@@ -47,6 +47,19 @@ describe("toolsForClauseType", () => {
     expect(toolsForClauseType("maintenance_repairs").map((t) => t.slug)).toEqual(["maintenance-repairs-checker"]);
   });
 
+  it("maps entry rights clauses to the landlord entry checker", () => {
+    expect(toolsForClauseType("entry_rights").map((t) => t.slug)).toEqual(["landlord-entry-checker"]);
+  });
+
+  it("only maps clause types the classifier actually produces", () => {
+    const labels = fs.readFileSync(path.join(__dirname, "..", "app", "components", "shared.tsx"), "utf8");
+    for (const tool of TENANT_TOOLS) {
+      for (const clauseType of tool.clauseTypes) {
+        expect(labels).toContain(`${clauseType}:`);
+      }
+    }
+  });
+
   it("returns nothing for clause types no tool covers", () => {
     expect(toolsForClauseType("parking_storage")).toEqual([]);
     expect(toolsForClauseType("unknown")).toEqual([]);
