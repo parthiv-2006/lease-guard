@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SiteHeader } from "../components/site-header";
+import { LetterBuilder } from "../components/letter-builder";
 import {
   allEntryReasons,
   entryReasonRule,
   type EntryCheckResult,
   type EntryCheckStatus,
   type EntryReason,
+  toEntryDateTime,
 } from "@/lib/landlord-entry-checker";
+import type { LetterParties } from "@/lib/tenant-letters/core";
+import { buildEntryObjectionLetter } from "@/lib/tenant-letters/entry-objection";
 
 function todayIso(): string {
   const d = new Date();
@@ -103,6 +107,14 @@ export default function LandlordEntryCheckerPage() {
   const [result, setResult] = useState<EntryCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Entry time as it was when the result was produced.
+  const [submittedEntryAt, setSubmittedEntryAt] = useState<Date | null>(null);
+
+  const buildLetter = useCallback(
+    (parties: LetterParties, letterDate: Date) =>
+      result && submittedEntryAt ? buildEntryObjectionLetter(result, { entryAt: submittedEntryAt }, parties, letterDate) : null,
+    [result, submittedEntryAt]
+  );
 
   const basis = entryReasonRule(form.reason).basis;
 
@@ -155,6 +167,7 @@ export default function LandlordEntryCheckerPage() {
         return;
       }
       setResult(data as EntryCheckResult);
+      setSubmittedEntryAt(toEntryDateTime(form.entryDate, form.entryTime));
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -398,6 +411,11 @@ export default function LandlordEntryCheckerPage() {
             </ol>
 
             <p style={{ marginTop: 24, fontSize: 12, color: "#6f6857", lineHeight: 1.6 }}>{result.disclaimer}</p>
+
+            <LetterBuilder
+              build={buildLetter}
+              intro="Let your landlord know in writing that this entry didn't follow the Act, and ask that future entries do. A dated letter is strong evidence if it happens again."
+            />
           </div>
         )}
 
