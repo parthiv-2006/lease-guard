@@ -7,7 +7,7 @@ import { LETTER_CATALOG } from "@/lib/tenant-letters/catalog";
 export const metadata: Metadata = {
   title: "Tenant Letters — LeaseGuard",
   description:
-    "Free letters for Ontario tenants: request a repair, dispute a rent increase, claim deposit interest, or respond to an eviction notice — each one citing the Residential Tenancies Act, 2006.",
+    "Free letters for Ontario tenants: request a repair, dispute a rent increase, claim deposit interest, respond to an eviction notice, or object to a landlord's entry — each one citing the Residential Tenancies Act, 2006.",
 };
 
 const STEPS = [

@@ -6,7 +6,7 @@ import { TENANT_TOOLS } from "@/lib/tenant-tools";
 export const metadata: Metadata = {
   title: "Tenant Tools — LeaseGuard",
   description:
-    "Free Ontario tenant tools: check a rent increase, an eviction notice, or your deposit and fees against the Residential Tenancies Act, 2006 — no lease upload required.",
+    "Free Ontario tenant tools: check a rent increase, an eviction notice, your deposit and fees, a repair problem, or a landlord's entry against the Residential Tenancies Act, 2006 — no lease upload required.",
 };
 
 export default function TenantToolsPage() {
