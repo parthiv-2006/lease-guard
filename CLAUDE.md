@@ -171,11 +171,16 @@ Key locations for quick reference:
 ├── app/
 │   ├── page.tsx                     ← Landing + upload + processing
 │   ├── report/[id]/page.tsx         ← Report shell + normaliseApiResponse()
-│   ├── components/                  ← panels.tsx, pdf-viewer.tsx, trace-timeline.tsx, lease-chat.tsx, shared.tsx
-│   └── api/                         ← upload/, job/[id]/, report/[id]/, chat/[leaseId]/, feedback/
+│   ├── tools/ · letters/            ← Tenant tools hub + letters hub
+│   ├── *-checker/page.tsx           ← 5 standalone RTA checkers (rent, eviction, deposit, repairs, entry)
+│   ├── components/                  ← panels.tsx, pdf-viewer.tsx, trace-timeline.tsx, lease-chat.tsx, shared.tsx, letter-builder.tsx
+│   └── api/                         ← upload/, job/[id]/, report/[id]/, chat/[leaseId]/, feedback/, *-check/
 ├── lib/
 │   ├── agent.ts                     ← 14-step pipeline with parallel batches
-│   └── mcp-client.ts               ← stdio subprocess, 90s timeout
+│   ├── mcp-client.ts               ← stdio subprocess, 90s timeout
+│   ├── *-checker.ts                 ← Deterministic checker engines — citations verified in file headers
+│   ├── tenant-tools.ts              ← Checker registry (tools hub, landing, sitemap, nav, clause links)
+│   └── tenant-letters/              ← Letter templates — no LLM, party details never persisted
 ├── mcp-server/src/
 │   ├── start.ts                     ← ENTRY POINT — loads dotenv then dynamic import
 │   ├── lib/embeddings.ts            ← Gemini REST, 768-dim, RETRIEVAL_QUERY default
@@ -185,7 +190,7 @@ Key locations for quick reference:
 │   ├── build_regulations.py         ← O.Reg.516/06 + O.Reg.517/06 + Standard Form
 │   ├── validate_retrieval.py        ← Retrieval accuracy — must pass 7/7
 │   └── eval-accuracy.mjs            ← Scoring accuracy — must pass 15/15
-└── supabase/migrations/             ← 001–006, all applied
+└── supabase/migrations/             ← 001–017, all applied
 ```
 
 ---
