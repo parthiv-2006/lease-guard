@@ -60,6 +60,16 @@ export const TENANT_TOOLS: TenantTool[] = [
     statuteRefs: ["s. 20", "s. 21", "s. 29", "s. 30"],
     clauseTypes: ["maintenance_repairs"],
   },
+  {
+    slug: "landlord-entry-checker",
+    href: "/landlord-entry-checker",
+    title: "Landlord Entry Checker",
+    question: "Was your landlord allowed to come in?",
+    blurb:
+      "Checks a landlord's entry against the reasons the RTA permits, the 24-hour written notice rule, and the 8 a.m. to 8 p.m. window, and gives the deadline to apply to the Board.",
+    statuteRefs: ["s. 25", "s. 26", "s. 27", "s. 29"],
+    clauseTypes: ["entry_rights"],
+  },
 ];
 
 export function toolsForClauseType(clauseType: string): TenantTool[] {
