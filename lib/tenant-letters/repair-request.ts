@@ -15,6 +15,19 @@ export interface RepairLetterDetails {
   reportedInWriting?: boolean;
 }
 
+/**
+ * The checker's obligation text speaks to the tenant ("unless you control the
+ * heat"). In a letter to the landlord "you" would mean the landlord, so rewrite
+ * those phrases into the third person.
+ */
+const LANDLORD_VOICE_REWRITES: Array<[RegExp, string]> = [
+  [/unless you control the heat yourself/g, "unless the tenant controls the heat"],
+];
+
+export function toLandlordVoice(text: string): string {
+  return LANDLORD_VOICE_REWRITES.reduce((out, [pattern, replacement]) => out.replace(pattern, replacement), text);
+}
+
 /** Days the landlord is asked to respond within — mirrors the checker's urgency. */
 const RESPOND_WITHIN_DAYS = { urgent: 1, standard: 7 } as const;
 
@@ -51,7 +64,7 @@ export function buildRepairRequestLetter(
       "knew about the problem before signing the lease (s.20(2)).",
   });
 
-  blocks.push({ type: "paragraph", text: `For this problem specifically: ${result.obligation}` });
+  blocks.push({ type: "paragraph", text: `For this problem specifically: ${toLandlordVoice(result.obligation)}` });
 
   if (result.heat?.belowMinimum) {
     blocks.push({

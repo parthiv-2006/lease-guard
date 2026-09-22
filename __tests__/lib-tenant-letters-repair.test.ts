@@ -1,4 +1,4 @@
-import { checkRepairIssue } from "../lib/maintenance-repairs-checker";
+import { allRepairIssueTypes, checkRepairIssue } from "../lib/maintenance-repairs-checker";
 import { letterToPlainText } from "../lib/tenant-letters/core";
 import { buildRepairRequestLetter } from "../lib/tenant-letters/repair-request";
 
@@ -68,5 +68,23 @@ describe("buildRepairRequestLetter", () => {
     const result = checkRepairIssue({ issueType: "utility_cut_off", reportedDate: new Date("2026-01-01"), reportedInWriting: true, asOfDate: asOf });
     const text = letterToPlainText(buildRepairRequestLetter(result, {}, PARTIES, asOf));
     expect(text.toLowerCase()).not.toContain("illegal");
+  });
+
+  it("never addresses the landlord as the tenant in the obligation paragraph", () => {
+    const asOf = new Date("2026-01-12");
+    for (const issueType of allRepairIssueTypes()) {
+      const result = checkRepairIssue({ issueType, reportedDate: null, reportedInWriting: false, asOfDate: asOf });
+      const letter = buildRepairRequestLetter(result, {}, PARTIES, asOf);
+      const obligation = letter.blocks.find((b) => b.type === "paragraph" && b.text.startsWith("For this problem specifically:"));
+      expect(obligation).toBeDefined();
+      expect(obligation!.type === "paragraph" && obligation!.text).not.toMatch(/\byou(rself)?\b/i);
+    }
+  });
+
+  it("rewrites heat control into the third person", () => {
+    const asOf = new Date("2026-01-12");
+    const result = checkRepairIssue({ issueType: "no_heat", reportedDate: null, reportedInWriting: false, asOfDate: asOf });
+    const text = letterToPlainText(buildRepairRequestLetter(result, {}, PARTIES, asOf));
+    expect(text).toContain("unless the tenant controls the heat");
   });
 });
