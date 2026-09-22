@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SiteHeader } from "../components/site-header";
+import { LetterBuilder } from "../components/letter-builder";
+import type { LetterParties } from "@/lib/tenant-letters/core";
+import { buildEvictionNoticeResponseLetter, type EvictionLetterDetails } from "@/lib/tenant-letters/eviction-notice-response";
 import type {
   EvictionCheckResult,
   CheckStatus,
@@ -132,6 +135,14 @@ export default function EvictionNoticeCheckerPage() {
   const [result, setResult] = useState<EvictionCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Notice details as they were when the result was produced.
+  const [submitted, setSubmitted] = useState<EvictionLetterDetails | null>(null);
+
+  const buildLetter = useCallback(
+    (parties: LetterParties, letterDate: Date) =>
+      result && submitted ? buildEvictionNoticeResponseLetter(result, submitted, parties, letterDate) : null,
+    [result, submitted]
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -196,6 +207,11 @@ export default function EvictionNoticeCheckerPage() {
         return;
       }
       setResult(data as EvictionCheckResult);
+      setSubmitted({
+        noticeType: form.noticeType,
+        noticeGivenDate: new Date(form.noticeGivenDate),
+        terminationDate: new Date(form.terminationDate),
+      });
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -527,6 +543,11 @@ export default function EvictionNoticeCheckerPage() {
             </div>
 
             <p style={{ marginTop: 24, fontSize: 12, color: "#6f6857", lineHeight: 1.6 }}>{result.disclaimer}</p>
+
+            <LetterBuilder
+              build={buildLetter}
+              intro="A notice alone can't force you out — only a Landlord and Tenant Board order can. This letter tells your landlord which requirements the notice doesn't appear to meet and that you don't agree to end your tenancy on the basis of it."
+            />
           </div>
         )}
       </main>
