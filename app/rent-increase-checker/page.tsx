@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SiteHeader } from "../components/site-header";
+import { LetterBuilder } from "../components/letter-builder";
 import type { RentIncreaseCheckResult, CheckStatus } from "@/lib/rent-increase-checker";
+import type { LetterParties } from "@/lib/tenant-letters/core";
+import { buildRentIncreaseDisputeLetter, type RentIncreaseLetterDetails } from "@/lib/tenant-letters/rent-increase-dispute";
 
 function todayIso(): string {
   // Use local date components, not toISOString() (UTC) — for users west of
@@ -74,6 +77,15 @@ export default function RentIncreaseCheckerPage() {
   const [result, setResult] = useState<RentIncreaseCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Inputs as they were when the result was produced — the letter must quote
+  // the notice that was checked, not whatever is in the form now.
+  const [submitted, setSubmitted] = useState<RentIncreaseLetterDetails | null>(null);
+
+  const buildLetter = useCallback(
+    (parties: LetterParties, letterDate: Date) =>
+      result && submitted ? buildRentIncreaseDisputeLetter(result, submitted, parties, letterDate) : null,
+    [result, submitted]
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -125,6 +137,12 @@ export default function RentIncreaseCheckerPage() {
         return;
       }
       setResult(data as RentIncreaseCheckResult);
+      setSubmitted({
+        currentRent,
+        proposedRent,
+        noticeGivenDate: new Date(form.noticeGivenDate),
+        effectiveDate: new Date(form.effectiveDate),
+      });
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -375,6 +393,11 @@ export default function RentIncreaseCheckerPage() {
             )}
 
             <p style={{ marginTop: 24, fontSize: 12, color: "#6f6857", lineHeight: 1.6 }}>{result.disclaimer}</p>
+
+            <LetterBuilder
+              build={buildLetter}
+              intro="Let your landlord know in writing which requirements this increase doesn't appear to meet. The letter lists each failed check with its RTA section and says you'll keep paying your current rent."
+            />
           </div>
         )}
       </main>
