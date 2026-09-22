@@ -6,6 +6,7 @@
 "use client";
 
 import type { Report } from "@/app/components/types";
+import type { TenantLetter } from "@/lib/tenant-letters/core";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PW = 210; // A4 page width  (mm)
@@ -671,4 +672,62 @@ export async function exportCopilotPDF(params: CopilotPDFParams): Promise<void> 
     w.addPageFooters(totalPages, `LeaseGuard Addendum · ${today} · Not legal advice — consult a lawyer before signing`);
     doc.save(`LeaseGuard_Amendment_${today}.pdf`);
   }
+}
+
+// ── Tenant letter PDF ──────────────────────────────────────────────────────────
+
+/**
+ * Exports a tenant letter (lib/tenant-letters) as a plain business letter.
+ * Unlike the report and copilot PDFs there is no branded header band — the
+ * letter goes to the landlord, so LeaseGuard only appears in the small
+ * not-legal-advice footer.
+ */
+export async function exportLetterPDF(letter: TenantLetter): Promise<void> {
+  const { default: jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4", putOnlyUsedFonts: true });
+  const w = new Writer(doc);
+  w.y = 26;
+
+  w.body(letter.date);
+  w.nl(4);
+  w.field("To:", letter.recipient);
+  w.field("Re:", letter.subject);
+  w.field("Rental unit:", letter.rentalAddress);
+  w.nl(4);
+
+  w.body(letter.salutation);
+  w.nl(2);
+
+  for (const block of letter.blocks) {
+    if (block.type === "paragraph") {
+      w.body(block.text);
+    } else {
+      for (const item of block.items) {
+        const lines: string[] = doc.splitTextToSize(item, CW - 8);
+        w.checkBreak(lines.length * 5.2 + 1);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("•", ML + 2, w.y);
+        w.body(item, 6);
+        w.nl(0.8);
+      }
+    }
+    w.nl(3);
+  }
+
+  w.checkBreak(26);
+  w.body(letter.signOff);
+  w.nl(12);
+  w.body(letter.signature);
+  w.nl(8);
+
+  w.checkBreak(20);
+  w.divider();
+  w.small(`Legal references: ${letter.citations.join(" · ")}`, 0, GRAY);
+  w.nl(1);
+  w.small(letter.disclaimer, 0, LIGHT_GRAY);
+
+  const totalPages = doc.getNumberOfPages();
+  w.addPageFooters(totalPages, `${letter.title} · ${letter.date} · Prepared with LeaseGuard · Not legal advice`);
+  doc.save(`LeaseGuard_${letter.title.replace(/[^A-Za-z0-9]+/g, "_")}_${letter.date.replace(/[^A-Za-z0-9]+/g, "_")}.pdf`);
 }
