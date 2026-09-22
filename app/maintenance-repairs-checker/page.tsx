@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SiteHeader } from "../components/site-header";
+import { LetterBuilder } from "../components/letter-builder";
 import {
   allRepairIssueTypes,
   repairIssueRule,
@@ -9,6 +10,8 @@ import {
   type RepairStatus,
   type RepairCheckResult,
 } from "@/lib/maintenance-repairs-checker";
+import { buildRepairRequestLetter } from "@/lib/tenant-letters/repair-request";
+import type { LetterParties } from "@/lib/tenant-letters/core";
 
 function todayIso(): string {
   const d = new Date();
@@ -100,6 +103,27 @@ export default function MaintenanceRepairsCheckerPage() {
   const [result, setResult] = useState<RepairCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Inputs as they were when the result was produced, so editing the form
+  // afterwards doesn't silently change the letter built from that result.
+  const [submitted, setSubmitted] = useState<{ reportedDate: string | null; reportedInWriting: boolean } | null>(null);
+  const [problemDescription, setProblemDescription] = useState("");
+
+  const buildLetter = useCallback(
+    (parties: LetterParties, letterDate: Date) =>
+      result && submitted
+        ? buildRepairRequestLetter(
+            result,
+            {
+              description: problemDescription,
+              reportedDate: submitted.reportedDate ? new Date(submitted.reportedDate) : null,
+              reportedInWriting: submitted.reportedInWriting,
+            },
+            parties,
+            letterDate
+          )
+        : null,
+    [result, submitted, problemDescription]
+  );
 
   function update<K extends keyof RepairFormState>(key: K, value: RepairFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -153,6 +177,10 @@ export default function MaintenanceRepairsCheckerPage() {
         return;
       }
       setResult(data as RepairCheckResult);
+      setSubmitted({
+        reportedDate: form.alreadyReported ? form.reportedDate : null,
+        reportedInWriting: form.alreadyReported && form.reportedInWriting,
+      });
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -382,6 +410,29 @@ export default function MaintenanceRepairsCheckerPage() {
               fix — the Board decides what was reasonable in each case.
             </p>
             <p style={{ marginTop: 12, fontSize: 12, color: "#6f6857", lineHeight: 1.6 }}>{result.disclaimer}</p>
+
+            <LetterBuilder
+              build={buildLetter}
+              intro="A dated written request is your strongest evidence if the repair drags on. This letter cites your landlord's obligations for this problem and asks for a written reply."
+              extraFields={
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    htmlFor="letterProblemDescription"
+                    style={{ display: "block", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6f6857", marginBottom: 6 }}
+                  >
+                    Describe the problem (optional)
+                  </label>
+                  <textarea
+                    id="letterProblemDescription"
+                    rows={3}
+                    value={problemDescription}
+                    onChange={(e) => setProblemDescription(e.target.value)}
+                    placeholder="e.g. The bathroom ceiling has been leaking since the storm on March 3."
+                    style={{ width: "100%", boxSizing: "border-box", fontFamily: "'Public Sans', sans-serif", fontSize: 15, padding: "10px 12px", border: "1px solid #cfc7b3", background: "#fff", color: "#17140f", resize: "vertical" }}
+                  />
+                </div>
+              }
+            />
           </div>
         )}
 
