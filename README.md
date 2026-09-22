@@ -40,6 +40,8 @@ LeaseGuard reads Ontario residential lease PDFs and produces a clause-by-clause 
 
 The result: **nine interactive panels** covering risk scoring, red flags, clause exploration, missing protections, negotiation guidance with AI copilot, contradiction detection, statute sources, PDF annotation, and a live Gantt trace of the agent's reasoning — plus a floating AI chat for follow-up questions, all grounded in the same retrieved corpus. The landing page shows a **live public stats bar** (real-time clause count and average risk score across all analyses). Every report has a **one-click share modal** with a generated OG preview card. The **Agent Trace** panel lets you replay the full tool-call sequence as a step-by-step animation, and clicking any RAG bar opens a **drill-down drawer** showing the exact Ontario statute text that was retrieved for that lookup.
 
+No lease? Five **tenant tools** check a single rent increase, eviction notice, deposit or fee, repair problem, or landlord entry against the RTA in seconds — and each one can turn its result into a **letter to the landlord** that cites the sections it relies on, ready to copy, print, or save as a PDF.
+
 ---
 
 ## Report panels
@@ -253,6 +255,12 @@ LeaseGuard is fully deployed across three free-tier services:
 ### Grounded legal analysis
 Every risk flag is backed by a retrieved RTA section or LTB decision — not a guess. The scoring engine is deterministic TypeScript (17 `MANDATORY_PROVISION_VIOLATION` types), so scores are reproducible and explainable.
 
+### Tenant Tools
+Five standalone checkers at [`/tools`](app/tools/page.tsx) answer one question without uploading a lease: **Rent Increase** (s.116/119/120), **Eviction Notice** (N4/N5/N8/N12/N13), **Deposit & Fees** (s.105/106/134), **Maintenance & Repairs** (s.20/21, O. Reg. 516/06 + 517/06) and **Landlord Entry** (s.25–27, 24-hour notice and the 8 a.m.–8 p.m. window, with the s.29(2) one-year Board deadline). Each is a deterministic rule engine in `lib/*-checker.ts` with every citation verified against the seeded corpus — no LLM call. A single registry (`lib/tenant-tools.ts`) feeds the tools page, landing page, sitemap, nav, and the report's clause cards.
+
+### Tenant Letters
+Every checker can turn a result into a letter to the landlord: a repair request, rent increase dispute, deposit interest demand, eviction notice response, or entry objection. Letters are built from fixed templates in `lib/tenant-letters/` (never an LLM), list each failed check with its RTA citation, and can be copied, printed, or downloaded as a PDF. Names and addresses stay in the browser — nothing is saved or sent to the server. Browse them at [`/letters`](app/letters/page.tsx).
+
 ### Ask Your Lease
 A floating chat panel on every report page. Ask natural-language questions ("Is this late fee legal?") and get streaming answers grounded in the same retrieved corpus — statute citations included. Rate-limited at 50 messages/day for authenticated users, 10/day for guests.
 
@@ -344,14 +352,14 @@ Open [http://localhost:3000](http://localhost:3000) and upload a lease PDF.
 ## Testing
 
 ```bash
-# Unit + integration tests (155 passing)
+# Unit + integration tests (310 passing)
 npm test
 
 # With coverage report
 npm test -- --coverage
 
-# End-to-end tests (51 Playwright tests)
-npm run test:e2e
+# End-to-end tests (85 Playwright tests)
+npm run e2e
 
 # Scoring accuracy eval — 45-case labelled suite (expect OVERALL: PASS)
 node scripts/eval-accuracy.mjs
@@ -363,21 +371,23 @@ python scripts/validate_retrieval.py
 cd mcp-server && npm run build
 ```
 
-**Test breakdown (206 total):**
+**Test breakdown (395 total — 310 Jest + 85 Playwright):**
 
 | Suite | Tests | What it covers |
 |-------|-------|---------------|
-| `api-upload.test.ts` | 12 | File validation, size limits, DB-backed rate limiting |
-| `api-report.test.ts` | 10 | Response shape, normalisation, DELETE cascade |
-| `api-job.test.ts` | 8 | SSE job status, polling transitions |
-| `api-job-retry.test.ts` | 7 | Retry endpoint — blocks wrong-jurisdiction errors |
-| `api-chat.test.ts` | 13 | Groq streaming, RAG retrieval, rate limiting |
-| `api-negotiation.test.ts` | 7 | Tone variants, Groq JSON mode, template fallback |
-| `lib-agent.test.ts` | 9 | Pipeline tool call sequencing, 3-min timeout |
-| `rate-limiter.test.ts` | 20 | Token bucket behaviour (in-memory + DB-backed) |
-| `trace-timeline.test.ts` | 34 | Gantt swim-lane computation helpers |
-| E2E (`e2e/landing.spec.ts` + `report.spec.ts` + `chat.spec.ts` + `static-pages.spec.ts`) | 43 | Landing, static pages, report panels, chat |
-| E2E (`e2e/wow-features.spec.ts`) | 8 | F1 live stats · F2 OG card · F3 trace drill-down · F4 replay |
+| `api-upload` · `api-report` · `api-job` · `api-job-retry` | 42 | Upload validation + rate limiting, report shape + DELETE cascade, SSE job status, retry |
+| `api-chat` · `api-negotiation` | 28 | Groq streaming chat + RAG, copilot tone variants + template fallback |
+| `lib-agent` | 19 | Pipeline tool call sequencing, 3-min timeout |
+| `rate-limiter` · `lib-chat-rate-limit` | 25 | In-memory + DB-backed rate limiting |
+| `trace-timeline` | 44 | Gantt swim-lane computation helpers |
+| `lib-*-checker` (5 engines) | 83 | Rent increase, eviction notice, deposit & fees, maintenance, landlord entry rule engines |
+| `api-maintenance-repairs-check` · `api-landlord-entry-check` | 17 | Checker API input validation + rate limiting |
+| `lib-tenant-tools` | 10 | Tool registry, clause-type mapping |
+| `lib-tenant-letters-*` (7 suites) | 42 | Letter core, five letter templates, catalog — incl. "never says illegal" guards |
+| E2E `landing` · `static-pages` · `report` · `chat` · `wow-features` | 56 | Landing, static pages, report panels, chat, F1–F4 features |
+| E2E `tenant-tools` · `maintenance-repairs-checker` · `landlord-entry-checker` | 19 | Tools hub, checker flows, RTA page links |
+| E2E `tenant-letters` | 9 | Letter generation from every checker, placeholder warning |
+| E2E `demo-record` | 1 | Demo video recording (manual) |
 
 All external services (Supabase, Anthropic, Groq, Gemini) are mocked in `__tests__/setup.ts` — no credentials required to run the unit suite.
 
@@ -402,9 +412,9 @@ type  test     ← parallel
 | Job | What it checks |
 |-----|---------------|
 | `typecheck` | `tsc --noEmit` on both the Next.js app and MCP server |
-| `test` | Jest suite (113 tests), uploads lcov coverage artifact |
+| `test` | Full Jest suite, uploads lcov coverage artifact |
 | `build` | MCP server `tsc` compile + Next.js production build |
-| `e2e` | 51 Playwright tests against the built app |
+| `e2e` | Playwright suite against the built app |
 
 See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
@@ -420,6 +430,11 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │   ├── report/[id]/layout.tsx      Per-report OpenGraph + Twitter metadata
 │   ├── report/[id]/opengraph-image.tsx  Edge-rendered OG card (1200×630, Satori)
 │   ├── privacy/ · terms/ · about/  Static legal and info pages
+│   ├── ontario-rta/page.tsx        RTA reference — key sections link to their checkers
+│   ├── tools/page.tsx              Tenant tools hub (reads lib/tenant-tools.ts)
+│   ├── rent-increase-checker/ · eviction-notice-checker/ · deposit-fees-checker/
+│   ├── maintenance-repairs-checker/ · landlord-entry-checker/   One page per checker
+│   ├── letters/page.tsx            Tenant letters hub (reads lib/tenant-letters/catalog.ts)
 │   ├── components/
 │   │   │   ├── overview-panel.tsx      Risk gauge, stats, clause breakdown
 │   │   ├── panels.tsx              Red Flags · Clause Explorer · Negotiation ·
@@ -427,6 +442,8 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │   │   │                           AgentTracePanel (Gantt + replay + drill-down drawer)
 │   │   ├── negotiation-copilot.tsx Groq JSON mode copilot modal (email + addendum)
 │   │   ├── lease-chat.tsx          "Ask Your Lease" floating chat (Groq + RAG)
+│   │   ├── letter-builder.tsx      "Write a letter to my landlord" panel (in-memory party details)
+│   │   ├── letter-preview.tsx      Letter preview + copy / print / PDF actions
 │   │   ├── pdf-viewer.tsx          pdfjs-dist v5, canvas + text layer, clause highlights
 │   │   ├── trace-timeline.tsx      Live Gantt chart (swim lanes, duration bars)
 │   │   ├── trace-timeline.utils.ts toolCategory + CATEGORY_COLOR helpers
@@ -439,6 +456,7 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │       ├── chat/[leaseId]/route.ts Groq SSE streaming chat + hybrid RAG
 │       ├── negotiation/generate/   Groq JSON mode — email + addendum drafts
 │       ├── stats/route.ts          Aggregate stats (avg risk, clause count) — no PII
+│       ├── *-check/route.ts        One rate-limited POST route per checker
 │       ├── stream/[id]/route.ts    SSE live progress events
 │       └── feedback/route.ts       Thumbs up/down with comment
 │
@@ -447,7 +465,10 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │   ├── mcp-client.ts               stdio ↔ SSE transport auto-select
 │   ├── ai-safety.ts                25-pattern prompt injection detector + sanitizers
 │   ├── upload-rate-limit.ts        DB-backed per-user/IP rate limiter
-│   └── pdf-export.ts               jsPDF report + copilot export
+│   ├── *-checker.ts                Deterministic RTA rule engines (rent, eviction, deposit, repairs, entry)
+│   ├── tenant-tools.ts             Checker registry — tools hub, landing, sitemap, nav, clause links
+│   ├── tenant-letters/             Letter core, 5 templates, catalog (no LLM, no persistence)
+│   └── pdf-export.ts               jsPDF report + copilot + tenant letter export
 │
 ├── mcp-server/src/
 │   ├── tools/
@@ -469,22 +490,21 @@ See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 │   ├── landing.spec.ts             8 tests
 │   ├── static-pages.spec.ts        12 tests
 │   ├── report.spec.ts              15 tests
-│   └── chat.spec.ts                13 tests
-│
-├── e2e/
-│   ├── landing.spec.ts             8 tests
-│   ├── static-pages.spec.ts        7 tests
-│   ├── report.spec.ts              15 tests
 │   ├── chat.spec.ts                13 tests
-│   └── wow-features.spec.ts        8 tests — F1 stats · F2 OG card · F3 drill-down · F4 replay
+│   ├── wow-features.spec.ts        8 tests — F1 stats · F2 OG card · F3 drill-down · F4 replay
+│   ├── tenant-tools.spec.ts        9 tests
+│   ├── maintenance-repairs-checker.spec.ts  4 tests
+│   ├── landlord-entry-checker.spec.ts       6 tests
+│   └── tenant-letters.spec.ts      9 tests
 │
-└── supabase/migrations/            13 migrations (001–013, all applied)
+└── supabase/migrations/            17 migrations (001–017, all applied)
     ├── 001_initial_schema.sql
     ├── 005_hybrid_search.sql       fts_vector column + GIN index + hybrid search RPC
     ├── 006_lease_address.sql       Property address extraction
     ├── 009_upload_ip.sql           DB-backed upload rate limiting
     ├── 010_chat_requests.sql       Chat rate limiting table
-    └── 013_public_stats_view.sql   Aggregate stats view (no PII)
+    ├── 013_public_stats_view.sql   Aggregate stats view (no PII)
+    └── 016–017                     Regulation act-name relabel (corpus + existing reports)
 ```
 
 ---
